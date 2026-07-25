@@ -1,5 +1,5 @@
 import { faq } from "@/content/site";
-import { SectionHead } from "@/components/ui";
+import { SectionHead, stagger } from "@/components/ui";
 
 /* Native <details> — keyboard accessible, works with JS disabled.
    The first item is open so the section never reads as a wall of rules. */
@@ -8,15 +8,16 @@ export function Faq() {
     <section id="faq" className="bg-cream px-6 py-24 lg:px-10 lg:py-32">
       <div className="shell grid gap-14 lg:grid-cols-[380px_1fr] lg:gap-20">
         <div className="lg:sticky lg:top-28 lg:self-start">
-          <SectionHead eyebrow={faq.eyebrow} title={faq.title} />
+          <SectionHead eyebrow={faq.eyebrow} title={faq.title} className="reveal" />
         </div>
 
-        <div className="flex flex-col">
+        <div className="reveal-group flex flex-col">
           {faq.items.map((item, i) => (
             <details
               key={item.q}
               open={i === 0}
               className="group border-b border-line py-6 first:border-t"
+              style={stagger(i)}
             >
               <summary className="flex cursor-pointer list-none items-start justify-between gap-8">
                 <span className="font-display text-[21px] leading-snug text-ink">{item.q}</span>

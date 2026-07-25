@@ -17,7 +17,7 @@ export function Cta() {
           <path d="M140 300V172a60 60 0 01120 0v128" stroke="currentColor" strokeWidth="1.2" />
         </svg>
 
-        <div className="relative mx-auto flex max-w-[560px] flex-col items-center gap-7">
+        <div className="reveal relative mx-auto flex max-w-[560px] flex-col items-center gap-7">
           <h2 className="text-[38px] leading-[1.08] tracking-[-1px] text-cream md:text-d1">
             {cta.title}
           </h2>

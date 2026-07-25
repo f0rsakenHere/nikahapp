@@ -77,6 +77,10 @@
 
   --shadow-soft: 0 1px 2px rgba(16, 32, 26, 0.04), 0 12px 32px -12px rgba(16, 32, 26, 0.14);
   --shadow-lift: 0 2px 6px rgba(16, 32, 26, 0.06), 0 34px 70px -28px rgba(16, 32, 26, 0.4);
+
+  /* Fast start, smooth landing. The only easing this project uses for
+     interaction; scroll-driven reveals are linear against scroll. */
+  --ease-land: cubic-bezier(0.2, 0, 0, 1);
 }
 
 @layer base {
@@ -119,8 +123,118 @@
     *::before,
     *::after {
       animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+  }
+
+  /* Focus must never be hidden by motion. Brass reads on both grounds. */
+  :focus-visible {
+    outline: 2px solid var(--color-brass);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+}
+
+/* ============================================================
+   MOTION — thesis: quiet, scroll-driven, CSS-only.
+
+   Sections rise 16px and fade across their entry range, staggered
+   inside groups. Nothing bounces, overshoots, parallaxes or loops.
+
+   Everything below is gated on BOTH `prefers-reduced-motion:
+   no-preference` AND `@supports (animation-timeline: view())`.
+   That second gate is the important one: without it, a browser
+   lacking scroll-driven animations would leave every revealed
+   element stuck at `opacity: 0`. Gated, it simply renders static.
+   ============================================================ */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Top-down wipe, so the dome of an arch-framed image lands first. */
+@keyframes arch-wipe {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    /* Single block. Apply to headings, cards, images — never to a whole
+       tall section: `entry` cannot complete on an element taller than
+       the viewport, which would strand it mid-fade. */
+    .reveal {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+
+    /* Group stagger. Each child runs on its OWN view timeline (so it
+       always completes) with its range offset by --i, which produces
+       the stagger even when children enter simultaneously in a row. */
+    .reveal-group > * {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry calc(var(--i, 0) * 6%) entry calc(65% + var(--i, 0) * 6%);
+    }
+
+    .reveal-arch {
+      animation: arch-wipe linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 80%;
+    }
+  }
+
+  /* Above the fold there is no scroll to drive anything, so the hero
+     plays once on load. --i staggers it. */
+  .enter {
+    animation: rise 520ms var(--ease-land) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+
+  .enter-arch {
+    animation: arch-wipe 760ms var(--ease-land) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+}
+
+/* ---- Route transitions (cross-document, plain <a> navigation) ---- */
+@view-transition {
+  navigation: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: vt-out 180ms ease-in both;
+  }
+  ::view-transition-new(root) {
+    animation: vt-in 280ms var(--ease-land) both;
+  }
+}
+
+@keyframes vt-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-in {
+  from {
+    opacity: 0;
   }
 }
 

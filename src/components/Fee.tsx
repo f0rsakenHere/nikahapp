@@ -1,5 +1,5 @@
 import { fee } from "@/content/site";
-import { Button, SectionHead } from "@/components/ui";
+import { Button, SectionHead, stagger } from "@/components/ui";
 
 /* No price cards, because the live site publishes no amount here.
    Instead this explains *when* the fee falls due — which is the part
@@ -8,9 +8,15 @@ export function Fee() {
   return (
     <section id="fee" className="bg-shell px-6 py-24 lg:px-10 lg:py-32">
       <div className="shell flex flex-col items-center gap-16">
-        <SectionHead eyebrow={fee.eyebrow} title={fee.title} body={fee.body} center />
+        <SectionHead
+          eyebrow={fee.eyebrow}
+          title={fee.title}
+          body={fee.body}
+          center
+          className="reveal"
+        />
 
-        <ol className="grid w-full items-stretch gap-6 md:grid-cols-3">
+        <ol className="reveal-group grid w-full items-stretch gap-6 md:grid-cols-3">
           {fee.points.map((p, i) => {
             const last = i === fee.points.length - 1;
             return (
@@ -19,6 +25,7 @@ export function Fee() {
                 className={`flex flex-col gap-3 rounded-lg p-8 ${
                   last ? "bg-ink text-cream ring-1 ring-brass/40" : "border border-line bg-cream"
                 }`}
+                style={stagger(i)}
               >
                 <span
                   className={`font-display text-[15px] ${last ? "text-brass-soft" : "text-brass"}`}
@@ -32,7 +39,7 @@ export function Fee() {
           })}
         </ol>
 
-        <p className="max-w-[620px] text-center text-body text-body">{fee.note}</p>
+        <p className="reveal max-w-[620px] text-center text-body text-body">{fee.note}</p>
 
         <Button href={fee.cta.href} variant="solid">
           {fee.cta.label}

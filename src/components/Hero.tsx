@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { hero, trust } from "@/content/site";
-import { Button, Eyebrow, Tick } from "@/components/ui";
+import { Button, Eyebrow, stagger, Tick } from "@/components/ui";
 
 /* The five assurances sit where invented statistics would normally go.
    They are the strongest true things the service can say up front. */
@@ -55,15 +55,22 @@ export function Hero() {
       <div className="shell relative pb-16 pt-36 lg:pb-20 lg:pt-44">
         <div className="grid items-center gap-14 lg:grid-cols-[1fr_440px] lg:gap-20">
           <div className="flex flex-col items-start gap-8">
-            <Eyebrow onDark>{hero.eyebrow}</Eyebrow>
+            <div className="enter" style={stagger(0)}>
+              <Eyebrow onDark>{hero.eyebrow}</Eyebrow>
+            </div>
 
-            <h1 className="max-w-[620px] text-[44px] leading-[1.06] tracking-[-1.2px] text-cream sm:text-[60px] xl:text-d1">
+            <h1
+              className="enter max-w-[620px] text-[44px] leading-[1.06] tracking-[-1.2px] text-cream sm:text-[60px] xl:text-d1"
+              style={stagger(1)}
+            >
               {hero.title}
             </h1>
 
-            <p className="max-w-[520px] text-lead text-body-dark">{hero.body}</p>
+            <p className="enter max-w-[520px] text-lead text-body-dark" style={stagger(2)}>
+              {hero.body}
+            </p>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="enter flex flex-wrap items-center gap-3" style={stagger(3)}>
               <Button href={hero.primary.href} variant="onDark">
                 {hero.primary.label}
               </Button>
@@ -74,7 +81,10 @@ export function Hero() {
           </div>
 
           <div className="relative mx-auto w-full max-w-[440px]">
-            <div className="arch relative aspect-[440/560] w-full overflow-hidden ring-1 ring-white/12">
+            <div
+              className="enter-arch arch relative aspect-[440/560] w-full overflow-hidden ring-1 ring-white/12"
+              style={stagger(2)}
+            >
               <Image
                 src={hero.image.src}
                 alt={hero.image.alt}
@@ -92,8 +102,8 @@ export function Hero() {
         </div>
 
         <ul className="mt-16 grid gap-x-10 gap-y-4 border-t border-white/12 pt-10 sm:grid-cols-2 lg:mt-24 lg:grid-cols-3">
-          {trust.points.map((p) => (
-            <li key={p} className="flex items-start gap-3">
+          {trust.points.map((p, i) => (
+            <li key={p} className="enter flex items-start gap-3" style={stagger(4 + i)}>
               <Tick className="mt-1 h-5 w-5 shrink-0 text-brass-soft" />
               <span className="text-sm text-body-dark">{p}</span>
             </li>

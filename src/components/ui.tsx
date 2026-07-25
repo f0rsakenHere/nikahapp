@@ -1,4 +1,9 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+
+/* Stagger index for `.reveal-group` children and `.enter` elements.
+   Drives --i, which offsets each item's animation range (scroll) or
+   delay (on-load). See the MOTION block in globals.css. */
+export const stagger = (i: number) => ({ "--i": i }) as CSSProperties;
 
 /* ------------------------------------------------------------------
    Eyebrow — small caps label with a fading brass rule beneath it.
