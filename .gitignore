@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+build/
+.env*
+!.env.example
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+
+# Claude Code: machine-local settings, and vendored skills that are
+# reinstallable (`npx impeccable install`, `/plugin install genjutsu`).
+.claude/settings.local.json
+.claude/skills/

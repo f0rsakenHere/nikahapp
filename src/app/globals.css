@@ -1,0 +1,189 @@
+@import "tailwindcss";
+
+/* ============================================================
+   SAKINAH — DESIGN TOKENS
+
+   Original system. Deep green-black and cream with brass, a serif
+   display face against a clean sans, and a dome-arch motif that
+   repeats through image frames, cards and buttons.
+   ============================================================ */
+
+@theme {
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  /* ---- Palette ---- */
+  --color-ink: #10201a; /* deepest — hero and story grounds */
+  --color-deep: #1a3229; /* raised surfaces on dark */
+  --color-forest: #2a4a3d; /* borders and fills on dark */
+
+  --color-cream: #fbf7ef; /* warm page ground */
+  --color-shell: #f3ede1; /* second warm tone */
+  --color-line: #e3dbcb; /* hairlines on cream */
+
+  --color-brass: #b8894a; /* primary accent */
+  --color-brass-soft: #d9b378;
+  --color-brass-tint: #f2e6d3;
+
+  --color-sage: #7f9b8b; /* secondary accent */
+
+  --color-body: #55635c; /* body copy on light */
+  --color-body-dark: #b9c9c0; /* body copy on dark */
+
+  /* ---- Display type (serif) ---- */
+  --text-d1: 76px;
+  --text-d1--line-height: 1.02;
+  --text-d1--letter-spacing: -2px;
+  --text-d1--font-weight: 400;
+
+  --text-d2: 54px;
+  --text-d2--line-height: 1.08;
+  --text-d2--letter-spacing: -1.4px;
+  --text-d2--font-weight: 400;
+
+  --text-d3: 38px;
+  --text-d3--line-height: 1.16;
+  --text-d3--letter-spacing: -0.8px;
+  --text-d3--font-weight: 400;
+
+  --text-d4: 26px;
+  --text-d4--line-height: 1.25;
+  --text-d4--letter-spacing: -0.3px;
+  --text-d4--font-weight: 400;
+
+  /* ---- UI type (sans) ---- */
+  --text-lead: 20px;
+  --text-lead--line-height: 32px;
+
+  --text-body: 17px;
+  --text-body--line-height: 28px;
+
+  --text-sm: 15px;
+  --text-sm--line-height: 24px;
+
+  --text-xs: 13px;
+  --text-xs--line-height: 20px;
+
+  --text-eyebrow: 12px;
+  --text-eyebrow--line-height: 16px;
+  --text-eyebrow--letter-spacing: 1.4px;
+  --text-eyebrow--font-weight: 600;
+
+  /* ---- Radii ---- */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  --shadow-soft: 0 1px 2px rgba(16, 32, 26, 0.04), 0 12px 32px -12px rgba(16, 32, 26, 0.14);
+  --shadow-lift: 0 2px 6px rgba(16, 32, 26, 0.06), 0 34px 70px -28px rgba(16, 32, 26, 0.4);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-cream);
+    color: var(--color-body);
+    font-family: var(--font-sans);
+    font-size: 17px;
+    line-height: 28px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    color: var(--color-ink);
+    font-weight: 400;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: var(--color-brass);
+    color: #fff;
+  }
+
+  [id] {
+    scroll-margin-top: 96px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ============================================================
+   LAYOUT + MOTIF
+   ============================================================ */
+
+@utility shell {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
+@utility shell-wide {
+  width: 100%;
+  max-width: 1360px;
+  margin-inline: auto;
+}
+
+/* The signature: a dome-topped frame. Used on hero and feature
+   imagery, and echoed at smaller scale on cards and step markers. */
+@utility arch {
+  border-radius: 50% 50% var(--radius-lg) var(--radius-lg) /
+    38% 38% var(--radius-lg) var(--radius-lg);
+}
+
+@utility arch-sm {
+  border-radius: 50% 50% var(--radius-md) var(--radius-md) /
+    42% 42% var(--radius-md) var(--radius-md);
+}
+
+/* Device-frame scale. The frame is 414px wide and the numbered callouts
+   overhang its edges by ~14px, so narrow viewports need progressively
+   smaller values. From md up, the component's own scale applies.
+   Budget at each step: viewport − 48px gutters − 28px pin overhang. */
+.phone-frame {
+  --ps: 0.6; /* 320px viewport */
+}
+
+@media (min-width: 380px) {
+  .phone-frame {
+    --ps: 0.7;
+  }
+}
+
+@media (min-width: 480px) {
+  .phone-frame {
+    --ps: 0.84;
+  }
+}
+
+@media (min-width: 768px) {
+  .phone-frame {
+    --ps: var(--ps-lg, 0.92);
+  }
+}
+
+/* Warm duotone so photography from different sources reads as one set. */
+@utility photo-warm {
+  filter: sepia(0.16) saturate(0.94) contrast(1.03);
+}
+
+/* A hairline rule that fades out — used under eyebrow labels. */
+@utility rule-fade {
+  background-image: linear-gradient(90deg, var(--color-brass) 0%, transparent 100%);
+}
