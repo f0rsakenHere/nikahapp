@@ -83,11 +83,13 @@ export const about = {
   ],
 };
 
-/* TODO: the template opened a video here. NikahCanada has none, so the
-   play control is gone and this is a still band. Drop a real film in and
-   the control can come back. */
 export const video = {
   poster: { src: `${PHOTO}/video.jpg`, w: 1110, h: 500, alt: "A floral archway set for a ceremony" },
+  /* TODO: no film exists yet. The play control renders either way because
+     it is part of the composition, but it only becomes a working button —
+     opening the clip in a lightbox — once this points at a real file or
+     URL. Deliberately not pointed at the template's stock demo clip. */
+  href: null as string | null,
 };
 
 /* Was "Includes Various Product Categories". */
