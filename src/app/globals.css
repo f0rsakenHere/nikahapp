@@ -1,6 +1,61 @@
 @import "tailwindcss";
 
 /* ============================================================
+   BRIDELY — DESIGN TOKENS  (homepage, "/")
+
+   Ported 1:1 from the Bridely HTML template's :root block and its
+   measured computed styles. Deliberately namespaced away from the
+   Sakinah tokens below so the two systems can coexist while
+   /how-it-works still runs on the old one.
+   ============================================================ */
+
+@theme {
+  --font-playfair: var(--font-playfair-display), Georgia, serif;
+  --font-jost: var(--font-jost-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --color-accent: #9accc9; /* mint — nav, buttons, rules */
+  --color-peach: #f4a492; /* primary CTA */
+  --color-text: #555555; /* body copy */
+  --color-form-text: #999999; /* input placeholders */
+  --color-mist: #edf7f8; /* section ground */
+  --color-soft-green: #daeded; /* hairlines */
+  --color-soft-peach: #fad2c9;
+  --color-offwhite: #fdfdfd;
+  --color-yellow: #fdde47;
+
+  --color-facebook: #3b5998;
+  --color-twitter: #4fc0e9;
+  --color-linkedin: #3272bd;
+  --color-gmail: #d13f2d;
+}
+
+/* Two infinite decorative loops that MotionConfig cannot switch off on its
+   own: it drops transforms for reduced-motion readers but happily keeps
+   cycling opacity and colour forever. A stylesheet !important beats
+   Framer's inline styles, so these pin both to a resting state.
+   `.twinkle` is the scattered bird/heart art, `.cycle` the hero's second
+   line. */
+@media (prefers-reduced-motion: reduce) {
+  .twinkle {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .cycle {
+    color: #f4a492 !important;
+  }
+}
+
+/* The template's container: a hard 1140px with 15px gutters. Every
+   absolute offset in the collage sections is measured against it, so it
+   stays fixed rather than fluid. */
+@utility shell-b {
+  width: 100%;
+  max-width: 1140px;
+  margin-inline: auto;
+  padding-inline: 15px;
+}
+
+/* ============================================================
    SAKINAH — DESIGN TOKENS
 
    Original system. Deep green-black and cream with brass, a serif
@@ -89,7 +144,11 @@
   }
 
   body {
-    background: var(--color-cream);
+    /* White, because the Bridely homepage owns the page ground now. The
+       cream belonged to the old Sakinah design and was bleeding through
+       the Instagram band and footer, which paint no background of their
+       own; /how-it-works re-applies it on its own wrapper. */
+    background: #ffffff;
     color: var(--color-body);
     font-family: var(--font-sans);
     font-size: 17px;

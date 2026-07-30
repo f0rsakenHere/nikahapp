@@ -12,3 +12,8 @@ next-env.d.ts
 # reinstallable (`npx impeccable install`, `/plugin install genjutsu`).
 .claude/settings.local.json
 .claude/skills/
+
+# The purchased Bridely HTML template (Envato). The repo is public, and the
+# licence covers building a site WITH the template, not redistributing its
+# source. Kept locally as the reference we measured the rebuild against.
+bridely-wedding-event-management-html-template-2024-01-26-13-13-29-utc/

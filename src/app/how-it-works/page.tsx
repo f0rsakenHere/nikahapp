@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Image from "next/image";
+import { Nav } from "@/components/Nav";
+import { Footer } from "@/components/Footer";
 import { Phone } from "@/components/app/Phone";
 import { SignUp, ProfileDeen, WaliSetup } from "@/components/app/screens/Onboarding";
 import { Introductions, ProfileDetail, MutualInterest } from "@/components/app/screens/Matching";
@@ -76,8 +78,13 @@ export default function HowItWorksPage() {
 
   return (
     <>
+      {/* Nav and Footer used to live in the root layout. The homepage now
+          ships its own light header, so this route carries the dark pair
+          it was designed against until it gets reskinned to match. */}
+      <Nav />
+      <main className="bg-cream">
       {/* ---- Header ---- */}
-      {/* Top padding clears the 96px transparent nav from the root layout. */}
+      {/* Top padding clears the 96px transparent nav. */}
       <section className="relative overflow-hidden bg-ink px-6 pb-24 pt-36 lg:px-10 lg:pb-32 lg:pt-44">
         {/* Photographic ground, scrimmed the same way as the home hero so the
             two pages read as one system. */}
@@ -201,6 +208,8 @@ export default function HowItWorksPage() {
           <p className="max-w-[460px] text-sm text-body/70">{close.note}</p>
         </div>
       </section>
+      </main>
+      <Footer />
     </>
   );
 }

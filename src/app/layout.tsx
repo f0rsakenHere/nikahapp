@@ -1,12 +1,33 @@
 import type { Metadata } from "next";
-import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import {
+  Fraunces,
+  Jost,
+  Playfair_Display,
+  Plus_Jakarta_Sans,
+} from "next/font/google";
 import { brand } from "@/content/site";
-import { Nav } from "@/components/Nav";
-import { Footer } from "@/components/Footer";
 import "./globals.css";
 
-/* Serif display against a clean sans — the pairing carries most of the
-   "considered, not an app" feeling the brand needs. */
+/* Two type systems live here while the site is mid-rebuild.
+
+   Playfair Display + Jost drive the new Bridely homepage. Fraunces +
+   Jakarta still drive /how-it-works, which has not been reskinned yet.
+   Both are declared as CSS variables and cost nothing on the routes that
+   do not reference them. */
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair-display",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
+
+const jost = Jost({
+  subsets: ["latin"],
+  variable: "--font-jost-sans",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
+});
+
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
@@ -32,15 +53,14 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    /* Nav and Footer live here, not in a page, so every route gets them.
-       The Nav sits transparent over the hero, so each page must open with
-       a dark section. */
-    <html lang="en" className={`${fraunces.variable} ${jakarta.variable}`}>
-      <body>
-        <Nav />
-        <main>{children}</main>
-        <Footer />
-      </body>
+    /* Nav and Footer are per-route rather than global: the homepage ships
+       its own light header and footer, while /how-it-works keeps the dark
+       pair it was designed against. */
+    <html
+      lang="en"
+      className={`${playfair.variable} ${jost.variable} ${fraunces.variable} ${jakarta.variable}`}
+    >
+      <body>{children}</body>
     </html>
   );
 }
