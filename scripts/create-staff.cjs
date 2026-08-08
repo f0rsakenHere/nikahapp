@@ -6,16 +6,19 @@
  * from a machine with the database credentials, not from a form on the
  * internet.
  *
- * The account is created with 2FA *required but not yet configured*:
- * `UserSchema` refuses a staff account with `mfa.enabled: false`, so the
- * secret is enrolled on first sign-in through /settings. That means this
- * script cannot hand anyone a fully working staff login on its own,
- * which is the point.
+ * The account is created with 2FA required and no secret enrolled, so
+ * the first sign-in goes straight to authenticator setup. TOTP needs no
+ * email — it is a shared secret and a clock.
+ *
+ * Setting the first password would, though: the reset flow sends a link,
+ * and no email provider has been supplied. So the script mints that link
+ * itself and prints it here. Hand it over in person or on a channel you
+ * trust; it works once and expires in an hour.
  *
  *   node scripts/create-staff.cjs someone@example.com "Their Name" admin
  */
 const { MongoClient, ObjectId, ServerApiVersion } = require("mongodb");
-const { randomBytes, createHmac } = require("node:crypto");
+const { randomBytes, createHash } = require("node:crypto");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
 
 loadEnv();
@@ -41,11 +44,15 @@ for (const role of roles) {
   }
 }
 
-/* A password nobody knows, including us. They set their own through the
-   reset flow — which means the account cannot be signed into from this
-   script's output, and there is no shared secret in anyone's terminal
-   history. */
+/* A password nobody knows, including us — not even briefly, and not in
+   anyone's shell history. They set their own with the link below. */
 const password = randomBytes(24).toString("base64url");
+
+const APP_ORIGIN = process.env.APP_ORIGIN || "http://localhost:3000";
+
+/* One hour, matching TOKEN_TTL_MS.resetPassword in src/lib/auth/tokens.ts.
+   Deliberately not longer for a staff account. */
+const SETUP_TTL_MS = 60 * 60 * 1000;
 
 const client = new MongoClient(uri, {
   serverApi: { version: ServerApiVersion.v1, strict: false, deprecationErrors: true },
@@ -101,6 +108,21 @@ const client = new MongoClient(uri, {
     closureReason: null,
   });
 
+  /* The setup link: an ordinary password-reset token, created here so
+     the account is reachable without an email provider. Same collection,
+     same shape, same expiry — the reset screen cannot tell the
+     difference, and there is no second code path to keep correct. */
+  const setupToken = randomBytes(32).toString("base64url");
+  await db.collection("verificationTokens").insertOne({
+    _id: new ObjectId(),
+    tokenHash: createHash("sha256").update(setupToken).digest("hex"),
+    purpose: "resetPassword",
+    userId: _id.toHexString(),
+    email: lower,
+    createdAt: now,
+    expiresAt: new Date(now.getTime() + SETUP_TTL_MS),
+  });
+
   await db.collection("auditLog").insertOne({
     _id: new ObjectId(),
     at: now,
@@ -115,17 +137,22 @@ const client = new MongoClient(uri, {
       "",
       `Created ${lower} with roles: ${roles.join(", ")}`,
       "",
-      "They cannot sign in yet, and that is deliberate. Two things must happen:",
+      "Send them this link. It works once and expires in an hour:",
       "",
-      "  1. They set a password via /forgot-password — no password was chosen",
-      "     here, so none of us knows one.",
-      "  2. They enrol an authenticator app. The account already requires a",
-      "     second factor; until a secret is enrolled, sign-in is impossible.",
+      `  ${APP_ORIGIN}/reset-password?token=${setupToken}`,
       "",
-      "⚠ Step 2 has no path yet for an account that cannot sign in — enrolment",
-      "  lives behind /settings. Until the staff console handles it, enrol the",
-      "  secret while signed in as them, or add an unauthenticated enrolment",
-      "  step to the reset flow.",
+      "It is a live credential — hand it over in person or on a channel you",
+      "trust, not by anything you would not send a password over.",
+      "",
+      "They set a password with it, and the first sign-in then takes them",
+      "straight to authenticator setup rather than a code prompt, because the",
+      "account requires a second factor and has none enrolled.",
+      "",
+      "No email is involved in any of that. TOTP is a shared secret and a",
+      "clock; nothing is sent. Only this first link would normally have been",
+      "emailed, which is why the script mints it instead.",
+      "",
+      `If ${APP_ORIGIN} is wrong, set APP_ORIGIN and run this again.`,
       "",
     ].join("\n")
   );

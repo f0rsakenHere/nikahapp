@@ -8,7 +8,7 @@
  */
 const { chromium } = require("playwright");
 const { MongoClient, ObjectId, ServerApiVersion } = require("mongodb");
-const { createHmac } = require("node:crypto");
+const { createHmac, createHash, randomBytes } = require("node:crypto");
 const argon2 = require("@node-rs/argon2");
 const { BASE, assertOurApp } = require("./lib/base.cjs");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
@@ -95,6 +95,33 @@ const mongo = new MongoClient(uri, {
     const p = await ctx.newPage();
     await p.goto(BASE + "/login", { waitUntil: "networkidle" });
     await assertOurApp(p);
+
+    /* ---------- the bootstrap link, with no email anywhere ------------
+       scripts/create-staff.cjs mints a reset token and prints it, because
+       the password is the one part of staff onboarding that would
+       otherwise need a provider. Built here the same way. */
+    {
+      const setupToken = randomBytes(32).toString("base64url");
+      await db.collection("verificationTokens").insertOne({
+        _id: new ObjectId(),
+        tokenHash: createHash("sha256").update(setupToken).digest("hex"),
+        purpose: "resetPassword",
+        userId: staffId.toHexString(),
+        email: STAFF,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      });
+
+      const boot = await (await browser.newContext()).newPage();
+      await boot.goto(`${BASE}/reset-password?token=${setupToken}`, { waitUntil: "networkidle" });
+      check("the setup link opens the password screen", /Choose a new password/.test(await boot.textContent("body")));
+
+      await boot.fill('input[name="password"]', PASSWORD);
+      await boot.click('button[type="submit"]');
+      await boot.waitForURL("**/login**", { timeout: 20_000 });
+      check("setting the first password lands on sign in", /has been reset/i.test(await boot.textContent("body")));
+      await boot.close();
+    }
 
     /* ---------- first sign-in goes to enrolment, not a code prompt ---- */
     await p.fill('input[name="email"]', STAFF);
@@ -214,6 +241,7 @@ const mongo = new MongoClient(uri, {
       await db.collection("sessions").deleteMany({ userId: String(u._id) });
       await db.collection("profiles").deleteMany({ userId: u._id });
       await db.collection("auditLog").deleteMany({ "subject.id": String(u._id) });
+      await db.collection("verificationTokens").deleteMany({ userId: String(u._id) });
       await db.collection("users").deleteOne({ _id: u._id });
     }
     console.log("\ncleaned up the fixture accounts");
