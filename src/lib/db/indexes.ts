@@ -44,6 +44,34 @@ export const INDEXES: Partial<Record<CollectionName, Spec[]>> = {
     },
   ],
 
+  [COLLECTIONS.connectionRequests]: [
+    /* One live request per ordered pair. The unique index is what
+     * makes two taps produce one request rather than two charges. */
+    { keys: { pairKey: 1 }, options: { unique: true, name: "pairKey_unique" } },
+    { keys: { toUserId: 1, state: 1 }, options: { name: "inbox" } },
+    { keys: { fromUserId: 1, state: 1 }, options: { name: "outbox" } },
+    { keys: { state: 1, expiresAt: 1 }, options: { name: "expiry_sweep" } },
+  ],
+
+  [COLLECTIONS.connectionLedger]: [
+    { keys: { userId: 1, at: -1 }, options: { name: "userId_at" } },
+    /* One monthly grant per person per period.
+     *
+     * `partialFilterExpression`, not `sparse`. A sparse *compound* index
+     * still indexes a document when any one of its keys exists — and
+     * `userId` always does — so every reservation and refund was indexed
+     * with `period: null` and the second one collided. Partial indexes
+     * only the documents this rule is about. */
+    {
+      keys: { userId: 1, period: 1 },
+      options: {
+        unique: true,
+        name: "grant_once_per_period",
+        partialFilterExpression: { reason: "monthlyGrant" },
+      },
+    },
+  ],
+
   [COLLECTIONS.verifications]: [
     { keys: { "subject.userId": 1, kind: 1 }, options: { name: "subject_kind" } },
     { keys: { decision: 1, createdAt: 1 }, options: { name: "decision_createdAt" } },

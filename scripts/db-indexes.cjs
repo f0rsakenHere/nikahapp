@@ -32,6 +32,26 @@ const INDEXES = {
     [{ userId: 1, lastSeenAt: -1 }, { name: "userId_lastSeen" }],
     [{ absoluteExpiresAt: 1 }, { name: "absoluteExpiresAt_ttl", expireAfterSeconds: 0 }],
   ],
+  connectionRequests: [
+    [{ pairKey: 1 }, { unique: true, name: "pairKey_unique" }],
+    [{ toUserId: 1, state: 1 }, { name: "inbox" }],
+    [{ fromUserId: 1, state: 1 }, { name: "outbox" }],
+    [{ state: 1, expiresAt: 1 }, { name: "expiry_sweep" }],
+  ],
+  connectionLedger: [
+    [{ userId: 1, at: -1 }, { name: "userId_at" }],
+    /* partial, not sparse: a sparse compound index still indexes a
+       document when any key exists, so every non-grant entry was
+       indexed with period: null and collided. */
+    [
+      { userId: 1, period: 1 },
+      {
+        unique: true,
+        name: "grant_once_per_period",
+        partialFilterExpression: { reason: "monthlyGrant" },
+      },
+    ],
+  ],
   verifications: [
     [{ "subject.userId": 1, kind: 1 }, { name: "subject_kind" }],
     [{ decision: 1, createdAt: 1 }, { name: "decision_createdAt" }],

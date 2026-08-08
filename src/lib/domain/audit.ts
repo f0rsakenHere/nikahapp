@@ -39,6 +39,11 @@ export const AUDIT_ACTIONS = [
   "profile.resumed",
   "profile.withdrawn",
 
+  /* connections (§3.1 D1) */
+  "connection.requested",
+  "connection.accepted",
+  "connection.declined",
+
   /* the wali */
   "guardianship.invited",
   "guardianship.confirmed",
@@ -62,6 +67,7 @@ export const AUDIT_SUBJECTS = [
   "guardianship",
   "session",
   "verification",
+  "connectionRequest",
 ] as const;
 
 export type AuditSubjectType = (typeof AUDIT_SUBJECTS)[number];
