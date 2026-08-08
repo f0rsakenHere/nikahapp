@@ -44,6 +44,15 @@ export const INDEXES: Partial<Record<CollectionName, Spec[]>> = {
     },
   ],
 
+  [COLLECTIONS.verificationTokens]: [
+    { keys: { tokenHash: 1 }, options: { unique: true, name: "tokenHash_unique" } },
+    { keys: { userId: 1, purpose: 1 }, options: { name: "userId_purpose" } },
+    /* Cleanup only — expiry is enforced on use, in `tokenInvalidReason`.
+     * Mongo's TTL monitor runs about once a minute, which is far too
+     * loose to be a security control on a one-hour reset link. */
+    { keys: { expiresAt: 1 }, options: { name: "expiresAt_ttl", expireAfterSeconds: 0 } },
+  ],
+
   [COLLECTIONS.guardianships]: [
     { keys: { memberUserId: 1, status: 1 }, options: { name: "member_status" } },
     { keys: { waliUserId: 1, status: 1 }, options: { name: "wali_status", sparse: true } },

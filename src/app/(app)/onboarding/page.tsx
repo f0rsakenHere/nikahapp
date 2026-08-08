@@ -41,7 +41,10 @@ export default async function OnboardingPage() {
       }
       footer={
         <>
-          Signed in as {user.email} ·{" "}
+          <Link href="/settings" className="font-semibold text-peach-deep underline-offset-2 hover:underline">
+            Your account
+          </Link>{" "}
+          ·{" "}
           <Link href="/how-it-works" className="font-semibold text-peach-deep underline-offset-2 hover:underline">
             How it works
           </Link>

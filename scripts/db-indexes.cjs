@@ -32,6 +32,11 @@ const INDEXES = {
     [{ userId: 1, lastSeenAt: -1 }, { name: "userId_lastSeen" }],
     [{ absoluteExpiresAt: 1 }, { name: "absoluteExpiresAt_ttl", expireAfterSeconds: 0 }],
   ],
+  verificationTokens: [
+    [{ tokenHash: 1 }, { unique: true, name: "tokenHash_unique" }],
+    [{ userId: 1, purpose: 1 }, { name: "userId_purpose" }],
+    [{ expiresAt: 1 }, { name: "expiresAt_ttl", expireAfterSeconds: 0 }],
+  ],
   guardianships: [
     [{ memberUserId: 1, status: 1 }, { name: "member_status" }],
     [{ waliUserId: 1, status: 1 }, { name: "wali_status", sparse: true }],

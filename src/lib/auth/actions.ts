@@ -6,7 +6,7 @@
  * enhanced and work without JavaScript, which matters for an audience
  * that includes walis on old phones.
  */
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { isPrivileged, signInBlockedReason, validateSignup } from "@/lib/domain/user";
 import {
@@ -49,8 +49,17 @@ async function startSession(user: {
   roles: readonly ("member" | "wali" | "staff" | "verifier" | "admin")[];
 }) {
   const now = new Date();
+  const h = await headers();
   const { token, record } = buildSession(
-    { userId: user.id, tokenVersion: user.tokenVersion, privileged: isPrivileged([...user.roles]) },
+    {
+      userId: user.id,
+      tokenVersion: user.tokenVersion,
+      privileged: isPrivileged([...user.roles]),
+      /* So the device list in settings says something a person
+       * recognises rather than "Unknown device" for every row. */
+      userAgent: h.get("user-agent"),
+      ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+    },
     now
   );
   await insertSession(record);

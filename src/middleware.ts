@@ -23,7 +23,18 @@ import { SESSION_COOKIE } from "@/lib/auth/cookie";
 
 /** Everything a signed-out visitor may reach. Exact matches, or prefixes
  *  where a trailing path is part of the same public document. */
-const PUBLIC_EXACT = new Set(["/", "/how-it-works", "/register", "/login"]);
+const PUBLIC_EXACT = new Set([
+  "/",
+  "/how-it-works",
+  "/register",
+  "/login",
+  /* All three are reached by someone who cannot sign in — that is the
+   * entire point of them — and the last two arrive from a link in an
+   * email, opened in whichever browser the mail client hands it to. */
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+]);
 const PUBLIC_PREFIXES = ["/legal/"];
 
 function isPublic(pathname: string): boolean {

@@ -150,3 +150,24 @@ export async function recordFailedLogin(userId: string, now: Date): Promise<numb
 export async function bumpTokenVersion(userId: string): Promise<void> {
   await (await users()).updateOne({ _id: new ObjectId(userId) }, { $inc: { tokenVersion: 1 } });
 }
+
+/** Records that the address on the account has been confirmed. */
+export async function markEmailVerified(userId: string, now: Date): Promise<void> {
+  await (await users()).updateOne(
+    { _id: new ObjectId(userId) },
+    { $set: { emailVerifiedAt: now } }
+  );
+}
+
+/** Replaces the password and invalidates every session issued so far.
+ *
+ *  The two happen together on purpose. A password is changed either
+ *  because it was routine or because someone else knows it, and the
+ *  second case is the one worth designing for: leaving the old sessions
+ *  alive would mean the person you locked out is still signed in. */
+export async function setPassword(userId: string, passwordHash: string): Promise<void> {
+  await (await users()).updateOne(
+    { _id: new ObjectId(userId) },
+    { $set: { passwordHash, failedLoginCount: 0, lockedUntil: null }, $inc: { tokenVersion: 1 } }
+  );
+}

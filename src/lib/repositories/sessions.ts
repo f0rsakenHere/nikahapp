@@ -36,14 +36,16 @@ export async function deleteSessionsForUser(userId: string): Promise<number> {
   return result.deletedCount ?? 0;
 }
 
-/** For the "signed-in devices" list §7.1 asks for. Never returns the
- *  digest: it is not a secret worth leaking into a page, and nothing in
- *  the UI needs it. */
-export async function listSessionsForUser(
-  userId: string
-): Promise<Array<Omit<SessionRecord, "tokenHash">>> {
+/** For the "signed-in devices" list §7.1 asks for.
+ *
+ *  The digest is included, because each row needs something to revoke by
+ *  and nothing else on the record is unique. It is safe to put on the
+ *  page: authentication requires the plaintext token, which is only ever
+ *  in the cookie, and SHA-256 of 256 random bits does not go backwards.
+ *  Revocation still checks ownership — see `revokeSession`. */
+export async function listSessionsForUser(userId: string): Promise<SessionRecord[]> {
   const docs = await (await sessions())
-    .find({ userId }, { sort: { lastSeenAt: -1 }, projection: { tokenHash: 0, _id: 0 } })
+    .find({ userId }, { sort: { lastSeenAt: -1 }, projection: { _id: 0 } })
     .toArray();
-  return docs as unknown as Array<Omit<SessionRecord, "tokenHash">>;
+  return docs as unknown as SessionRecord[];
 }

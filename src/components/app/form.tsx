@@ -288,3 +288,25 @@ export function FormError({ children }: { children?: string }) {
     </p>
   );
 }
+
+/** The link that would have been emailed, shown because there is no
+ *  email service yet.
+ *
+ *  Deliberately loud and deliberately ugly. It is a live credential on a
+ *  page, which is fine in development and would be a serious hole in
+ *  production — `mayRevealLinks()` is what keeps the two apart, and this
+ *  looks like scaffolding so that nobody mistakes it for a finished
+ *  feature and leaves it in. */
+export function DevLink({ href }: { href?: string }) {
+  if (!href) return null;
+  return (
+    <div className="rounded-md border-2 border-dashed border-peach-deep/50 bg-soft-peach/40 px-3.5 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.6px] text-peach-deep">
+        No email service — link shown here instead
+      </p>
+      <a href={href} className="mt-1 block break-all text-[12px] leading-[17px] text-black underline">
+        {href}
+      </a>
+    </div>
+  );
+}

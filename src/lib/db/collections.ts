@@ -33,6 +33,10 @@ export const COLLECTIONS = {
   staffNotes: "staffNotes",
   outcomes: "outcomes",
   sessions: "sessions",
+  /* Email verification and password reset links. Named as Auth.js's
+   * adapter names it, so magic links can share the collection when the
+   * email provider arrives. */
+  verificationTokens: "verificationTokens",
   idempotencyKeys: "idempotencyKeys",
   settings: "settings",
 } as const;
