@@ -23,7 +23,8 @@ const STAMP = Date.now();
 const PASSWORD = "a-long-enough-passphrase";
 const SISTER = `waliflow+sister${STAMP}@example.invalid`;
 const WALI = `waliflow+wali${STAMP}@example.invalid`;
-const emails = [SISTER, WALI];
+const WALI2 = `waliflow+wali2${STAMP}@example.invalid`;
+const emails = [SISTER, WALI, WALI2];
 
 const findings = [];
 let checks = 0;
@@ -207,14 +208,107 @@ const mongo = new MongoClient(uri, {
       him.url()
     );
 
-    /* ---------- her step now reads as done -------------------------- */
-    await her.goto(BASE + "/onboarding", { waitUntil: "networkidle" });
-    check(
-      "her wali step is no longer waiting",
-      !/Waiting on your wali/.test(await her.textContent("body"))
-    );
+    /* ---------- the failure paths (§6.2) ---------------------------- */
+    {
+      await her.goto(BASE + "/onboarding/guardian", { waitUntil: "networkidle" });
+      const step = await her.textContent("body");
+      check("her step shows him as confirmed", /Ahmed Al-Rashid/.test(step));
+      check("and offers a way out if he can no longer act", /Name somebody else/.test(step));
+
+      await her.click('button:has-text("Name somebody else")');
+      await her.waitForSelector('input[name="name"]', { timeout: 15000 });
+      check(
+        "replacing warns that he loses access immediately",
+        /loses access the moment/.test(await her.textContent("body"))
+      );
+
+      /* Naming the same man again is a mistake, not a replacement. */
+      await her.fill('input[name="name"]', "Ahmed Al-Rashid");
+      await her.selectOption('select[name="relationship"]', "father");
+      await her.fill('input[name="email"]', WALI);
+      await her.click('button:has-text("Send the invitation")');
+      await her.waitForTimeout(2500);
+      check("naming the same person again is refused", /same person/i.test(await her.textContent("body")));
+
+      await her.fill('input[name="email"]', WALI2);
+      await her.click('button:has-text("Send the invitation")');
+      await her.waitForTimeout(3000);
+      const secondLink = await devLink(her);
+      check("a replacement invitation was issued", !!secondLink);
+
+      const rows = await db
+        .collection("guardianships")
+        .find({ memberUserId: String(sister._id) })
+        .toArray();
+      const old = rows.find((r) => r.invited.email === WALI);
+      const fresh = rows.find((r) => r.invited.email === WALI2);
+      check("the old link reads as replaced, not revoked", old.status === "replaced");
+      check(
+        "and the two point at each other",
+        old.replacedByGuardianshipId === String(fresh._id) &&
+          fresh.replacesGuardianshipId === String(old._id)
+      );
+      check("the new one is waiting", fresh.status === "invited");
+
+      await him.goto(BASE + "/wali", { waitUntil: "networkidle" });
+      check(
+        "the replaced wali no longer sees her",
+        !/Fatima/.test(await him.textContent("body")),
+        him.url()
+      );
+
+      await her.goto(BASE + "/onboarding", { waitUntil: "networkidle" });
+      check(
+        "her profile waits on the new wali",
+        /Waiting on your wali/.test(await her.textContent("body"))
+      );
+
+      /* Reminders are capped. */
+      await her.goto(BASE + "/onboarding/guardian", { waitUntil: "networkidle" });
+      for (let i = 0; i < 4; i++) {
+        await her.click('button:has-text("Send it to him again")');
+        await her.waitForTimeout(1500);
+      }
+      const reminded = await db.collection("guardianships").findOne({ _id: fresh._id });
+      check(
+        "reminders stop at the cap",
+        reminded.invited.remindersSent === 3,
+        String(reminded.invited.remindersSent)
+      );
+      check(
+        "and it says what to do instead of sending a fourth",
+        /telephone him|name someone else/i.test(await her.textContent("body"))
+      );
+
+      /* The expiry sweep. */
+      await db
+        .collection("guardianships")
+        .updateOne({ _id: fresh._id }, { $set: { "invited.expiresAt": new Date(Date.now() - 1000) } });
+
+      require("node:child_process").execFileSync(
+        process.execPath,
+        ["scripts/expire-invitations.cjs", "--apply"],
+        { stdio: "pipe" }
+      );
+
+      const swept = await db.collection("guardianships").findOne({ _id: fresh._id });
+      check("the sweep expires an unanswered invitation", swept.status === "expired");
+      const entry = await db
+        .collection("auditLog")
+        .findOne({ "subject.id": String(fresh._id), action: "guardianship.revoked" });
+      check("with an audit entry attributed to no person", !!entry && entry.actor.userId === null);
+
+      const late = await (await browser.newContext()).newPage();
+      await late.goto(String(secondLink), { waitUntil: "networkidle" });
+      check(
+        "and the link no longer works",
+        /did not work|expired|already been answered/i.test(await late.textContent("body"))
+      );
+      await late.close();
+    }
 
     /* ---------- submit for review ----------------------------------- */
+    await her.goto(BASE + "/onboarding", { waitUntil: "networkidle" });
     check(
       "an unfinished profile offers no submit button",
       (await her.locator('button:has-text("Send my profile for review")').count()) === 0
@@ -249,6 +343,35 @@ const mongo = new MongoClient(uri, {
       await her.click('button[type="submit"]');
       await her.waitForTimeout(2000);
     }
+
+    /* She has no confirmed wali any more, so invite one last time and
+       have him accept. He already has an account, which exercises the
+       brother-who-is-also-a-wali path. */
+    await her.goto(BASE + "/onboarding/guardian", { waitUntil: "networkidle" });
+    await her.fill('input[name="name"]', "Ahmed Al-Rashid");
+    await her.selectOption('select[name="relationship"]', "father");
+    await her.fill('input[name="email"]', WALI);
+    await her.click('button:has-text("Send his invitation")');
+    await her.waitForTimeout(3000);
+    const finalLink = await devLink(her);
+
+    const back = await (await browser.newContext()).newPage();
+    await back.goto(String(finalLink), { waitUntil: "networkidle" });
+    await back.click('button:has-text("I accept")');
+    await back.waitForTimeout(2500);
+    check(
+      "an existing account is told to sign in rather than set a password",
+      /Sign in|already have a NikahCanada account/i.test(await back.textContent("body"))
+    );
+    await back.goto(BASE + "/login", { waitUntil: "networkidle" });
+    await back.fill('input[name="email"]', WALI);
+    await back.fill('input[name="password"]', PASSWORD);
+    await back.click('button[type="submit"]');
+    await back.waitForTimeout(2500);
+    await back.goto(String(finalLink), { waitUntil: "networkidle" });
+    await back.click('button:has-text("I accept")');
+    await back.waitForTimeout(3000);
+    await back.close();
 
     await her.goto(BASE + "/onboarding", { waitUntil: "networkidle" });
     check("a finished profile reaches 100%", /100%/.test(await her.textContent("body")));

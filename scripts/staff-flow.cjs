@@ -127,7 +127,12 @@ const mongo = new MongoClient(uri, {
     await p.fill('input[name="email"]', STAFF);
     await p.fill('input[name="password"]', PASSWORD);
     await p.click('button[type="submit"]');
-    await p.waitForTimeout(3000);
+    /* Wait for the destination, not for a stopwatch. Landing on /mfa and
+       having /mfa rendered are different moments, and in dev the second
+       one waits on a compile — which made this fail only when other
+       checkers had warmed different routes first. */
+    await p.waitForURL("**/mfa**", { timeout: 30000 });
+    await p.waitForSelector("code, input[name=\"code\"]", { timeout: 30000 });
     check("a staff sign-in lands on the second factor", new URL(p.url()).pathname === "/mfa", p.url());
     check(
       "with no secret enrolled it offers setup, not a challenge",
@@ -179,7 +184,8 @@ const mongo = new MongoClient(uri, {
     await q.fill('input[name="email"]', STAFF);
     await q.fill('input[name="password"]', PASSWORD);
     await q.click('button[type="submit"]');
-    await q.waitForTimeout(3000);
+    await q.waitForURL("**/mfa**", { timeout: 30000 });
+    await q.waitForSelector('input[name="code"]', { timeout: 30000 });
     check("a second sign-in asks for the code", /Enter your code/.test(await q.textContent("body")));
 
     await q.fill('input[name="code"]', "111111");

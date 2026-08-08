@@ -48,18 +48,29 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
 
   /* Only the wali step needs this, and only for a sister, so it is not
      fetched for the other four. */
-  const outstanding =
-    step.id === "guardian"
-      ? (await listGuardianshipsForMember(session.user.id)).find((g) => g.status === "invited")
-      : undefined;
+  const guardianships =
+    step.id === "guardian" ? await listGuardianshipsForMember(session.user.id) : [];
+  const day = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeZone: "UTC" }).format(d);
+
+  const outstanding = guardianships.find((g) => g.status === "invited");
+  const active = guardianships.find((g) => g.status === "confirmed");
+
   const pending = outstanding
     ? {
         name: outstanding.invited.name,
         email: outstanding.invited.email,
-        invitedAt: new Intl.DateTimeFormat("en-CA", {
-          dateStyle: "medium",
-          timeZone: "UTC",
-        }).format(outstanding.invited.invitedAt),
+        invitedAt: day(outstanding.invited.invitedAt),
+        reminders: outstanding.invited.remindersSent,
+      }
+    : null;
+
+  const confirmed = active
+    ? {
+        name: active.invited.name,
+        email: active.invited.email,
+        relationship: active.invited.relationship,
+        confirmedAt: active.confirmedAt ? day(active.confirmedAt) : "",
       }
     : null;
 
@@ -85,7 +96,7 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
       </div>
 
       {step.id === "guardian" ? (
-        <GuardianStep pending={pending} />
+        <GuardianStep pending={pending} confirmed={confirmed} />
       ) : (
         <StepForm
           step={step.id}

@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "db:ping": "node scripts/db-ping.cjs",
     "db:indexes": "node scripts/db-indexes.cjs",
+    "jobs:expire": "node scripts/expire-invitations.cjs",
     "shot": "node scripts/screenshot.cjs ."
   },
   "dependencies": {

@@ -256,3 +256,151 @@ export async function declineInvitation(_prev: WaliState, form: FormData): Promi
   await applyTransition(g, { type: "decline", at: new Date(), reason });
   return { done: "declined" };
 }
+
+/* ------------------------------------------- the failure paths (§6.2) -- */
+
+/** Sends the invitation again.
+ *
+ *  Capped, and the cap is the point: a man who has not answered three
+ *  emails is not going to answer the fourth, and at that point the
+ *  answer is a phone call from staff or a different wali — not more
+ *  email. D14 will set the cadence; the ceiling is here either way. */
+export async function resendInvitation(_prev: WaliState): Promise<WaliState> {
+  const session = await currentUser();
+  if (!session) redirect("/login?next=/onboarding/guardian");
+
+  const pending = (await listGuardianshipsForMember(session.user.id)).find(
+    (g) => g.status === "invited"
+  );
+  if (!pending) return { error: "There is no invitation outstanding." };
+
+  const result = await applyTransition(pending, { type: "remind", at: new Date() });
+  if (!result.ok) {
+    return {
+      error:
+        result.error === "reminder-limit-reached"
+          ? "We have written to him three times. Contact us and we will telephone him, or name someone else."
+          : "That could not be sent.",
+    };
+  }
+
+  /* The original link, not a new one. Re-issuing would invalidate the
+   * copy already sitting in his inbox, which is the copy he is most
+   * likely to eventually open. */
+  const link = `${await origin()}/wali/invite?token=REISSUED`;
+  await send({
+    to: pending.invited.email,
+    kind: "waliInvitation",
+    name: pending.invited.name,
+    memberFirstName: session.user.legalName.first,
+    relationship: pending.invited.relationship,
+    link,
+  });
+
+  revalidatePath("/onboarding/guardian");
+  return { done: `Sent again to ${pending.invited.email}.` };
+}
+
+/** Replacing a confirmed wali.
+ *
+ *  §6.2 lists this as a failure path that must be designed, and it is
+ *  the one that strands people: a man who confirmed and then stopped
+ *  answering leaves a woman unable to proceed and unable to leave. The
+ *  old link is marked `replaced` rather than revoked, and the two point
+ *  at each other, so the history reads as a handover rather than as her
+ *  having sacked him.
+ *
+ *  D11 is already handled: the new wali reads conversations opened at or
+ *  after his own confirmedAt, so he does not inherit her past
+ *  correspondence.
+ */
+export async function replaceWali(_prev: WaliState, form: FormData): Promise<WaliState> {
+  const session = await currentUser();
+  if (!session) redirect("/login?next=/onboarding/guardian");
+
+  const profile = await findProfileByUserId(session.user.id);
+  if (!profile || profile.gender !== "sister") redirect("/onboarding");
+
+  const all = await listGuardianshipsForMember(session.user.id);
+  const active = activeGuardianship(all);
+  if (!active.ok) return { error: "Something is wrong with your wali records. Please contact us." };
+  if (!active.guardianship) return { error: "You do not have a confirmed wali to replace." };
+
+  const values = {
+    name: String(form.get("name") ?? ""),
+    relationship: String(form.get("relationship") ?? ""),
+    email: String(form.get("email") ?? ""),
+    phone: String(form.get("phone") ?? ""),
+  };
+
+  const parsed = InviteSchema.safeParse({
+    name: values.name,
+    relationship: values.relationship,
+    email: values.email,
+    phone: values.phone.trim() || undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message, values };
+
+  const email = parsed.data.email.toLowerCase();
+  if (email === session.user.email) {
+    return { error: "You cannot be your own wali. Use his email address, not yours.", values };
+  }
+  if (email === active.guardianship.invited.email) {
+    return { error: "That is the same person. Name somebody else, or ask us to contact him.", values };
+  }
+
+  const now = new Date();
+  const token = randomBytes(32).toString("base64url");
+
+  /* The new one first: if this fails, she still has the wali she had.
+   * The reverse order would leave her with none. */
+  const created = await createGuardianship({
+    memberUserId: session.user.id,
+    memberProfileId: profile.id,
+    waliUserId: null,
+    invited: {
+      name: parsed.data.name,
+      relationship: parsed.data.relationship,
+      email,
+      phone: parsed.data.phone,
+      invitedAt: now,
+      tokenHash: hashToken(token),
+      expiresAt: new Date(now.getTime() + INVITATION_TTL_MS),
+      remindersSent: 0,
+    },
+    status: "invited",
+    confirmedAt: null,
+    declinedAt: null,
+    declineReason: null,
+    revokedAt: null,
+    revokedBy: null,
+    expiredAt: null,
+    verification: { state: "unverified", verifiedAt: null, method: null },
+    replacesGuardianshipId: active.guardianship.id,
+    replacedByGuardianshipId: null,
+  });
+
+  const replaced = await applyTransition(active.guardianship, {
+    type: "replace",
+    at: now,
+    replacedByGuardianshipId: created.id,
+  });
+  if (!replaced.ok) return { error: "That could not be recorded. Please contact us.", values };
+
+  const link = `${await origin()}/wali/invite?token=${token}`;
+  await send({
+    to: email,
+    kind: "waliInvitation",
+    name: parsed.data.name,
+    memberFirstName: session.user.legalName.first,
+    relationship: parsed.data.relationship,
+    link,
+  });
+
+  revalidatePath("/onboarding");
+  revalidatePath("/onboarding/guardian");
+  return {
+    done: `Invitation sent to ${email}. Your previous wali no longer has access.`,
+    devLink: mayRevealLinks() ? link : undefined,
+  };
+}

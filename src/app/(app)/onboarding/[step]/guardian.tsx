@@ -1,7 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
-import { cancelInvitation, inviteWali, type WaliState } from "@/lib/guardianship/actions";
+import { useActionState, useState } from "react";
+import {
+  cancelInvitation,
+  inviteWali,
+  replaceWali,
+  resendInvitation,
+  type WaliState,
+} from "@/lib/guardianship/actions";
 import { WALI_RELATIONSHIPS } from "@/lib/domain/guardianship";
 import { DevLink, FormError, SubmitButton, TextField } from "@/components/app/form";
 
@@ -28,58 +34,16 @@ const POWERS = [
   "End a conversation at any point",
 ];
 
-export function GuardianStep({
-  pending,
-}: {
-  pending: { name: string; email: string; invitedAt: string } | null;
-}) {
-  const [state, action] = useActionState(inviteWali, EMPTY);
-  const v = state.values ?? {};
+const GHOST =
+  "h-12 w-full rounded-pill border-2 border-accent-deep text-[14px] font-semibold text-accent-deep";
 
-  if (pending || state.done) {
-    return (
-      <div className="flex flex-col gap-5">
-        <div className="rounded-md border border-soft-green bg-mist px-4 py-4">
-          <p className="text-[14px] font-semibold text-black">Waiting on him</p>
-          <p className="mt-1 text-[13px] leading-[20px] text-text">
-            {pending
-              ? `We have written to ${pending.name} at ${pending.email}. Your profile goes to review once he confirms.`
-              : state.done}
-          </p>
-          {pending ? (
-            <p className="mt-2 text-[11px] text-text/70">Sent {pending.invitedAt}</p>
-          ) : null}
-        </div>
+export type Pending = { name: string; email: string; invitedAt: string; reminders: number };
+export type Confirmed = { name: string; email: string; relationship: string; confirmedAt: string };
 
-        <DevLink href={state.devLink} />
-
-        <form action={cancelInvitation}>
-          <button
-            type="submit"
-            className="h-12 w-full rounded-pill border-2 border-accent-deep text-[14px] font-semibold text-accent-deep"
-          >
-            Cancel and invite someone else
-          </button>
-        </form>
-      </div>
-    );
-  }
-
+/** The form itself, shared between naming a wali and replacing one. */
+function WaliFields({ v }: { v: NonNullable<WaliState["values"]> }) {
   return (
-    <form action={action} className="flex flex-col gap-6" noValidate>
-      <FormError>{state.error}</FormError>
-
-      <div className="rounded-md border border-peach/40 bg-soft-peach/60 px-4 py-4">
-        <p className="text-[13px] font-semibold text-peach-deep">He will be able to:</p>
-        <ul className="mt-2 flex flex-col gap-1.5">
-          {POWERS.map((p) => (
-            <li key={p} className="text-[13px] leading-[19px] text-black/75">
-              · {p}
-            </li>
-          ))}
-        </ul>
-      </div>
-
+    <>
       <TextField
         label="His full name"
         name="name"
@@ -129,6 +93,150 @@ export function GuardianStep({
         autoComplete="off"
         hint="Only used if he does not answer the email."
       />
+    </>
+  );
+}
+
+export function GuardianStep({
+  pending,
+  confirmed,
+}: {
+  pending: Pending | null;
+  confirmed: Confirmed | null;
+}) {
+  const [state, action] = useActionState(inviteWali, EMPTY);
+  const [resendState, resendAction] = useActionState(
+    async (prev: WaliState) => resendInvitation(prev),
+    EMPTY
+  );
+  const [replaceState, replaceAction] = useActionState(replaceWali, EMPTY);
+  const [replacing, setReplacing] = useState(false);
+
+  /* ---------------------------------------------- he has confirmed -- */
+  if (confirmed && !replacing && !replaceState.done) {
+    return (
+      <div className="flex flex-col gap-5">
+        <div className="rounded-md border border-soft-green bg-mist px-4 py-4">
+          <p className="text-[14px] font-semibold text-black">{confirmed.name}</p>
+          <p className="mt-1 text-[13px] leading-[20px] text-text">
+            Confirmed {confirmed.confirmedAt}. He sees everything you do, and no conversation
+            opens without him.
+          </p>
+        </div>
+
+        {/* §6.2. A wali who confirmed and then stopped answering is the
+            failure that strands people: she cannot proceed and cannot
+            leave. This is the way out, and it is deliberately not hidden
+            behind a support email. */}
+        <div className="rounded-md border border-soft-green px-4 py-4">
+          <p className="text-[13px] font-semibold text-black">If he can no longer act for you</p>
+          <p className="mt-1 text-[13px] leading-[20px] text-text">
+            Someone else can take his place. He loses access immediately, and the person who
+            replaces him does not see anything from before he confirms.
+          </p>
+          <button type="button" className={`${GHOST} mt-3`} onClick={() => setReplacing(true)}>
+            Name somebody else
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ------------------------------------------------- replacing him -- */
+  if (confirmed || replaceState.done) {
+    if (replaceState.done) {
+      return (
+        <div className="flex flex-col gap-5">
+          <div className="rounded-md border border-soft-green bg-mist px-4 py-4">
+            <p className="text-[14px] font-semibold text-black">Waiting on him</p>
+            <p className="mt-1 text-[13px] leading-[20px] text-text">{replaceState.done}</p>
+          </div>
+          <DevLink href={replaceState.devLink} />
+        </div>
+      );
+    }
+
+    return (
+      <form action={replaceAction} className="flex flex-col gap-6" noValidate>
+        <FormError>{replaceState.error}</FormError>
+        <div className="rounded-md border border-peach/40 bg-soft-peach/60 px-4 py-4">
+          <p className="text-[13px] leading-[19px] text-black/75">
+            {confirmed?.name} loses access the moment you send this. Your profile stops being
+            shown until the new wali confirms.
+          </p>
+        </div>
+        <WaliFields v={replaceState.values ?? {}} />
+        <SubmitButton>Send the invitation</SubmitButton>
+        <button
+          type="button"
+          onClick={() => setReplacing(false)}
+          className="text-center text-[13px] text-text underline-offset-2 hover:underline"
+        >
+          Never mind
+        </button>
+      </form>
+    );
+  }
+
+  /* ------------------------------------------- invited, no answer -- */
+  if (pending || state.done) {
+    return (
+      <div className="flex flex-col gap-5">
+        <div className="rounded-md border border-soft-green bg-mist px-4 py-4">
+          <p className="text-[14px] font-semibold text-black">Waiting on him</p>
+          <p className="mt-1 text-[13px] leading-[20px] text-text">
+            {pending
+              ? `We have written to ${pending.name} at ${pending.email}. Your profile goes to review once he confirms.`
+              : state.done}
+          </p>
+          {pending ? (
+            <p className="mt-2 text-[11px] text-text/70">
+              Sent {pending.invitedAt}
+              {pending.reminders ? ` · reminded ${pending.reminders} time${pending.reminders === 1 ? "" : "s"}` : ""}
+            </p>
+          ) : null}
+        </div>
+
+        <DevLink href={state.devLink} />
+
+        {pending ? (
+          <form action={resendAction}>
+            <FormError>{resendState.error}</FormError>
+            {resendState.done ? (
+              <p className="mb-2 text-[12px] text-accent-deep">{resendState.done}</p>
+            ) : null}
+            <button type="submit" className={GHOST}>
+              Send it to him again
+            </button>
+          </form>
+        ) : null}
+
+        <form action={cancelInvitation}>
+          <button type="submit" className={GHOST}>
+            Cancel and invite someone else
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  /* ---------------------------------------------- nobody named yet -- */
+  return (
+    <form action={action} className="flex flex-col gap-6" noValidate>
+      <FormError>{state.error}</FormError>
+
+      <div className="rounded-md border border-peach/40 bg-soft-peach/60 px-4 py-4">
+        <p className="text-[13px] font-semibold text-peach-deep">He will be able to:</p>
+        <ul className="mt-2 flex flex-col gap-1.5">
+          {POWERS.map((p) => (
+            <li key={p} className="text-[13px] leading-[19px] text-black/75">
+              · {p}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <WaliFields v={state.values ?? {}} />
 
       <SubmitButton>Send his invitation</SubmitButton>
     </form>
