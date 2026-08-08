@@ -4,9 +4,8 @@
    BRIDELY — DESIGN TOKENS  (homepage, "/")
 
    Ported 1:1 from the Bridely HTML template's :root block and its
-   measured computed styles. Deliberately namespaced away from the
-   Sakinah tokens below so the two systems can coexist while
-   /how-it-works still runs on the old one.
+   measured computed styles. This is the live palette: both routes, and
+   the in-app screens inside the device frames, draw from it.
    ============================================================ */
 
 @theme {
@@ -15,6 +14,23 @@
 
   --color-accent: #9accc9; /* mint — nav, buttons, rules */
   --color-peach: #f4a492; /* primary CTA */
+
+  /* Peach is a tint, not a text colour: #f4a492 is 1.99:1 on white and
+     1.43:1 on its own soft-peach ground, so anything small set in it is
+     barely there. This is the same hue taken down until it clears 4.5:1
+     on every ground the palette has — white 6.5, mist 5.96, soft-peach
+     4.68. The rule: --color-peach fills a shape, --color-peach-deep sets
+     type and marks inside one. Used throughout the in-app screens, where
+     peach labels carry meaning at 10-13px. */
+  --color-peach-deep: #9c422d;
+
+  /* Mint has exactly the same problem and it is easy to miss, because it
+     reads as a "strong" colour: #9accc9 is 1.77:1 on white AND 1.77:1
+     under white, so mint-on-white and white-on-mint are equally
+     unreadable. Same rule as peach — --color-accent fills a shape,
+     --color-accent-deep sets type and hairlines. 5.82:1 on white,
+     5.34:1 on mist. */
+  --color-accent-deep: #2f6f6b;
   --color-text: #555555; /* body copy */
   --color-form-text: #999999; /* input placeholders */
   --color-mist: #edf7f8; /* section ground */
@@ -56,16 +72,25 @@
 }
 
 /* ============================================================
-   SAKINAH — DESIGN TOKENS
+   SAKINAH — DESIGN TOKENS  (superseded)
 
-   Original system. Deep green-black and cream with brass, a serif
-   display face against a clean sans, and a dome-arch motif that
-   repeats through image frames, cards and buttons.
+   The original system: deep green-black and cream with brass, a serif
+   display face against a clean sans, and a dome-arch motif.
+
+   Nothing rendered draws on the palette or the type scale below any
+   more — /how-it-works and the app screens were moved onto the Bridely
+   tokens above, and the landing components that used these are no
+   longer imported by any route. What IS still live from this block is
+   further down: the radii, the shadows, --ease-land, and the `shell` /
+   `arch` / `photo-warm` layout utilities.
+
+   Kept, rather than deleted, so the orphaned components still compile
+   if they are revived. Delete the block and them together.
    ============================================================ */
 
 @theme {
   --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-jost-sans), ui-sans-serif, system-ui, sans-serif;
 
   /* ---- Palette ---- */
   --color-ink: #10201a; /* deepest — hero and story grounds */
@@ -144,29 +169,28 @@
   }
 
   body {
-    /* White, because the Bridely homepage owns the page ground now. The
-       cream belonged to the old Sakinah design and was bleeding through
-       the Instagram band and footer, which paint no background of their
-       own; /how-it-works re-applies it on its own wrapper. */
+    /* Both routes paint their own ground on their outermost wrapper; these
+       are the fallbacks underneath, so an unstyled edge reads as the page
+       rather than as a stray band of some earlier palette. */
     background: #ffffff;
-    color: var(--color-body);
-    font-family: var(--font-sans);
-    font-size: 17px;
-    line-height: 28px;
+    color: var(--color-text);
+    font-family: var(--font-jost);
+    font-size: 16px;
+    line-height: 26px;
     -webkit-font-smoothing: antialiased;
   }
 
   h1,
   h2,
   h3 {
-    font-family: var(--font-display);
-    color: var(--color-ink);
-    font-weight: 400;
+    font-family: var(--font-playfair);
+    color: #000;
+    font-weight: 700;
     text-wrap: balance;
   }
 
   ::selection {
-    background: var(--color-brass);
+    background: var(--color-peach);
     color: #fff;
   }
 
@@ -187,9 +211,13 @@
     }
   }
 
-  /* Focus must never be hidden by motion. Brass reads on both grounds. */
+  /* Focus must never be hidden by motion, and it must not be tinted for
+     looks: peach on white is about 2:1, well under the 3:1 a non-text
+     indicator needs. This is the template's own near-black — the value
+     behind its shadows — which clears every ground the palette has,
+     white, mint, mist and the watercolour banner alike. */
   :focus-visible {
-    outline: 2px solid var(--color-brass);
+    outline: 2px solid #141212;
     outline-offset: 3px;
     border-radius: 3px;
   }

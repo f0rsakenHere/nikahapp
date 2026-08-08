@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { brand, nav } from "@/content/home";
 import { Wordmark } from "./primitives/Wordmark";
@@ -18,6 +19,11 @@ import { Search } from "./primitives/Icons";
 export function Header() {
   const [open, setOpen] = useState(false);
   const [pages, setPages] = useState(false);
+  /* Which link gets the mint treatment. The template hard-coded the first
+     one, which was fine while there was one page; now that /how-it-works
+     runs the same header, it has to be derived. Hash links all belong to
+     the homepage, so only the path is compared. */
+  const pathname = usePathname();
 
   return (
     <header className="relative z-50 pt-[26px]">
@@ -28,18 +34,24 @@ export function Header() {
 
         {/* ---- desktop nav ---- */}
         <nav className="ml-auto hidden items-center gap-[30px] lg:flex xl:ml-20 xl:mr-auto">
-          {nav.links.map((l, i) => (
-            <Link
-              key={l.label}
-              href={l.href}
-              className={
-                "p-2 font-jost text-[18px] leading-5 transition-colors hover:text-accent " +
-                (i === 0 ? "text-accent" : "text-black")
-              }
-            >
-              {l.label}
-            </Link>
-          ))}
+          {nav.links.map((l) => {
+            const [path, hash] = l.href.split("#");
+            // a link to a section is never "the current page"
+            const active = !hash && path.replace(/\/$/, "") === pathname.replace(/\/$/, "");
+            return (
+              <Link
+                key={l.label}
+                href={l.href}
+                aria-current={active ? "page" : undefined}
+                className={
+                  "p-2 font-jost text-[18px] leading-5 transition-colors hover:text-accent " +
+                  (active ? "text-accent" : "text-black")
+                }
+              >
+                {l.label}
+              </Link>
+            );
+          })}
 
           <div
             className="relative"

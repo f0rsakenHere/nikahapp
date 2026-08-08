@@ -47,11 +47,13 @@ export function Phone({
           width: FRAME_W,
         }}
       >
-        <div className="rounded-[52px] bg-ink p-3 shadow-lift ring-1 ring-white/10">
+        <div className="rounded-[52px] bg-black p-3 shadow-[0_30px_60px_-25px_rgba(20,18,18,0.45)] ring-1 ring-white/10">
           {/* Flex column, so a screen's `h-full` means "the space left under
-              the status bar" rather than the full 780. */}
+              the status bar" rather than the full 780. `font-jost` is set
+              here rather than inherited: every screen inside is UI copy in
+              the site's sans, and only titles opt back into Playfair. */}
           <div
-            className="relative flex flex-col overflow-hidden rounded-[42px] bg-cream"
+            className="relative flex flex-col overflow-hidden rounded-[42px] bg-white font-jost"
             style={{ width: W, height: H }}
           >
             <StatusBar />
@@ -64,10 +66,14 @@ export function Phone({
         <span
           key={p.n}
           aria-hidden
-          className="absolute z-10 grid h-7 w-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-brass text-[13px] font-bold text-ink ring-4 ring-cream"
+          className="absolute z-10 grid h-7 w-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-peach-deep font-jost text-[13px] font-semibold text-white"
           style={{
             left: `calc(${BEZEL + (p.x / 100) * W}px * var(--ps))`,
             top: `calc(${BEZEL + (p.y / 100) * H}px * var(--ps))`,
+            /* The halo has to punch out of the section ground, which
+               alternates white and mist down the page — so the colour comes
+               from the section rather than being hard-coded here. */
+            boxShadow: "0 0 0 4px var(--pin-ring, #fff)",
           }}
         >
           {p.n}
@@ -81,7 +87,7 @@ export const PHONE_WIDTH = (scale = 0.78) => (W + BEZEL * 2) * scale;
 
 function StatusBar() {
   return (
-    <div className="flex h-12 items-center justify-between px-7 pt-2 text-[13px] font-semibold text-ink">
+    <div className="flex h-12 items-center justify-between px-7 pt-2 text-[13px] font-semibold text-black">
       <span>9:41</span>
       <div className="flex items-center gap-1.5" aria-hidden>
         <svg viewBox="0 0 18 12" className="h-3 w-4 fill-current">
@@ -111,7 +117,7 @@ function StatusBar() {
 export function HomeBar() {
   return (
     <div className="absolute inset-x-0 bottom-0 flex h-6 items-center justify-center">
-      <span className="h-1 w-32 rounded-full bg-ink/25" />
+      <span className="h-1 w-32 rounded-full bg-black/25" />
     </div>
   );
 }

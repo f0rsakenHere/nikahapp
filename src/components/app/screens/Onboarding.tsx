@@ -1,26 +1,30 @@
 import { AppBar, Btn, Chip, Field, Progress, Segmented } from "@/components/app/kit";
 import { HomeBar } from "@/components/app/Phone";
-import { Mark } from "@/components/ui";
+import { Wordmark } from "@/components/bridely/primitives/Wordmark";
 
 /* 1 — Sign up. Gender is asked first because it determines whether a
    wali is required, and that shapes the rest of onboarding. */
 export function SignUp() {
   return (
     <div className="flex h-full flex-col px-6 pb-10 pt-4">
-      <Mark className="h-9 w-9 text-brass" />
+      {/* not leading-none: Playfair's line box is taller than 1em and the
+          wordmark loses its descender to the clip */}
+      <Wordmark className="text-[22px] leading-[1.3]" />
 
-      <h3 className="mt-6 font-display text-[28px] leading-tight text-ink">Create your account</h3>
-      <p className="mt-2 text-[13px] leading-[19px] text-body">
+      <h3 className="mt-6 font-playfair text-[28px] font-bold leading-tight text-black">
+        Create your account
+      </h3>
+      <p className="mt-2 text-[13px] leading-[19px] text-text">
         Registration is free. A photograph is not required, and your profile is never public.
       </p>
 
       <div className="mt-7 flex flex-col gap-5">
         <div className="flex flex-col gap-2">
-          <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-body/70">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
             I am registering as
           </span>
           <Segmented options={["A brother", "A sister"]} active={1} />
-          <span className="text-[11px] leading-[15px] text-brass">
+          <span className="text-[11px] leading-[15px] text-peach-deep">
             Sisters register a wali in step four. He confirms before your profile goes live.
           </span>
         </div>
@@ -30,20 +34,20 @@ export function SignUp() {
       </div>
 
       <label className="mt-6 flex items-start gap-3">
-        <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-[6px] bg-brass text-ink">
+        <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-[6px] bg-peach text-black">
           <svg viewBox="0 0 20 20" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4">
             <path d="M4 10.5l4 4 8-9" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </span>
-        <span className="text-[12px] leading-[17px] text-body">
+        <span className="text-[12px] leading-[17px] text-text">
           I am seeking marriage, and I understand this service is for nikah only.
         </span>
       </label>
 
       <div className="mt-auto flex flex-col gap-4">
         <Btn>Continue</Btn>
-        <p className="text-center text-[12px] text-body">
-          Already registered? <span className="font-semibold text-brass">Sign in</span>
+        <p className="text-center text-[12px] text-text">
+          Already registered? <span className="font-semibold text-peach-deep">Sign in</span>
         </p>
       </div>
 
@@ -62,30 +66,30 @@ export function ProfileDeen() {
 
       <div className="flex flex-1 flex-col gap-6 px-6">
         <div className="flex flex-col gap-2">
-          <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-body/70">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
             Salah
           </span>
           <Segmented options={["Five daily", "Most", "Learning"]} active={0} />
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-body/70">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
             Dress
           </span>
           <div className="flex flex-wrap gap-2">
-            <Chip tone="ink">Hijab</Chip>
+            <Chip tone="selected">Hijab</Chip>
             <Chip>Niqab</Chip>
             <Chip>Modest, no hijab</Chip>
           </div>
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-body/70">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
             Madhhab
           </span>
           <div className="flex flex-wrap gap-2">
             <Chip>Hanafi</Chip>
-            <Chip tone="ink">Shafi&apos;i</Chip>
+            <Chip tone="selected">Shafi&apos;i</Chip>
             <Chip>Maliki</Chip>
             <Chip>Hanbali</Chip>
             <Chip>Not specified</Chip>
@@ -122,10 +126,10 @@ export function WaliSetup() {
       <AppBar title="Register your wali" />
 
       <div className="flex flex-1 flex-col gap-4 px-6">
-        <div className="flex flex-col gap-1.5 rounded-md border border-brass/30 bg-brass-tint/60 p-3.5">
-          <span className="text-[13px] font-semibold text-brass">He will be able to:</span>
-          <ul className="flex flex-col gap-1.5 text-[12px] leading-[17px] text-ink/75">
-            <li>· Receive every introduction the moment you do</li>
+        <div className="flex flex-col gap-1.5 rounded-md border border-peach/30 bg-soft-peach/60 p-3.5">
+          <span className="text-[13px] font-semibold text-peach-deep">He will be able to:</span>
+          <ul className="flex flex-col gap-1.5 text-[12px] leading-[17px] text-black/75">
+            <li>· See every connection you send or accept</li>
             <li>· Read every message you exchange</li>
             <li>· Approve or decline before any conversation opens</li>
             <li>· End a conversation at any point</li>
@@ -135,11 +139,11 @@ export function WaliSetup() {
         <Field label="Wali's full name" value="Ahmed Al-Rashid" />
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-body/70">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
             Relationship
           </span>
           <div className="flex flex-wrap gap-2">
-            <Chip tone="ink">Father</Chip>
+            <Chip tone="selected">Father</Chip>
             <Chip>Brother</Chip>
             <Chip>Paternal uncle</Chip>
             <Chip>Appointed</Chip>

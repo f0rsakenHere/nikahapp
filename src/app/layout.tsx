@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import {
-  Fraunces,
-  Jost,
-  Playfair_Display,
-  Plus_Jakarta_Sans,
-} from "next/font/google";
-import { brand } from "@/content/site";
+import { Jost, Playfair_Display } from "next/font/google";
+import { brand } from "@/content/home";
 import "./globals.css";
 
-/* Two type systems live here while the site is mid-rebuild.
-
-   Playfair Display + Jost drive the new Bridely homepage. Fraunces +
-   Jakarta still drive /how-it-works, which has not been reskinned yet.
-   Both are declared as CSS variables and cost nothing on the routes that
-   do not reference them. */
+/* Playfair Display for display type, Jost for everything else — both
+   routes and the in-app screens now run on this one pair. Fraunces and
+   Plus Jakarta went with the old /how-it-works design; nothing rendered
+   references them any more, so they are no longer fetched. */
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair-display",
@@ -28,19 +21,6 @@ const jost = Jost({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-  display: "swap",
-  axes: ["SOFT", "WONK", "opsz"],
-});
-
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-jakarta",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: `${brand.name} — ${brand.tagline}`,
   description:
@@ -53,13 +33,14 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    /* Nav and Footer are per-route rather than global: the homepage ships
-       its own light header and footer, while /how-it-works keeps the dark
-       pair it was designed against. */
-    <html
-      lang="en"
-      className={`${playfair.variable} ${jost.variable} ${fraunces.variable} ${jakarta.variable}`}
-    >
+    /* Header and footer are per-route rather than global. Both routes now
+       compose the same pair, but each also owns the watercolour ground the
+       header sits on, which the layout has no business knowing about.
+
+       `en-CA`, not `en` — the service operates in Canada, and this becomes
+       a runtime value once fr-CA lands (docs/APP-PLAN.md §7.9: Bill 96
+       makes French a legal requirement here, not a preference). */
+    <html lang="en-CA" className={`${playfair.variable} ${jost.variable}`}>
       <body>{children}</body>
     </html>
   );

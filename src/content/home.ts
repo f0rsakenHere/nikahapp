@@ -11,6 +11,20 @@
    fabricating them for a real business would be worse than leaving them
    out. Every open item is marked TODO.
 
+   BROWSE MODEL. This copy previously stated that members cannot look
+   through other members — "your profile is not public, and never will
+   be", "no public directory". That has been reversed: members browse a
+   closed, verified pool and spend a connection to ask to talk. The
+   confidentiality claims that survive are narrower and precise — nothing
+   is visible outside the service, nothing is indexed, nothing is sold —
+   and they are worded to stay true. Anything asserting that members
+   cannot search has been removed rather than softened.
+
+   ⚠ This changes a promise published on nikahcanada.com. It needs the
+   client's sign-off, and the "no browsing" position reads as a scholarly
+   one rather than a marketing one, so it belongs in front of Mufti Faisal
+   al-Mahmudi too (APP-PLAN §3.4).
+
    The template had four slots with no NikahCanada equivalent. Rather
    than invent one, each was repointed at real copy:
      - "Meet our event organizers" (4 named staff)  -> confidentiality
@@ -43,19 +57,19 @@ export const nav = {
   links: [
     { label: "Home", href: "/" },
     { label: "How It Works", href: "/how-it-works" },
-    { label: "Pricing", href: "#fee" },
-    { label: "Contact Us", href: "#contact" },
+    { label: "Pricing", href: "/#fee" },
+    { label: "Contact Us", href: "/#contact" },
   ],
   dropdown: {
     label: "More",
     items: [
-      { label: "The process", href: "#process" },
-      { label: "Confidentiality", href: "#safety" },
-      { label: "Developed with scholars", href: "#scholars" },
-      { label: "For guardians", href: "#wali" },
+      { label: "The process", href: "/#process" },
+      { label: "Confidentiality", href: "/#safety" },
+      { label: "Developed with scholars", href: "/#scholars" },
+      { label: "For guardians", href: "/#wali" },
     ],
   },
-  cta: { label: "Register Now", href: "#contact" },
+  cta: { label: "Register Now", href: "/#contact" },
 };
 
 export const hero = {
@@ -64,7 +78,7 @@ export const hero = {
   body:
     "Send us your profile for free and we will help you find a match according to your " +
     "preferences. A personalised matrimonial service based in Montreal, operating across Canada.",
-  cta: { label: "Register Now", href: "#contact" },
+  cta: { label: "Register Now", href: "/#contact" },
   image: { src: `${PHOTO}/hero.jpg`, w: 475, h: 540, alt: "White flowers in a vase" },
 };
 
@@ -73,8 +87,8 @@ export const about = {
   eyebrow: "Why register",
   title: "Why send us your profile?",
   body:
-    "Finding a suitable match can be stressful, and can span months or years. Register today " +
-    "and we will refer you marriage candidates.",
+    "Finding a suitable match can be stressful, and can span months or years. Register today, " +
+    "look through the pool yourself, and we will refer you marriage candidates as well.",
   cta: { label: "How it works", href: "/how-it-works" },
   images: [
     { src: `${PHOTO}/about-1.jpg`, w: 445, h: 354, alt: "White and beige flowers" },
@@ -101,7 +115,7 @@ export const categories = {
   cta: { label: "See the full process", href: "/how-it-works" },
   cards: [
     { label: "Registration", src: `${PHOTO}/category-1.jpg`, alt: "White petalled centerpiece" },
-    { label: "We search", src: `${PHOTO}/category-2.jpg`, alt: "Outdoor wedding arch" },
+    { label: "Browse and referral", src: `${PHOTO}/category-2.jpg`, alt: "Outdoor wedding arch" },
     { label: "Matchmaking", src: `${PHOTO}/category-3.jpg`, alt: "Red and white flowers on a wooden table" },
     { label: "Contact shared", src: `${PHOTO}/category-4.jpg`, alt: "Centerpiece in a glass vase" },
   ],
@@ -111,13 +125,17 @@ export const categories = {
 export const reservation = {
   title: "Free to register. A fee only when it matters.",
   body:
-    "There is no cost to send us your profile, and no cost to be searched for or referred. " +
-    "The matchmaking fee falls due once both sides have read each other's profile and want to proceed.",
-  /* TODO: the live site publishes no amount. Add it here when you have it. */
+    "There is no cost to send us your profile, and no cost to browse, to be browsed or to be " +
+    "referred. The matchmaking fee falls due once both sides have read each other's profile and " +
+    "want to proceed.",
+  /* TODO: the live site publishes no amount. Add it here when you have it.
+     TODO: this section says nothing about what a connection costs, because
+     that is undecided. If connections are sold rather than granted, this is
+     no longer the whole pricing story and the section needs a second line. */
   note:
     "Because both parties pay before contact details are exchanged, the fee also confirms the " +
     "interest is mutual.",
-  cta: { label: "Register Now", href: "#contact" },
+  cta: { label: "Register Now", href: "/#contact" },
   images: [
     { src: `${PHOTO}/reservation-1.jpg`, w: 635, h: 540, alt: "Flowers hanging from a ceiling" },
     { src: `${PHOTO}/reservation-2.jpg`, w: 445, h: 300, alt: "Vases of assorted flowers" },
@@ -146,13 +164,13 @@ export const eventTogether = {
    links. NikahCanada publishes no team, so this carries the
    confidentiality measures instead, and the per-card social row is gone. */
 export const organizers = {
-  title: "Your profile is not public, and never will be.",
+  title: "Seen by verified members. Never by the public.",
   body: "Each of the following is how the service actually operates, not a policy statement.",
   cta: { label: "Confidentiality in full", href: "/how-it-works" },
   people: [
-    { name: "Stored offline", src: `${PHOTO}/organizer-1.jpg`, alt: "White and pink flowers on a wooden box" },
+    { name: "Never on the open web", src: `${PHOTO}/organizer-1.jpg`, alt: "White and pink flowers on a wooden box" },
     { name: "We speak to everyone", src: `${PHOTO}/organizer-2.jpg`, alt: "White and purple flowers in a black vase" },
-    { name: "No public directory", src: `${PHOTO}/organizer-3.jpg`, alt: "White roses" },
+    { name: "Verified members only", src: `${PHOTO}/organizer-3.jpg`, alt: "White roses" },
     { name: "Nothing is sold", src: `${PHOTO}/organizer-4.jpg`, alt: "White flowers in a vase" },
   ],
 };
@@ -233,7 +251,7 @@ export const gallery = {
 
 export const footer = {
   planning: "Send us your profile.",
-  primary: { label: "Register Now", href: "#contact" },
+  primary: { label: "Register Now", href: "/#contact" },
   secondary: { label: "How it works", href: "/how-it-works" },
   blurb:
     "A Muslim marriage match and matrimony service. Based in Montreal, operating across Canada, " +
@@ -243,15 +261,15 @@ export const footer = {
   columns: [
     [
       { label: "How It Works", href: "/how-it-works" },
-      { label: "The process", href: "#process" },
-      { label: "Pricing", href: "#fee" },
-      { label: "Developed with scholars", href: "#scholars" },
+      { label: "The process", href: "/#process" },
+      { label: "Pricing", href: "/#fee" },
+      { label: "Developed with scholars", href: "/#scholars" },
     ],
     [
-      { label: "Registration", href: "#contact" },
-      { label: "For guardians", href: "#wali" },
-      { label: "Confidentiality", href: "#safety" },
-      { label: "Contact Us", href: "#contact" },
+      { label: "Registration", href: "/#contact" },
+      { label: "For guardians", href: "/#wali" },
+      { label: "Confidentiality", href: "/#safety" },
+      { label: "Contact Us", href: "/#contact" },
     ],
   ],
   /* TODO: the template shipped a fake phone number and email. Nothing has

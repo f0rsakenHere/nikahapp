@@ -1,10 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect width="32" height="32" rx="7" fill="#10201A"/>
-  <g fill="none" stroke="#D9B378" stroke-linejoin="round">
-    <path d="M6.5 26.5V14a9.5 9.5 0 0 1 19 0v12.5z" stroke-width="1.9"/>
-    <g stroke-width="1.5">
-      <rect x="11.9" y="13.4" width="8.2" height="8.2"/>
-      <rect x="11.9" y="13.4" width="8.2" height="8.2" transform="rotate(45 16 17.5)"/>
-    </g>
-  </g>
+  <!--
+    The tile takes the design system's signature picture shape: two
+    opposite corners rounded hard, two left square — the same form as the
+    hero photography and the Initials tile inside the app.
+
+    Deep mint rather than #9ACCC9, because a favicon has to hold against
+    both light and dark browser chrome, and the brand mint is too pale to
+    carry a white letterform (1.77:1).
+
+    TODO: no logo file has been supplied. This is a typographic stand-in
+    matching primitives/Wordmark.tsx; replace it when a real mark exists.
+  -->
+  <path d="M11 0H32V21A11 11 0 0 1 21 32H0V11A11 11 0 0 1 11 0Z" fill="#2F6F6B"/>
+  <path d="M9 23V9H13L19 18.5V9H23V23H19L13 13.5V23Z" fill="#FFFFFF"/>
 </svg>
