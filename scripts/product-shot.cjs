@@ -1,12 +1,13 @@
 /* Screenshots /how-it-works — full page plus each phone frame individually. */
 const { chromium } = require("playwright");
+const { BASE } = require("./lib/base.cjs");
 
 (async () => {
   const out = process.argv[2] || ".";
   const browser = await chromium.launch();
 
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  await page.goto("http://127.0.0.1:3000/how-it-works", { waitUntil: "networkidle" });
+  await page.goto(BASE + "/how-it-works", { waitUntil: "networkidle" });
   await page.waitForTimeout(1800);
 
   await page.screenshot({

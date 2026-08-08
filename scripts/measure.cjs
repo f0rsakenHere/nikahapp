@@ -3,12 +3,16 @@
    which the page layout may or may not use. Exits non-zero if it finds
    nothing, so a broken selector can never read as a pass. */
 const { chromium } = require("playwright");
+const { assertStyled } = require("./lib/styled.cjs");
+const { BASE, assertOurApp } = require("./lib/base.cjs");
 
 (async () => {
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
-  await p.goto("http://127.0.0.1:3000/how-it-works", { waitUntil: "networkidle" });
+  await p.goto(BASE + "/how-it-works", { waitUntil: "networkidle" });
   await p.waitForTimeout(1800);
+  await assertStyled(p, "/how-it-works");
+  await assertOurApp(p);
 
   const rows = await p.evaluate(() => {
     const frames = [...document.querySelectorAll("div[style*='780px']")];

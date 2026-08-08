@@ -3,7 +3,7 @@
    any dead link. */
 const { chromium } = require("playwright");
 
-const BASE = "http://127.0.0.1:3000";
+const { BASE, assertOurApp } = require("./lib/base.cjs");
 const ROUTES = ["/", "/how-it-works"];
 
 (async () => {
@@ -14,6 +14,7 @@ const ROUTES = ["/", "/how-it-works"];
   const idsByRoute = {};
   for (const r of ROUTES) {
     await page.goto(BASE + r, { waitUntil: "networkidle" });
+    await assertOurApp(page);
     idsByRoute[r] = await page.evaluate(() =>
       [...document.querySelectorAll("[id]")].map((e) => e.id)
     );

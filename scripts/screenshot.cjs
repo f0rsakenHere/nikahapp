@@ -1,5 +1,6 @@
 /* Screenshots the running dev server. Usage: node scripts/screenshot.cjs <outDir> */
 const { chromium } = require("playwright");
+const { BASE } = require("./lib/base.cjs");
 
 (async () => {
   const out = process.argv[2] || ".";
@@ -10,13 +11,13 @@ const { chromium } = require("playwright");
     viewport: { width: 1440, height: 1000 },
     deviceScaleFactor: 0.5,
   });
-  await wide.goto("http://127.0.0.1:3000/", { waitUntil: "networkidle" });
+  await wide.goto(BASE + "/", { waitUntil: "networkidle" });
   await wide.waitForTimeout(1500);
   await wide.screenshot({ path: `${out}/full.jpg`, fullPage: true, type: "jpeg", quality: 78 });
 
   // Crisp per-section captures.
   const shot = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  await shot.goto("http://127.0.0.1:3000/", { waitUntil: "networkidle" });
+  await shot.goto(BASE + "/", { waitUntil: "networkidle" });
   await shot.waitForTimeout(1500);
   for (const [name, sel] of [
     ["hero", "#top"],

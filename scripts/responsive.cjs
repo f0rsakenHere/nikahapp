@@ -4,6 +4,8 @@
 
    Usage: node scripts/responsive.cjs [outDir]   (outDir optional, for shots) */
 const { chromium } = require("playwright");
+const { assertStyled } = require("./lib/styled.cjs");
+const { BASE, assertOurApp } = require("./lib/base.cjs");
 
 const ROUTES = ["/", "/how-it-works"];
 const WIDTHS = [320, 360, 390, 414, 480, 640, 768, 834, 1024, 1280, 1440, 1920];
@@ -16,8 +18,10 @@ const WIDTHS = [320, 360, 390, 414, 480, 640, 768, 834, 1024, 1280, 1440, 1920];
   for (const route of ROUTES) {
     for (const width of WIDTHS) {
       const page = await browser.newPage({ viewport: { width, height: 900 } });
-      await page.goto("http://127.0.0.1:3000" + route, { waitUntil: "networkidle" });
+      await page.goto(BASE + route, { waitUntil: "networkidle" });
       await page.waitForTimeout(600);
+      await assertStyled(page, `${route} @ ${width}px`);
+      await assertOurApp(page);
 
       const report = await page.evaluate(() => {
         const doc = document.documentElement;

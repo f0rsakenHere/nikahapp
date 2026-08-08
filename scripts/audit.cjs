@@ -6,7 +6,8 @@
    or if it somehow ran no checks at all. */
 const { chromium } = require("playwright");
 
-const BASE = process.env.BASE || "http://localhost:3000";
+const { BASE, assertOurApp } = require("./lib/base.cjs");
+const ROUTES = ["/", "/how-it-works"];
 const findings = [];
 let checks = 0;
 
@@ -20,7 +21,7 @@ function check(name, ok, detail) {
   const b = await chromium.launch();
 
   /* ---------- 1. console + network on both routes, desktop and phone ---- */
-  for (const route of ["/", "/how-it-works"]) {
+  for (const route of ROUTES) {
     for (const [w, h] of [
       [1440, 900],
       [390, 844],
@@ -36,6 +37,7 @@ function check(name, ok, detail) {
         if (r.status() >= 400) bad.push(`${r.status()} ${r.url().replace(BASE, "")}`);
       });
       await p.goto(BASE + route, { waitUntil: "networkidle" });
+      await assertOurApp(p);
       await p.evaluate(async () => {
         const s = window.innerHeight * 0.5;
         for (let y = 0; y < document.documentElement.scrollHeight; y += s) {
@@ -134,10 +136,14 @@ function check(name, ok, detail) {
     await p.close();
   }
 
-  /* ---------- 6. accessibility basics ---------------------------------- */
-  {
+  /* ---------- 6. accessibility basics ----------------------------------
+     Sections 6-8 loop over both routes. They used to check the homepage
+     only, which meant /how-it-works — the longer page, and the one
+     carrying every app screen — was never checked for alt text, heading
+     structure, focus visibility or tap target size. */
+  for (const route of ROUTES) {
     const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
-    await p.goto(BASE + "/", { waitUntil: "networkidle" });
+    await p.goto(BASE + route, { waitUntil: "networkidle" });
     const a11y = await p.evaluate(() => {
       const out = {};
       out.imgNoAlt = [...document.querySelectorAll("img")]
@@ -162,18 +168,18 @@ function check(name, ok, detail) {
       out.langSet = document.documentElement.lang || null;
       return out;
     });
-    check("all images have alt", a11y.imgNoAlt.length === 0, a11y.imgNoAlt.join(", "));
-    check("no unnamed links", a11y.emptyLinks.length === 0, a11y.emptyLinks.join(", "));
-    check("no unnamed buttons", a11y.buttonsNoName.length === 0, a11y.buttonsNoName.join(", "));
-    check("exactly one h1", a11y.h1Count === 1, `found ${a11y.h1Count}`);
-    check("lang attribute set", !!a11y.langSet, "missing");
+    check(`all images have alt ${route}`, a11y.imgNoAlt.length === 0, a11y.imgNoAlt.join(", "));
+    check(`no unnamed links ${route}`, a11y.emptyLinks.length === 0, a11y.emptyLinks.join(", "));
+    check(`no unnamed buttons ${route}`, a11y.buttonsNoName.length === 0, a11y.buttonsNoName.join(", "));
+    check(`exactly one h1 ${route}`, a11y.h1Count === 1, `found ${a11y.h1Count}`);
+    check(`lang attribute set ${route}`, !!a11y.langSet, "missing");
     await p.close();
   }
 
   /* ---------- 7. keyboard focus is visible ----------------------------- */
-  {
+  for (const route of ROUTES) {
     const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
-    await p.goto(BASE + "/", { waitUntil: "networkidle" });
+    await p.goto(BASE + route, { waitUntil: "networkidle" });
     let focusable = 0;
     for (let i = 0; i < 12; i++) {
       await p.keyboard.press("Tab");
@@ -189,14 +195,14 @@ function check(name, ok, detail) {
       });
       if (ok) focusable++;
     }
-    check("tab reaches interactive elements", focusable >= 5, `only ${focusable} in 12 tabs`);
+    check(`tab reaches interactive elements ${route}`, focusable >= 5, `only ${focusable} in 12 tabs`);
     await p.close();
   }
 
   /* ---------- 8. touch target sizes on phone --------------------------- */
-  {
+  for (const route of ROUTES) {
     const p = await b.newPage({ viewport: { width: 390, height: 844 } });
-    await p.goto(BASE + "/", { waitUntil: "networkidle" });
+    await p.goto(BASE + route, { waitUntil: "networkidle" });
     await p.evaluate(async () => {
       const s = window.innerHeight * 0.5;
       for (let y = 0; y < document.documentElement.scrollHeight; y += s) {
@@ -221,7 +227,11 @@ function check(name, ok, detail) {
       });
       return [...new Set(out)];
     });
-    check("touch targets >= 30px", small.length === 0, `${small.length}: ${small.slice(0, 6).join(" | ")}`);
+    check(
+      `touch targets >= 30px ${route}`,
+      small.length === 0,
+      `${small.length}: ${small.slice(0, 6).join(" | ")}`
+    );
     await p.close();
   }
 
