@@ -9,6 +9,8 @@ import { mfaRequired } from "@/lib/domain/user";
 import { AuthShell } from "../auth-shell";
 import { ChangePassword, SendVerification, SessionRow, SignOutEverywhere } from "./forms";
 import { MfaSection } from "./mfa";
+import { ExportData, PauseOrResume, WithdrawOrDelete } from "./lifecycle";
+import { findProfileByUserId } from "@/lib/repositories/profiles";
 
 export const metadata: Metadata = { title: "Your account — NikahCanada" };
 
@@ -26,6 +28,7 @@ export default async function SettingsPage() {
 
   const { user, tokenHash } = session;
   const sessions = await listSessionsForUser(user.id);
+  const profile = await findProfileByUserId(user.id);
 
   return (
     <AuthShell
@@ -104,6 +107,30 @@ export default async function SettingsPage() {
           </ul>
 
           {sessions.length > 1 ? <SignOutEverywhere /> : null}
+        </section>
+
+        {/* --------------------------------------------- your record -- */}
+        {profile ? (
+          <section className="flex flex-col gap-3 border-t border-soft-green pt-7">
+            <h2 className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
+              Your profile
+            </h2>
+            <PauseOrResume status={profile.status} />
+          </section>
+        ) : null}
+
+        <section className="flex flex-col gap-3 border-t border-soft-green pt-7">
+          <h2 className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
+            Your data
+          </h2>
+          <ExportData />
+        </section>
+
+        <section className="flex flex-col gap-3 border-t border-soft-green pt-7">
+          <h2 className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
+            Leaving
+          </h2>
+          <WithdrawOrDelete status={profile?.status ?? "draft"} />
         </section>
       </div>
     </AuthShell>

@@ -28,12 +28,15 @@ export const AUDIT_ACTIONS = [
   "account.sessionRevoked",
   "account.mfaEnabled",
   "account.mfaChallengeFailed",
+  "account.dataExported",
+  "account.erased",
 
   /* profile */
   "profile.submitted",
   "profile.approved",
   "profile.rejected",
   "profile.paused",
+  "profile.resumed",
   "profile.withdrawn",
 
   /* the wali */
