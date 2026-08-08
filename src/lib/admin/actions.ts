@@ -8,7 +8,9 @@ import { currentUser } from "@/lib/auth/current";
 import { can, isStaffActor } from "@/lib/domain/authorisation";
 import { submitBlockers } from "@/lib/domain/profile";
 import { decideProfile, findProfileById } from "@/lib/repositories/profiles";
-import { hasConfirmedWali } from "@/lib/repositories/guardianships";
+import { hasConfirmedWali, listGuardianshipsForMember } from "@/lib/repositories/guardianships";
+import { listVerificationsFor } from "@/lib/repositories/verifications";
+import { verificationGaps } from "@/lib/domain/verification";
 
 export type DecisionState = { error?: string; done?: string };
 
@@ -58,6 +60,27 @@ export async function decide(
           ? "Her wali has not confirmed. This profile cannot go live yet."
           : `Not ready: ${blockers.map((b) => b.step).join(", ")} unfinished.`,
       };
+    }
+
+    /* Nobody goes live unchecked. The published process puts identity,
+     * references and a phone call before matching, and this is the only
+     * place that is actually true rather than merely written down. */
+    const gaps = verificationGaps(profile.gender, await listVerificationsFor(profile.userId));
+    if (gaps.length) {
+      return {
+        error: `Checks outstanding: ${gaps.map((g) => `${g.kind} (${g.reason})`).join(", ")}.`,
+      };
+    }
+
+    /* And her wali is checked too (D10) — he holds a veto and reads her
+     * correspondence. */
+    if (profile.gender === "sister") {
+      const active = (await listGuardianshipsForMember(profile.userId)).find(
+        (g) => g.status === "confirmed"
+      );
+      if (active && active.verification.state !== "verified") {
+        return { error: "Her wali has not been identity-checked yet." };
+      }
     }
   }
 

@@ -11,6 +11,8 @@ import {
   submitForReview,
 } from "@/lib/repositories/profiles";
 import { hasConfirmedWali } from "@/lib/repositories/guardianships";
+import { openRequiredChecks } from "@/lib/repositories/verifications";
+import { record } from "@/lib/audit";
 
 export type StepState = { issues?: string[] };
 
@@ -64,7 +66,26 @@ export async function submitProfile(): Promise<void> {
   });
   if (blockers.length) redirect("/onboarding");
 
-  await submitForReview(session.user.id, new Date());
+  const now = new Date();
+  await submitForReview(session.user.id, now);
+
+  /* The checks staff will work from, opened at submission rather than
+   * when someone first opens the case. A queue that only fills when a
+   * reviewer looks at it is a queue that hides its own backlog. */
+  await openRequiredChecks(
+    session.user.id,
+    profile.gender,
+    { reference: profile.gender === "brother" ? profile.reference : undefined },
+    now
+  );
+
+  await record({
+    action: "profile.submitted",
+    subject: { type: "profile", id: profile.id },
+    actor: { userId: session.user.id, role: "member" },
+    meta: { gender: profile.gender },
+  });
+
   revalidatePath("/onboarding");
   redirect("/onboarding?submitted=1");
 }

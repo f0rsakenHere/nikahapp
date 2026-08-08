@@ -44,6 +44,12 @@ export const INDEXES: Partial<Record<CollectionName, Spec[]>> = {
     },
   ],
 
+  [COLLECTIONS.verifications]: [
+    { keys: { "subject.userId": 1, kind: 1 }, options: { name: "subject_kind" } },
+    { keys: { decision: 1, createdAt: 1 }, options: { name: "decision_createdAt" } },
+    { keys: { decision: 1, "call.scheduledFor": 1 }, options: { name: "decision_callAt" } },
+  ],
+
   [COLLECTIONS.auditLog]: [
     { keys: { "subject.type": 1, "subject.id": 1, at: -1 }, options: { name: "subject_at" } },
     { keys: { "actor.userId": 1, at: -1 }, options: { name: "actor_at" } },

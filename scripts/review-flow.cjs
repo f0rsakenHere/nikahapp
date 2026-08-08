@@ -219,6 +219,114 @@ const mongo = new MongoClient(uri, {
     check("it shows her wali as confirmed", /Ahmed Al-Rashid/.test(page360));
     check("it shows the audit history", /profile\.|Nothing recorded/.test(page360));
 
+    /* ---------- the checks are opened at submission ------------------ */
+    {
+      const opened = await db
+        .collection("verifications")
+        .find({ "subject.userId": String(sisterUser._id) })
+        .toArray();
+      check("submitting opened her checks", opened.length === 2, `${opened.length} opened`);
+      check(
+        "a sister gets identity and the intake call, not a reference",
+        opened.map((v) => v.kind).sort().join(",") === "identity,intakeCall"
+      );
+
+      const page = await s.textContent("body");
+      check("the member page lists them", /Intake call/.test(page) && /Identity/.test(page));
+      check(
+        "and says why a document cannot be uploaded yet",
+        /object storage/i.test(page)
+      );
+      check("approval is blocked by the outstanding checks", /Checks outstanding/.test(page));
+    }
+
+    /* ---------- approving before the checks is refused --------------- */
+    await s.click('label:has(input[name="decision"][value="live"])');
+    await s.click('button:has-text("Record the decision")');
+    await s.waitForTimeout(2500);
+    check(
+      "approving with checks outstanding is refused on the server",
+      /Checks outstanding/i.test(await s.textContent("body"))
+    );
+    check(
+      "and she stayed in the queue",
+      (await db.collection("profiles").findOne({ _id: profile._id })).status === "pendingReview"
+    );
+
+    /* ---------- doing the checks ------------------------------------- */
+    {
+      const [identity, intake] = await db
+        .collection("verifications")
+        .find({ "subject.userId": String(sisterUser._id) })
+        .sort({ kind: 1 })
+        .toArray();
+
+      /* The intake call must be arranged before it can be marked done. */
+      await s.goto(`${BASE}/admin/members/${profileId}`, { waitUntil: "networkidle" });
+      await s.fill('input[name="scheduledFor"]', "2026-08-20");
+      await s.click('button:has-text("Arrange the call")');
+      await s.waitForTimeout(2500);
+
+      const arranged = await db.collection("verifications").findOne({ _id: intake._id });
+      check("the intake call was arranged", !!arranged.call?.scheduledFor);
+
+      await s.goto(`${BASE}/admin/members/${profileId}`, { waitUntil: "networkidle" });
+      await s.click('button:has-text("Mark the call done")');
+      await s.waitForTimeout(2500);
+      const done = await db.collection("verifications").findOne({ _id: intake._id });
+      check("and marked done, with who did it", !!done.call?.completedAt && !!done.call?.staffUserId);
+
+      /* Approve both checks straight in the database is not the point —
+         drive the forms, because that is what staff will do. */
+      for (const _ of [0, 1]) {
+        await s.goto(`${BASE}/admin/members/${profileId}`, { waitUntil: "networkidle" });
+        const selects = s.locator('select[name="outcome"]');
+        if ((await selects.count()) === 0) break;
+        await selects.first().selectOption("approve");
+        await s.locator('button:has-text("Record")').first().click();
+        await s.waitForTimeout(2500);
+      }
+
+      const after = await db
+        .collection("verifications")
+        .find({ "subject.userId": String(sisterUser._id) })
+        .toArray();
+      check(
+        "both checks are approved",
+        after.every((v) => v.decision === "approved"),
+        after.map((v) => `${v.kind}:${v.decision}`).join(" ")
+      );
+      check(
+        "the identity document was deleted with the decision",
+        after.filter((v) => v.kind === "identity").every((v) => v.documents.every((d) => d.deletedAt))
+      );
+      void identity;
+    }
+
+    /* ---------- her wali still has to be checked (D10) --------------- */
+    await s.goto(`${BASE}/admin/members/${profileId}`, { waitUntil: "networkidle" });
+    await s.click('label:has(input[name="decision"][value="live"])');
+    await s.click('button:has-text("Record the decision")');
+    await s.waitForTimeout(2500);
+    check(
+      "approving is still refused while her wali is unchecked",
+      /wali has not been identity-checked/i.test(await s.textContent("body"))
+    );
+
+    await s.goto(`${BASE}/admin/members/${profileId}`, { waitUntil: "networkidle" });
+    await s.click('button:has-text("Record that he is verified")');
+    await s.waitForTimeout(2000);
+    check(
+      "verifying him needs a method, not just a click",
+      /how he was checked/i.test(await s.textContent("body"))
+    );
+
+    await s.fill('input[name="method"]', "Spoke to him and saw his ID over video");
+    await s.click('button:has-text("Record that he is verified")');
+    await s.waitForTimeout(2500);
+    const g = await db.collection("guardianships").findOne({ memberUserId: String(sisterUser._id) });
+    check("his check is recorded with the method", g.verification.state === "verified" && !!g.verification.method);
+
     /* ---------- declining needs a reason ---------------------------- */
     await s.click('label:has(input[name="decision"][value="rejected"])');
     /* By name, not by type. The console header carries a sign-out form,
@@ -231,7 +339,8 @@ const mongo = new MongoClient(uri, {
     const undecided = await db.collection("profiles").findOne({ _id: profile._id });
     check("and nothing changed", undecided.status === "pendingReview");
 
-    /* ---------- approving works ------------------------------------- */
+    /* ---------- approving works, now that everything is done -------- */
+    await s.goto(`${BASE}/admin/members/${profileId}`, { waitUntil: "networkidle" });
     await s.click('label:has(input[name="decision"][value="live"])');
     await s.click('button:has-text("Record the decision")');
     await s.waitForTimeout(3000);
@@ -301,6 +410,7 @@ const mongo = new MongoClient(uri, {
       await db.collection("guardianships").deleteMany({
         $or: [{ memberUserId: String(u._id) }, { waliUserId: String(u._id) }],
       });
+      await db.collection("verifications").deleteMany({ "subject.userId": String(u._id) });
       await db.collection("profiles").deleteMany({ userId: u._id });
       await db.collection("auditLog").deleteMany({ "subject.id": String(u._id) });
       await db.collection("users").deleteOne({ _id: u._id });

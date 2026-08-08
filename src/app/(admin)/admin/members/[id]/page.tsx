@@ -18,6 +18,9 @@ import { findUserById } from "@/lib/repositories/users";
 import { listGuardianshipsForMember } from "@/lib/repositories/guardianships";
 import { AdminShell } from "../../../shell";
 import { DecisionForm } from "./decision";
+import { ChecksPanel } from "./checks";
+import { listVerificationsFor } from "@/lib/repositories/verifications";
+import { verificationGaps } from "@/lib/domain/verification";
 
 export const metadata: Metadata = { title: "Member — NikahCanada staff" };
 
@@ -67,6 +70,8 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
   const blockers = submitBlockers(profile, ctx);
   const progress = completeness(profile, ctx);
   const history = await historyFor({ type: "profile", id });
+  const verifications = await listVerificationsFor(profile.userId);
+  const gaps = verificationGaps(profile.gender, verifications);
 
   const mayDecide = can(
     { userId: staffUser.id, roles: staffUser.roles },
@@ -203,6 +208,23 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
       </div>
 
       <div className="mt-6">
+        <Section title="Checks">
+          <ChecksPanel
+            verifications={verifications}
+            guardianship={
+              profile.gender === "sister" && confirmed
+                ? {
+                    id: confirmed.id,
+                    name: `${confirmed.invited.name} · ${confirmed.invited.relationship}`,
+                    verified: confirmed.verification.state === "verified",
+                  }
+                : null
+            }
+          />
+        </Section>
+      </div>
+
+      <div className="mt-6">
         <Section title="Decision">
           {blockers.length ? (
             <p className="mb-3 text-[13px] leading-[20px] text-peach-deep">
@@ -213,8 +235,14 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
             </p>
           ) : null}
 
+          {gaps.length ? (
+            <p className="mb-3 text-[13px] leading-[20px] text-peach-deep">
+              Checks outstanding: {gaps.map((g) => `${g.kind} (${g.reason})`).join(" · ")}
+            </p>
+          ) : null}
+
           {mayDecide ? (
-            <DecisionForm profileId={id} blocked={blockers.length > 0} status={profile.status} />
+            <DecisionForm profileId={id} blocked={blockers.length > 0 || gaps.length > 0} status={profile.status} />
           ) : (
             <p className="text-[13px] text-text">
               Your account can read this profile but not decide on it.
