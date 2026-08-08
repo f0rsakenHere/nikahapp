@@ -121,3 +121,77 @@ export async function submitForReview(
   );
   return result.matchedCount === 1 ? { ok: true } : { ok: false, error: "not-a-draft" };
 }
+
+export type QueueRow = {
+  profileId: string;
+  userId: string;
+  gender: "brother" | "sister";
+  initials: string | null;
+  city?: string;
+  province?: string;
+  birthYear?: number;
+  submittedAt: Date | null;
+  status: ProfileDraft["status"];
+};
+
+/** The review queue: oldest first, because the person who has been
+ *  waiting longest is the one to serve next. */
+export async function listQueue(
+  status: ProfileDraft["status"] = "pendingReview",
+  limit = 100
+): Promise<QueueRow[]> {
+  const docs = await (await profiles())
+    .find({ status } as never, { sort: { submittedAt: 1, updatedAt: 1 }, limit })
+    .toArray();
+
+  return docs.map((d) => {
+    const doc = d as unknown as ProfileDoc & { submittedAt?: Date };
+    return {
+      profileId: doc._id.toHexString(),
+      userId: doc.userId.toHexString(),
+      gender: doc.gender,
+      initials: doc.initials,
+      city: doc.basics?.city,
+      province: doc.basics?.province,
+      birthYear: doc.basics?.birthYear,
+      submittedAt: doc.submittedAt ?? null,
+      status: doc.status,
+    };
+  });
+}
+
+export async function findProfileById(profileId: string): Promise<ProfileDraft | null> {
+  if (!ObjectId.isValid(profileId)) return null;
+  const doc = await (await profiles()).findOne({ _id: new ObjectId(profileId) });
+  return doc ? toDomain(doc) : null;
+}
+
+export type Decision = "live" | "rejected" | "verifying";
+
+/** Records a staff decision.
+ *
+ *  Guarded on the profile still being in the queue, inside the update.
+ *  Two reviewers opening the same row is the ordinary case in a shared
+ *  queue, not a race worth ignoring — the second one is told it has
+ *  already been decided rather than silently overwriting the first. */
+export async function decideProfile(
+  profileId: string,
+  decision: Decision,
+  by: { userId: string; reason?: string },
+  now: Date
+): Promise<{ ok: true } | { ok: false; error: "already-decided" }> {
+  const result = await (await profiles()).updateOne(
+    { _id: new ObjectId(profileId), status: { $in: ["pendingReview", "verifying"] } } as never,
+    {
+      $set: {
+        status: decision,
+        updatedAt: now,
+        decidedAt: now,
+        decidedBy: by.userId,
+        decisionReason: by.reason ?? null,
+        ...(decision === "live" ? { liveAt: now } : {}),
+      },
+    } as never
+  );
+  return result.matchedCount === 1 ? { ok: true } : { ok: false, error: "already-decided" };
+}
