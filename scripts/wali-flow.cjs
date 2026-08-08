@@ -214,6 +214,64 @@ const mongo = new MongoClient(uri, {
       !/Waiting on your wali/.test(await her.textContent("body"))
     );
 
+    /* ---------- submit for review ----------------------------------- */
+    check(
+      "an unfinished profile offers no submit button",
+      (await her.locator('button:has-text("Send my profile for review")').count()) === 0
+    );
+
+    for (const [step, fill] of [
+      ["basics", async () => {
+        await her.fill('input[name="basics.birthYear"]', "1995");
+        await her.fill('input[name="basics.city"]', "Montreal");
+        await her.selectOption('select[name="basics.province"]', "QC");
+        await her.click('label:has(input[name="basics.citizenship"][value="citizen"])');
+      }],
+      ["background", async () => {
+        await her.click('label:has(input[name="background.maritalStatus"][value="neverMarried"])');
+        await her.click('label:has(input[name="background.children"][value="none"])');
+        await her.fill('input[name="background.languages"]', "English");
+        await her.selectOption('select[name="education.level"]', "bachelor");
+      }],
+      ["deen", async () => {
+        await her.click('label:has(input[name="deen.salah"][value="fiveDaily"])');
+        await her.click('label:has(input[name="deen.madhhab"][value="hanafi"])');
+        await her.click('label:has(input[name="deen.dress"][value="hijab"])');
+      }],
+      ["lookingFor", async () => {
+        await her.fill('input[name="lookingFor.ageMin"]', "27");
+        await her.fill('input[name="lookingFor.ageMax"]', "38");
+        await her.click('label:has(input[name="lookingFor.provinces"][value="QC"])');
+      }],
+    ]) {
+      await her.goto(`${BASE}/onboarding/${step}`, { waitUntil: "networkidle" });
+      await fill();
+      await her.click('button[type="submit"]');
+      await her.waitForTimeout(2000);
+    }
+
+    await her.goto(BASE + "/onboarding", { waitUntil: "networkidle" });
+    check("a finished profile reaches 100%", /100%/.test(await her.textContent("body")));
+    check(
+      "and now offers the submit button",
+      (await her.locator('button:has-text("Send my profile for review")').count()) === 1
+    );
+
+    await her.click('button:has-text("Send my profile for review")');
+    await her.waitForTimeout(2500);
+
+    const submitted = await db.collection("profiles").findOne({ userId: sister._id });
+    check("the profile moved to pendingReview", submitted.status === "pendingReview");
+    check("and recorded when", !!submitted.submittedAt);
+    check(
+      "the screen says what happens next, not just thank you",
+      /telephone you before any matching/.test(await her.textContent("body"))
+    );
+    check(
+      "and stops offering to submit again",
+      (await her.locator('button:has-text("Send my profile for review")').count()) === 0
+    );
+
     await hisCtx.close();
     await herCtx.close();
   } finally {

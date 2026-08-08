@@ -181,6 +181,37 @@ export const STEP_FIELDS: Record<Exclude<StepId, "guardian">, FieldSpec[]> = {
     },
   ],
 
+  reference: [
+    {
+      path: "reference.name",
+      kind: "text",
+      label: "Their full name",
+      required: true,
+      placeholder: "Imam Suleiman Diallo",
+    },
+    {
+      path: "reference.relationship",
+      kind: "text",
+      label: "How they know you",
+      required: true,
+      placeholder: "The imam of my masjid",
+      hint: "Someone who knows you well enough to speak for your character — an imam, an employer, a long-standing friend of the family.",
+    },
+    {
+      path: "reference.organisation",
+      kind: "text",
+      label: "Where, if it is a place",
+      placeholder: "Optional",
+    },
+    {
+      path: "reference.phone",
+      kind: "text",
+      label: "Their phone number",
+      required: true,
+      hint: "We telephone them once, before your profile goes live. We do not say what you told us about yourself.",
+    },
+  ],
+
   lookingFor: [
     {
       path: "lookingFor.ageMin",
@@ -230,6 +261,8 @@ export const STEP_FIELDS: Record<Exclude<StepId, "guardian">, FieldSpec[]> = {
 };
 
 export function fieldsForStep(step: StepId, gender: "brother" | "sister"): FieldSpec[] {
+  /* The wali step is not a form — it creates a guardianship and emails
+     an invitation, so it has no field specs at all. */
   if (step === "guardian") return [];
   return STEP_FIELDS[step].filter((f) => !f.only || f.only === gender);
 }

@@ -163,6 +163,22 @@ export const ProfileDraftSchema = z.object({
 
   family: z.object({ detail: optionalText(2000) }).default({}), // 🔒
 
+  /* 🔒 A brother's counterpart to a sister's wali (§2.3). She registers a
+   * guardian who vouches for her and stays involved; he names someone
+   * who will vouch for him once, whom staff telephone during
+   * verification. It is not a symmetric power — it is a symmetric check.
+   *
+   * §2.4 lists this as missing from the mock-ups: ContactShared reveals
+   * "his wali or reference" and no screen ever collected one. */
+  reference: z
+    .object({
+      name: optionalText(120),
+      relationship: optionalText(80),
+      organisation: optionalText(120),
+      phone: optionalText(40),
+    })
+    .default({}),
+
   lookingFor: z
     .object({
       ageMin: z.number().int().min(18).max(99).optional(),
@@ -196,7 +212,23 @@ export type ProfileDraft = z.infer<typeof ProfileDraftSchema>;
 
 /* --------------------------------------------------------------- steps -- */
 
-export type StepId = "basics" | "background" | "deen" | "guardian" | "lookingFor";
+export type StepId =
+  | "basics"
+  | "background"
+  | "deen"
+  /** Sisters only. */
+  | "guardian"
+  /** Brothers only — the same slot in the flow. */
+  | "reference"
+  | "lookingFor";
+
+/** What a step needs that is not on the profile document.
+ *
+ *  Only the wali step uses it, and only because whether it is finished
+ *  depends on another person having replied to an email. */
+export type StepContext = { hasConfirmedWali: boolean };
+
+export const NO_WALI: StepContext = { hasConfirmedWali: false };
 
 export type Step = {
   id: StepId;
@@ -206,7 +238,7 @@ export type Step = {
   blurb: string;
   /** Answered before the profile can be submitted for review. Anything
    *  not listed is genuinely optional and must never block progress. */
-  required: (p: ProfileDraft) => boolean;
+  required: (p: ProfileDraft, ctx: StepContext) => boolean;
 };
 
 /* Five, matching the mock-ups: the deen screen shows "step 3 of 5" and
@@ -251,18 +283,22 @@ export const STEPS: readonly Step[] = [
     n: 4,
     title: "Your wali",
     blurb: "He confirms by email before your profile goes live.",
-    /* Never satisfiable from the profile alone — it depends on a
-     * confirmed guardianship, which lives in another collection and
-     * needs another person to act.
+    /* Not satisfiable from the profile alone — it depends on a confirmed
+     * guardianship, which lives in another collection and needs another
+     * person to act. So it is answered from context.
      *
-     * So a sister who has answered everything sits at 80%, not 100%,
-     * until her wali confirms. That is the honest number: her profile
-     * genuinely cannot go live yet, and showing 100% beside a list item
-     * reading "waiting on your wali" is the kind of small contradiction
-     * that makes people distrust the whole screen. Brothers never see
-     * this step (§2.3 — they give a reference), so it does not hold
-     * them at 75%. */
-    required: () => false,
+     * With no context it reports unfinished, which is the safe default:
+     * a screen that cannot see the guardianship should say "waiting on
+     * your wali", not claim she is done. */
+    required: (_p, ctx) => ctx.hasConfirmedWali,
+  },
+  {
+    id: "reference",
+    n: 4,
+    title: "Your reference",
+    blurb: "Someone who can vouch for you. We telephone them before your profile goes live.",
+    required: (p) =>
+      !!p.reference.name && !!p.reference.relationship && !!p.reference.phone,
   },
   {
     id: "lookingFor",
@@ -276,9 +312,16 @@ export const STEPS: readonly Step[] = [
   },
 ] as const;
 
+/* Which of the two fourth steps each gender sees. Both have five: the
+ * slot is the same, the check inside it is not. */
+const HIDDEN_FROM: Record<"brother" | "sister", StepId> = {
+  sister: "reference",
+  brother: "guardian",
+};
+
 /** The steps this member is actually shown. */
 export function stepsFor(gender: "brother" | "sister"): readonly Step[] {
-  return gender === "sister" ? STEPS : STEPS.filter((s) => s.id !== "guardian");
+  return STEPS.filter((s) => s.id !== HIDDEN_FROM[gender]);
 }
 
 export function stepById(id: string): Step | undefined {
@@ -290,10 +333,13 @@ export function stepById(id: string): Step | undefined {
  *  `step` is the first unfinished one — where "resume" should land —
  *  rather than the furthest reached, so a member who skipped step two
  *  and finished step three is sent back to two. */
-export function completeness(p: ProfileDraft): { step: number; of: number; percent: number } {
+export function completeness(
+  p: ProfileDraft,
+  ctx: StepContext = NO_WALI
+): { step: number; of: number; percent: number } {
   const steps = stepsFor(p.gender);
-  const done = steps.filter((s) => s.required(p));
-  const firstUnfinished = steps.find((s) => !s.required(p));
+  const done = steps.filter((s) => s.required(p, ctx));
+  const firstUnfinished = steps.find((s) => !s.required(p, ctx));
   return {
     step: firstUnfinished ? firstUnfinished.n : steps.length,
     of: steps.length,
@@ -313,10 +359,7 @@ export type SubmitBlocked =
  *
  *  `hasConfirmedWali` comes from the guardianship repository, because
  *  this module does no I/O. */
-export function submitBlockers(
-  p: ProfileDraft,
-  context: { hasConfirmedWali: boolean }
-): SubmitBlocked[] {
+export function submitBlockers(p: ProfileDraft, context: StepContext): SubmitBlocked[] {
   const blockers: SubmitBlocked[] = [];
 
   for (const step of stepsFor(p.gender)) {
@@ -324,9 +367,10 @@ export function submitBlockers(
      * true of it. Listing it here as well would tell a sister her
      * guardian step is "incomplete" — which reads as something she
      * forgot to fill in, when what it means is that someone else has
-     * not replied to an email yet. */
+     * not replied to an email yet. The reference step is hers to
+     * finish, so it is not excluded. */
     if (step.id === "guardian") continue;
-    if (!step.required(p)) blockers.push({ step: step.id, reason: "incomplete" });
+    if (!step.required(p, context)) blockers.push({ step: step.id, reason: "incomplete" });
   }
 
   if (p.gender === "sister" && !context.hasConfirmedWali) {

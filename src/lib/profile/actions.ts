@@ -4,8 +4,13 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { currentUser } from "@/lib/auth/current";
 import { parseStepForm } from "@/lib/domain/profile-form";
-import { stepsFor, type StepId } from "@/lib/domain/profile";
-import { findProfileByUserId, saveProfileSection } from "@/lib/repositories/profiles";
+import { stepsFor, submitBlockers, type StepId } from "@/lib/domain/profile";
+import {
+  findProfileByUserId,
+  saveProfileSection,
+  submitForReview,
+} from "@/lib/repositories/profiles";
+import { hasConfirmedWali } from "@/lib/repositories/guardianships";
 
 export type StepState = { issues?: string[] };
 
@@ -37,4 +42,29 @@ export async function saveStep(step: StepId, _prev: StepState, form: FormData): 
   const here = steps.findIndex((s) => s.id === step);
   const next = steps[here + 1];
   redirect(next ? `/onboarding/${next.id}` : "/onboarding");
+}
+
+/** Sends a finished profile to the review queue.
+ *
+ *  Re-checks the blockers server-side. The button only appears when
+ *  there are none, but a form that trusts the button that submitted it
+ *  is trusting the browser — and here that would let someone reach the
+ *  queue without a wali, which is the one promise the whole product is
+ *  built around.
+ */
+export async function submitProfile(): Promise<void> {
+  const session = await currentUser();
+  if (!session) redirect("/login?next=/onboarding");
+
+  const profile = await findProfileByUserId(session.user.id);
+  if (!profile) redirect("/onboarding");
+
+  const blockers = submitBlockers(profile, {
+    hasConfirmedWali: await hasConfirmedWali(session.user.id),
+  });
+  if (blockers.length) redirect("/onboarding");
+
+  await submitForReview(session.user.id, new Date());
+  revalidatePath("/onboarding");
+  redirect("/onboarding?submitted=1");
 }

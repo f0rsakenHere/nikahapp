@@ -143,15 +143,35 @@ describe("stepsFor", () => {
     ]);
   });
 
-  it("skips the wali step for a brother — he gives a reference instead", () => {
+  it("swaps the wali step for a reference step, for a brother", () => {
+    expect(stepsFor("brother").map((s) => s.id)).toEqual([
+      "basics",
+      "background",
+      "deen",
+      "reference",
+      "lookingFor",
+    ]);
+  });
+
+  it("never shows a sister the reference step, nor a brother the wali step", () => {
+    expect(stepsFor("sister").map((s) => s.id)).not.toContain("reference");
     expect(stepsFor("brother").map((s) => s.id)).not.toContain("guardian");
-    expect(stepsFor("brother")).toHaveLength(4);
+  });
+
+  it("gives both genders the same number of steps", () => {
+    expect(stepsFor("brother")).toHaveLength(5);
+    expect(stepsFor("sister")).toHaveLength(5);
   });
 
   it("matches the mock-ups: deen is step 3 of 5, the wali step 4", () => {
     expect(stepById("deen")?.n).toBe(3);
     expect(stepById("guardian")?.n).toBe(4);
-    expect(STEPS).toHaveLength(5);
+  });
+
+  it("keeps six definitions for five visible steps — slot 4 has two forms", () => {
+    expect(STEPS).toHaveLength(6);
+    expect(stepById("guardian")?.n).toBe(4);
+    expect(stepById("reference")?.n).toBe(4);
   });
 });
 
@@ -160,8 +180,8 @@ describe("completeness", () => {
     expect(completeness(draft())).toEqual({ step: 1, of: 5, percent: 0 });
   });
 
-  it("counts a brother out of four", () => {
-    expect(completeness(draft({ gender: "brother" })).of).toBe(4);
+  it("counts a brother out of five, like a sister", () => {
+    expect(completeness(draft({ gender: "brother" })).of).toBe(5);
   });
 
   it("resumes at the first unfinished step, not the furthest reached", () => {
@@ -181,9 +201,19 @@ describe("completeness", () => {
     expect(c.step).toBe(4); // resume lands on the wali step
   });
 
-  it("reaches 100% for a brother, who is never shown that step", () => {
+  it("holds a brother at 80% until he names a reference", () => {
     const brother = complete({ gender: "brother", deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "yes" } } as Partial<ProfileDraft>);
-    expect(completeness(brother)).toEqual({ step: 4, of: 4, percent: 100 });
+    expect(completeness(brother).percent).toBe(80);
+    expect(completeness(brother).step).toBe(4);
+  });
+
+  it("reaches 100% for a brother once he has", () => {
+    const brother = complete({
+      gender: "brother",
+      deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "yes" },
+      reference: { name: "Imam Suleiman", relationship: "My imam", phone: "5140000000" },
+    } as Partial<ProfileDraft>);
+    expect(completeness(brother)).toEqual({ step: 5, of: 5, percent: 100 });
   });
 });
 
@@ -219,12 +249,21 @@ describe("submitBlockers", () => {
     ]);
   });
 
-  it("never asks a brother for a wali", () => {
-    const brother = complete({
+  it("never asks a brother for a wali, but does ask for a reference", () => {
+    const noReference = complete({
       gender: "brother",
       deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "trimmed" },
     } as Partial<ProfileDraft>);
-    expect(submitBlockers(brother, { hasConfirmedWali: false })).toEqual([]);
+    expect(submitBlockers(noReference, { hasConfirmedWali: false })).toEqual([
+      { step: "reference", reason: "incomplete" },
+    ]);
+
+    const withReference = complete({
+      gender: "brother",
+      deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "trimmed" },
+      reference: { name: "Imam Suleiman", relationship: "My imam", phone: "5140000000" },
+    } as Partial<ProfileDraft>);
+    expect(submitBlockers(withReference, { hasConfirmedWali: false })).toEqual([]);
   });
 
   it("reports every unfinished step at once, not one at a time", () => {
@@ -242,5 +281,25 @@ describe("submitBlockers", () => {
     /* Height, ethnicity, quran, family detail and the free text are all
        unset in `complete()` and must not stand in anyone's way. */
     expect(submitBlockers(complete(), { hasConfirmedWali: true })).toEqual([]);
+  });
+});
+
+describe("completeness with the guardianship in view", () => {
+  it("holds a sister at 80% while nobody has confirmed", () => {
+    expect(completeness(complete(), { hasConfirmedWali: false }).percent).toBe(80);
+  });
+
+  it("reaches 100% once her wali has", () => {
+    expect(completeness(complete(), { hasConfirmedWali: true })).toEqual({
+      step: 5,
+      of: 5,
+      percent: 100,
+    });
+  });
+
+  /* The safe default: a screen that cannot see the guardianship must
+     not claim she is finished. */
+  it("assumes no wali when it is not told", () => {
+    expect(completeness(complete()).percent).toBe(80);
   });
 });

@@ -34,10 +34,11 @@ function check(name, ok, detail = "") {
 }
 
 async function register(page, gender) {
+  const isSister = gender.startsWith("sister");
   const email = `profileflow+${gender}${STAMP}@example.invalid`;
   emails.push(email);
   await page.goto(BASE + "/register", { waitUntil: "networkidle" });
-  await page.click(`label:has(input[name="gender"][value="${gender}"])`);
+  await page.click(`label:has(input[name="gender"][value="${isSister ? "sister" : "brother"}"])`);
   await page.fill('input[name="firstName"]', "Testonly");
   await page.fill('input[name="lastName"]', "Fixture");
   await page.fill('input[name="dateOfBirth"]', "1995-04-12");
@@ -167,14 +168,34 @@ const mongo = new MongoClient(uri, {
       const email = await register(p, "brother");
 
       const steps = await p.locator("ol li a").count();
-      check("a brother sees four steps — no wali", steps === 4, `saw ${steps}`);
+      check("a brother sees five steps too", steps === 5, `saw ${steps}`);
       check("a brother starts at 0% too", (await p.textContent("body")).includes("0%"));
+      check(
+        "his fourth step is a reference, not a wali",
+        /Your reference/.test(await p.textContent("body")) &&
+          !/Your wali/.test(await p.textContent("body"))
+      );
 
       await p.goto(BASE + "/onboarding/deen", { waitUntil: "networkidle" });
       const deen = await p.textContent("body");
       check("a brother is asked about his beard", /Beard/.test(deen));
       check("a brother is not asked about hijab", !/Hijab/.test(deen));
 
+      /* The reference step is his, and it is a real form. */
+      await p.goto(BASE + "/onboarding/reference", { waitUntil: "networkidle" });
+      const ref = await p.textContent("body");
+      check("the reference step explains why we want one", /telephone them once/.test(ref));
+      await p.fill('input[name="reference.name"]', "Imam Suleiman Diallo");
+      await p.fill('input[name="reference.relationship"]', "The imam of my masjid");
+      await p.fill('input[name="reference.phone"]', "5140000000");
+      await p.click('button[type="submit"]');
+      await p.waitForURL("**/onboarding/lookingFor", { timeout: 20_000 });
+
+      const brother = await db.collection("users").findOne({ email });
+      const bProfile = await db.collection("profiles").findOne({ userId: brother._id });
+      check("his reference was stored", bProfile?.reference?.name === "Imam Suleiman Diallo");
+
+      /* A sister must never be shown the reference step. */
       /* Typing the wali step's URL must not show it to him. */
       await p.goto(BASE + "/onboarding/guardian", { waitUntil: "networkidle" });
       check(
@@ -187,6 +208,19 @@ const mongo = new MongoClient(uri, {
       const res = await p.goto(BASE + "/onboarding/nonsense", { waitUntil: "networkidle" });
       check("an unknown step is a 404", res.status() === 404, String(res.status()));
 
+      await p.close();
+    }
+
+    /* --------------------------------------- a sister and the reference -- */
+    {
+      const p = await browser.newPage({ viewport: { width: 500, height: 900 } });
+      await register(p, "sister2");
+      await p.goto(BASE + "/onboarding/reference", { waitUntil: "networkidle" });
+      check(
+        "a sister typing the reference step's URL is sent back",
+        new URL(p.url()).pathname === "/onboarding",
+        p.url()
+      );
       await p.close();
     }
   } finally {

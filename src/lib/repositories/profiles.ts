@@ -10,11 +10,14 @@ type ProfileDoc = Omit<ProfileDraft, "id" | "userId"> & { _id: ObjectId; userId:
 /** Parses on the way out, so a document written by an older shape fails
  *  here rather than three screens later with a missing array.
  *
- *  Progress is recomputed rather than read. The stored `completeness` is
- *  a denormalised copy for staff queues and list views; deriving it here
- *  means a screen can never show a percentage that disagrees with the
- *  answers on it — including for the document written at sign-up, before
- *  a single question has been asked. */
+ *  Progress is recomputed rather than read, so it can never disagree
+ *  with the answers — including for the document written at sign-up,
+ *  before a single question has been asked.
+ *
+ *  Computed without the guardianship, because this module does not read
+ *  it. For a sister that understates by one step until her wali
+ *  confirms, so any screen that knows the guardianship recomputes with
+ *  it. The stored value is a denormalised copy for staff lists. */
 function toDomain(doc: WithId<ProfileDoc>): ProfileDraft {
   const { _id, userId, ...rest } = doc;
   const parsed = ProfileDraftSchema.parse({
@@ -49,6 +52,7 @@ export type WritableSection =
   | "education"
   | "work"
   | "family"
+  | "reference"
   | "lookingFor"
   | "freeText";
 
@@ -97,4 +101,23 @@ export async function saveProfileSection(
   );
 
   return { ok: true, profile: next };
+}
+
+/** Moves a finished draft to the review queue.
+ *
+ *  Guarded on the *current* status inside the update rather than checked
+ *  first and written after: two taps on a slow connection would
+ *  otherwise both pass the check, and the second would silently reset a
+ *  profile staff had already begun looking at. Whether it is finished is
+ *  the caller's question — `submitBlockers` answers it, and it needs the
+ *  guardianship, which this module does not read. */
+export async function submitForReview(
+  userId: string,
+  now: Date
+): Promise<{ ok: true } | { ok: false; error: "not-a-draft" }> {
+  const result = await (await profiles()).updateOne(
+    { userId: new ObjectId(userId), status: "draft" },
+    { $set: { status: "pendingReview", updatedAt: now, submittedAt: now } }
+  );
+  return result.matchedCount === 1 ? { ok: true } : { ok: false, error: "not-a-draft" };
 }

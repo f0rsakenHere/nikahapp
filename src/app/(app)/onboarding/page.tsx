@@ -3,9 +3,10 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { currentUser } from "@/lib/auth/current";
 import { logout } from "@/lib/auth/actions";
+import { submitProfile } from "@/lib/profile/actions";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
 import { hasConfirmedWali } from "@/lib/repositories/guardianships";
-import { STEPS, stepsFor, submitBlockers } from "@/lib/domain/profile";
+import { STEPS, completeness, stepsFor, submitBlockers } from "@/lib/domain/profile";
 import { Check } from "@/components/app/kit";
 import { AuthShell } from "../auth-shell";
 
@@ -18,7 +19,12 @@ export const metadata: Metadata = { title: "Your profile — NikahCanada" };
  * one step a sister cannot finish alone — her wali — needs to be visible
  * as *waiting on someone else* rather than as her failure to complete
  * it. */
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ submitted?: string }>;
+}) {
+  const { submitted } = await searchParams;
   const session = await currentUser();
   if (!session) redirect("/login?next=/onboarding");
 
@@ -29,18 +35,23 @@ export default async function OnboardingPage() {
   if (!profile) redirect(user.roles.includes("wali") ? "/wali" : "/register");
 
   const visible = stepsFor(profile.gender);
-  const blockers = submitBlockers(profile, {
-    hasConfirmedWali: await hasConfirmedWali(user.id),
-  });
+  const ctx = { hasConfirmedWali: await hasConfirmedWali(user.id) };
+  const blockers = submitBlockers(profile, ctx);
+  /* Recomputed with the guardianship. The stored figure cannot see it,
+     so a sister whose wali has confirmed would otherwise sit at 80%
+     next to a button offering to submit. */
+  const progress = completeness(profile, ctx);
   const blocked = new Set(blockers.map((b) => b.step));
 
   return (
     <AuthShell
       title={`Assalamu alaikum, ${user.legalName.first}`}
       blurb={
-        blockers.length
-          ? "Your profile is not finished. Everything you have filled in is saved."
-          : "Your profile is complete and ready to be sent for review."
+        profile.status !== "draft"
+          ? "Your profile is with our team."
+          : blockers.length
+            ? "Your profile is not finished. Everything you have filled in is saved."
+            : "Your profile is complete. Send it to us when you are ready."
       }
       footer={
         <>
@@ -54,6 +65,24 @@ export default async function OnboardingPage() {
         </>
       }
     >
+      {profile.status !== "draft" ? (
+        /* Once it is submitted the checklist is no longer the point.
+           What she wants to know is what happens next, and the intake
+           call is a published step — "we will speak with you by phone
+           before any matching begins" — so it is said here rather than
+           left as a silence. */
+        <div className="mb-7 rounded-md border border-soft-green bg-mist px-4 py-4">
+          <p className="text-[14px] font-semibold text-black">
+            {submitted ? "Thank you — we have it." : "With our team"}
+          </p>
+          <p className="mt-2 text-[13px] leading-[20px] text-text">
+            Someone will read your profile and telephone you before any matching begins. We check
+            identity and speak to your reference or your wali first. You can still change your
+            answers below.
+          </p>
+        </div>
+      ) : null}
+
       <div className="mb-6 flex flex-col gap-2">
         {/* Counted from the same `blocked` set the list below ticks from.
             Deriving it separately gave "2 of 5 done" above a list with
@@ -63,12 +92,12 @@ export default async function OnboardingPage() {
           <span>
             {visible.filter((s) => !blocked.has(s.id)).length} of {visible.length} done
           </span>
-          <span className="text-peach-deep">{profile.completeness.percent}%</span>
+          <span className="text-peach-deep">{progress.percent}%</span>
         </div>
         <div className="h-1 w-full overflow-hidden rounded-full bg-soft-green">
           <div
             className="h-full rounded-full bg-peach transition-[width]"
-            style={{ width: `${profile.completeness.percent}%` }}
+            style={{ width: `${progress.percent}%` }}
           />
         </div>
       </div>
@@ -104,6 +133,17 @@ export default async function OnboardingPage() {
           );
         })}
       </ol>
+
+      {profile.status === "draft" && blockers.length === 0 ? (
+        <form action={submitProfile} className="mt-7">
+          <button
+            type="submit"
+            className="h-12 w-full rounded-pill bg-peach text-[14px] font-semibold text-black"
+          >
+            Send my profile for review
+          </button>
+        </form>
+      ) : null}
 
       <form action={logout} className="mt-7">
         <button

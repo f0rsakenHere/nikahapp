@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 import { currentUser } from "@/lib/auth/current";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
 import { fieldsForStep } from "@/lib/domain/profile-form";
-import { stepById, stepsFor, type ProfileDraft } from "@/lib/domain/profile";
+import { completeness, stepById, stepsFor, type ProfileDraft } from "@/lib/domain/profile";
 import { AuthShell } from "../../auth-shell";
 import { StepForm } from "./form";
 import { GuardianStep } from "./guardian";
-import { listGuardianshipsForMember } from "@/lib/repositories/guardianships";
+import { hasConfirmedWali, listGuardianshipsForMember } from "@/lib/repositories/guardianships";
 
 export const metadata: Metadata = { title: "Your profile — NikahCanada" };
 
@@ -40,6 +40,9 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
    * rather than showing a 404 for a step that exists but is not his. */
   if (!visible.some((s) => s.id === step.id)) redirect("/onboarding");
 
+  const progress = completeness(profile, {
+    hasConfirmedWali: await hasConfirmedWali(session.user.id),
+  });
   const position = visible.findIndex((s) => s.id === step.id) + 1;
   const fields = fieldsForStep(step.id, profile.gender);
 
@@ -67,7 +70,7 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
           <span>
             Step {position} of {visible.length}
           </span>
-          <span className="text-peach-deep">{profile.completeness.percent}% complete</span>
+          <span className="text-peach-deep">{progress.percent}% complete</span>
         </div>
         {/* The bar tracks completion, not position. Filling it by
             position put a 60%-wide bar next to the words "20% complete",
@@ -76,7 +79,7 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
         <div className="h-1 w-full overflow-hidden rounded-full bg-soft-green">
           <div
             className="h-full rounded-full bg-peach"
-            style={{ width: `${profile.completeness.percent}%` }}
+            style={{ width: `${progress.percent}%` }}
           />
         </div>
       </div>
