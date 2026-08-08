@@ -17,6 +17,7 @@ import {
 } from "@/lib/repositories/users";
 import { deleteSession, insertSession } from "@/lib/repositories/sessions";
 import { currentUser } from "./current";
+import { record } from "@/lib/audit";
 import { safeNext } from "./redirect";
 import { equalisePasswordTiming, hashPassword, verifyPassword } from "./password";
 import { SESSION_COOKIE, buildSession, sessionCookieOptions } from "./session";
@@ -43,11 +44,14 @@ const MESSAGES: Record<string, string> = {
   "acceptedTerms:required": "Please accept the privacy policy and terms.",
 };
 
-async function startSession(user: {
-  id: string;
-  tokenVersion: number;
-  roles: readonly ("member" | "wali" | "staff" | "verifier" | "admin")[];
-}) {
+async function startSession(
+  user: {
+    id: string;
+    tokenVersion: number;
+    roles: readonly ("member" | "wali" | "staff" | "verifier" | "admin")[];
+  },
+  options: { pendingMfa?: boolean } = {}
+) {
   const now = new Date();
   const h = await headers();
   const { token, record } = buildSession(
@@ -59,6 +63,7 @@ async function startSession(user: {
        * recognises rather than "Unknown device" for every row. */
       userAgent: h.get("user-agent"),
       ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+      pendingMfa: options.pendingMfa ?? false,
     },
     now
   );
@@ -126,6 +131,13 @@ export async function register(_prev: FormState, form: FormData): Promise<FormSt
 
   if (!created.ok) return { errors: { email: MESSAGES["email:taken"] }, values };
 
+  await record({
+    action: "account.registered",
+    subject: { type: "user", id: created.user.id },
+    actor: { userId: created.user.id, role: "member" },
+    meta: { gender: validated.value.gender },
+  });
+
   await startSession(created.user);
   redirect("/onboarding");
 }
@@ -158,11 +170,32 @@ export async function login(_prev: FormState, form: FormData): Promise<FormState
 
   const correct = await verifyPassword(user.passwordHash ?? "", password);
   if (!correct) {
-    await recordFailedLogin(user.id, now);
+    const count = await recordFailedLogin(user.id, now);
+    await record({
+      action: "account.signInFailed",
+      subject: { type: "user", id: user.id },
+      actor: { userId: user.id, role: user.roles[0] },
+      meta: { consecutiveFailures: count },
+    });
     return generic;
   }
 
   await recordSuccessfulLogin(user.id, now);
+
+  /* Mandatory for staff and admin (§7.1), optional for everyone else.
+   * The session is issued half-authenticated: the cookie exists, and
+   * `currentUser()` refuses it until the second factor is in. */
+  if (user.mfa.enabled) {
+    await startSession(user, { pendingMfa: true });
+    redirect(`/mfa?next=${encodeURIComponent(safeNext(String(form.get("next") ?? "")))}`);
+  }
+
+  await record({
+    action: "account.signedIn",
+    subject: { type: "user", id: user.id },
+    actor: { userId: user.id, role: user.roles[0] },
+  });
+
   await startSession(user);
   redirect(safeNext(String(form.get("next") ?? "")));
 }
@@ -171,7 +204,14 @@ export async function login(_prev: FormState, form: FormData): Promise<FormState
 
 export async function logout(): Promise<void> {
   const session = await currentUser();
-  if (session) await deleteSession(session.tokenHash);
+  if (session) {
+    await record({
+      action: "account.signedOut",
+      subject: { type: "user", id: session.user.id },
+      actor: { userId: session.user.id, role: session.user.roles[0] },
+    });
+    await deleteSession(session.tokenHash);
+  }
   (await cookies()).delete(SESSION_COOKIE);
   redirect("/");
 }

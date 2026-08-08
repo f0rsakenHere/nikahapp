@@ -56,6 +56,12 @@ export type SessionRecord = {
   absoluteExpiresAt: Date;
   userAgent: string | null;
   ip: string | null;
+  /** Issued after the password but before the second factor. Nothing is
+   *  reachable while this is true — `currentUser()` refuses it outright,
+   *  and only the challenge screen looks it up. Modelled as a session so
+   *  it inherits the expiry, the cookie handling and the revocation,
+   *  rather than inventing a second short-lived credential. */
+  pendingMfa: boolean;
 };
 
 /** A fresh token and the digest to store.
@@ -91,7 +97,14 @@ export function sessionTimeouts(privileged: boolean): { idleMs: number; absolute
 }
 
 export function buildSession(
-  input: { userId: string; tokenVersion: number; privileged: boolean; userAgent?: string | null; ip?: string | null },
+  input: {
+    userId: string;
+    tokenVersion: number;
+    privileged: boolean;
+    userAgent?: string | null;
+    ip?: string | null;
+    pendingMfa?: boolean;
+  },
   now: Date
 ): { token: string; record: SessionRecord } {
   const { token, tokenHash } = newSessionToken();
@@ -108,6 +121,7 @@ export function buildSession(
       absoluteExpiresAt: new Date(now.getTime() + absoluteMs),
       userAgent: input.userAgent ?? null,
       ip: input.ip ?? null,
+      pendingMfa: input.pendingMfa ?? false,
     },
   };
 }

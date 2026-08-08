@@ -5,8 +5,10 @@ import { currentUser } from "@/lib/auth/current";
 import { listSessionsForUser } from "@/lib/repositories/sessions";
 import { mayRevealLinks } from "@/lib/notifications";
 import { describeDevice } from "@/lib/domain/device";
+import { mfaRequired } from "@/lib/domain/user";
 import { AuthShell } from "../auth-shell";
 import { ChangePassword, SendVerification, SessionRow, SignOutEverywhere } from "./forms";
+import { MfaSection } from "./mfa";
 
 export const metadata: Metadata = { title: "Your account — NikahCanada" };
 
@@ -70,6 +72,14 @@ export default async function SettingsPage() {
             Changing it signs you out on every device, including this one.
           </p>
           <ChangePassword />
+        </section>
+
+        {/* ------------------------------------------------ two-factor -- */}
+        <section className="flex flex-col gap-3 border-t border-soft-green pt-7">
+          <h2 className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
+            Two-factor authentication
+          </h2>
+          <MfaSection enabled={user.mfa.enabled} required={mfaRequired(user.roles)} />
         </section>
 
         {/* ------------------------------------------------- sessions -- */}

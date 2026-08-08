@@ -55,8 +55,33 @@ export async function currentUser(now: Date = new Date()): Promise<Session | nul
     return null;
   }
 
+  /* Password accepted, second factor not yet. Refused here rather than
+   * guarded per-page, so a new screen is protected without anyone
+   * remembering to think about it. */
+  if (session.pendingMfa) return null;
+
   const slid = slidIdleDeadline(session, isPrivileged(user.roles), now);
   if (slid) await touchSession(tokenHash, slid, now);
+
+  return { user, tokenHash };
+}
+
+/** The half-authenticated session, for the challenge screen alone. */
+export async function pendingMfaSession(now: Date = new Date()): Promise<Session | null> {
+  const jar = await cookies();
+  const token = jar.get(SESSION_COOKIE)?.value;
+  if (!token) return null;
+
+  const tokenHash = hashSessionToken(token);
+  const session = await findSessionByTokenHash(tokenHash);
+  if (!session || !session.pendingMfa) return null;
+
+  const user = await findUserById(session.userId);
+  if (!user || user.status !== "active") return null;
+  if (sessionInvalidReason(session, user.tokenVersion, now)) {
+    await deleteSession(tokenHash);
+    return null;
+  }
 
   return { user, tokenHash };
 }

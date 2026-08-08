@@ -49,3 +49,8 @@ export async function listSessionsForUser(userId: string): Promise<SessionRecord
     .toArray();
   return docs as unknown as SessionRecord[];
 }
+
+/** Promotes a half-authenticated session once the second factor is in. */
+export async function clearPendingMfa(tokenHash: string): Promise<void> {
+  await (await sessions()).updateOne({ tokenHash }, { $set: { pendingMfa: false } });
+}

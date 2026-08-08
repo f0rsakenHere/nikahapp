@@ -37,6 +37,11 @@ const PUBLIC_EXACT = new Set([
   /* The invitation link. He has no account until he accepts it, so
    * requiring a session here would make it impossible to use. */
   "/wali/invite",
+  /* The second-factor challenge. There *is* a cookie by this point, so
+   * the guard would pass anyway — but listing it makes the intent
+   * explicit rather than incidental. `currentUser()` is what actually
+   * keeps a half-authenticated session out of everything else. */
+  "/mfa",
 ]);
 const PUBLIC_PREFIXES = ["/legal/"];
 

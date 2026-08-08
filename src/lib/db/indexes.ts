@@ -44,6 +44,14 @@ export const INDEXES: Partial<Record<CollectionName, Spec[]>> = {
     },
   ],
 
+  [COLLECTIONS.auditLog]: [
+    { keys: { "subject.type": 1, "subject.id": 1, at: -1 }, options: { name: "subject_at" } },
+    { keys: { "actor.userId": 1, at: -1 }, options: { name: "actor_at" } },
+    { keys: { action: 1, at: -1 }, options: { name: "action_at" } },
+    /* No TTL. §5.10: no updates, no deletes, ever — old entries move to
+     * Atlas Online Archive rather than being removed. */
+  ],
+
   [COLLECTIONS.verificationTokens]: [
     { keys: { tokenHash: 1 }, options: { unique: true, name: "tokenHash_unique" } },
     { keys: { userId: 1, purpose: 1 }, options: { name: "userId_purpose" } },

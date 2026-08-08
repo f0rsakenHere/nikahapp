@@ -32,6 +32,11 @@ const INDEXES = {
     [{ userId: 1, lastSeenAt: -1 }, { name: "userId_lastSeen" }],
     [{ absoluteExpiresAt: 1 }, { name: "absoluteExpiresAt_ttl", expireAfterSeconds: 0 }],
   ],
+  auditLog: [
+    [{ "subject.type": 1, "subject.id": 1, at: -1 }, { name: "subject_at" }],
+    [{ "actor.userId": 1, at: -1 }, { name: "actor_at" }],
+    [{ action: 1, at: -1 }, { name: "action_at" }],
+  ],
   verificationTokens: [
     [{ tokenHash: 1 }, { unique: true, name: "tokenHash_unique" }],
     [{ userId: 1, purpose: 1 }, { name: "userId_purpose" }],
