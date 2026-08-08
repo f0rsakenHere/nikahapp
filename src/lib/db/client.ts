@@ -56,6 +56,14 @@ const options = {
   /* Atlas shared tiers cap total connections per cluster, and a preview
    * deploy per pull request multiplies whatever we choose here. */
   maxPoolSize: 10,
+
+  /* Without this the driver stores `undefined` as `null`, and a `null`
+   * fails every `.optional()` in a Zod schema — so a document saves
+   * happily and then throws on the next read, which is a confusing
+   * place to find out. Skipping the key instead means "not answered"
+   * round-trips as absent. Clearing a field is a `$unset`, done
+   * explicitly where it is meant (see repositories/profiles.ts). */
+  ignoreUndefined: true,
 };
 
 type Cache = { client: MongoClient; promise: Promise<MongoClient> };

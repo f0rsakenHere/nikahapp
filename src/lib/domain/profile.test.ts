@@ -1,0 +1,246 @@
+import { describe, expect, it } from "vitest";
+import {
+  CITIZENSHIP,
+  PROFILE_STATUSES,
+  ProfileDraftSchema,
+  STEPS,
+  completeness,
+  stepById,
+  stepsFor,
+  submitBlockers,
+  type ProfileDraft,
+} from "./profile";
+
+const NOW = new Date("2026-08-08T00:00:00Z");
+
+function draft(over: Partial<ProfileDraft> = {}): ProfileDraft {
+  return ProfileDraftSchema.parse({
+    id: "p1",
+    userId: "u1",
+    gender: "sister",
+    status: "draft",
+    initials: "F.A",
+    completeness: { step: 1, of: 5, percent: 0 },
+    createdAt: NOW,
+    updatedAt: NOW,
+    ...over,
+  });
+}
+
+/** A profile with every required answer filled in. */
+function complete(over: Partial<ProfileDraft> = {}): ProfileDraft {
+  return draft({
+    basics: {
+      birthYear: 1995,
+      city: "Montreal",
+      province: "QC",
+      citizenship: "citizen",
+    },
+    background: {
+      maritalStatus: "neverMarried",
+      children: "none",
+      languages: ["English", "Arabic"],
+    },
+    education: { level: "bachelor" },
+    deen: { salah: "fiveDaily", madhhab: "hanafi", dress: "hijab" },
+    lookingFor: { ageMin: 27, ageMax: 38, provinces: ["QC", "ON"] },
+    ...over,
+  } as Partial<ProfileDraft>);
+}
+
+describe("ProfileDraftSchema", () => {
+  it("accepts an empty draft — nothing is required to start", () => {
+    expect(draft().basics).toEqual({});
+  });
+
+  /* Regression. An outer `.default({})` on these objects gave back the
+     literal `{}` without running the inner defaults, so the arrays came
+     out undefined and `required()` was one short-circuit away from
+     throwing on `.length`. */
+  it("gives the array fields real defaults when the whole section is absent", () => {
+    const empty = draft();
+    expect(empty.background.languages).toEqual([]);
+    expect(empty.lookingFor.provinces).toEqual([]);
+    expect(empty.lookingFor.maritalStatus).toEqual([]);
+    expect(empty.lookingFor.madhhab).toEqual([]);
+  });
+
+  it("does not throw when asked for progress on a completely empty draft", () => {
+    expect(() => submitBlockers(draft(), { hasConfirmedWali: false })).not.toThrow();
+    expect(() => completeness(draft())).not.toThrow();
+  });
+
+  it("keeps a citizenship status a guessed list would have rejected", () => {
+    expect(CITIZENSHIP).toContain("refugee");
+    expect(draft({ basics: { citizenship: "refugee" } } as Partial<ProfileDraft>).basics.citizenship).toBe(
+      "refugee"
+    );
+  });
+
+  it("offers a way out of every sensitive question", () => {
+    /* A required radio group with no escape gets answered dishonestly,
+       and a dishonest answer is worse than a missing one here. */
+    for (const field of ["salah", "madhhab", "dress", "beard", "quran"] as const) {
+      const parsed = ProfileDraftSchema.safeParse({
+        ...draft(),
+        deen: { [field]: "preferNotToSay" },
+      });
+      expect(parsed.success).toBe(true);
+    }
+  });
+
+  it("refuses an age range that runs backwards", () => {
+    const bad = ProfileDraftSchema.safeParse({
+      ...draft(),
+      lookingFor: { ageMin: 40, ageMax: 30, provinces: [], maritalStatus: [], madhhab: [] },
+    });
+    expect(bad.success).toBe(false);
+    expect(!bad.success && bad.error.issues[0].message).toMatch(/youngest/);
+  });
+
+  it("allows a range with only one end set, mid-draft", () => {
+    const partial = ProfileDraftSchema.safeParse({
+      ...draft(),
+      lookingFor: { ageMin: 40, provinces: [], maritalStatus: [], madhhab: [] },
+    });
+    expect(partial.success).toBe(true);
+  });
+
+  it("stores a birth year, never an exact date", () => {
+    expect(Object.keys(ProfileDraftSchema.parse(draft()).basics)).not.toContain("dateOfBirth");
+  });
+
+  it("knows about every profile status in the plan", () => {
+    expect(PROFILE_STATUSES).toContain("pendingReview");
+    expect(PROFILE_STATUSES).toContain("withdrawn");
+  });
+
+  it("caps free text rather than accepting a novel", () => {
+    const tooLong = ProfileDraftSchema.safeParse({
+      ...draft(),
+      freeText: { aboutMe: "x".repeat(4001) },
+    });
+    expect(tooLong.success).toBe(false);
+  });
+
+  it("accepts the ~1,800 character biography a real applicant wrote", () => {
+    const ok = ProfileDraftSchema.safeParse({
+      ...draft(),
+      freeText: { aboutMe: "x".repeat(1800) },
+    });
+    expect(ok.success).toBe(true);
+  });
+});
+
+describe("stepsFor", () => {
+  it("shows a sister all five steps", () => {
+    expect(stepsFor("sister").map((s) => s.id)).toEqual([
+      "basics",
+      "background",
+      "deen",
+      "guardian",
+      "lookingFor",
+    ]);
+  });
+
+  it("skips the wali step for a brother — he gives a reference instead", () => {
+    expect(stepsFor("brother").map((s) => s.id)).not.toContain("guardian");
+    expect(stepsFor("brother")).toHaveLength(4);
+  });
+
+  it("matches the mock-ups: deen is step 3 of 5, the wali step 4", () => {
+    expect(stepById("deen")?.n).toBe(3);
+    expect(stepById("guardian")?.n).toBe(4);
+    expect(STEPS).toHaveLength(5);
+  });
+});
+
+describe("completeness", () => {
+  it("starts at nothing", () => {
+    expect(completeness(draft())).toEqual({ step: 1, of: 5, percent: 0 });
+  });
+
+  it("counts a brother out of four", () => {
+    expect(completeness(draft({ gender: "brother" })).of).toBe(4);
+  });
+
+  it("resumes at the first unfinished step, not the furthest reached", () => {
+    /* Someone who skipped step 2 and finished step 3 goes back to 2. */
+    const skipped = complete({
+      background: { maritalStatus: undefined, children: undefined, languages: [] },
+    } as Partial<ProfileDraft>);
+    expect(completeness(skipped).step).toBe(2);
+  });
+
+  it("holds a fully-answered sister at 80% until her wali confirms", () => {
+    /* The honest number. Her profile cannot go live yet, and showing
+       100% next to "waiting on your wali" is the kind of contradiction
+       that makes people distrust the whole screen. */
+    const c = completeness(complete());
+    expect(c.percent).toBe(80);
+    expect(c.step).toBe(4); // resume lands on the wali step
+  });
+
+  it("reaches 100% for a brother, who is never shown that step", () => {
+    const brother = complete({ gender: "brother", deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "yes" } } as Partial<ProfileDraft>);
+    expect(completeness(brother)).toEqual({ step: 4, of: 4, percent: 100 });
+  });
+});
+
+describe("the deen step is gendered", () => {
+  it("asks a sister about hijab, and will not accept a beard instead", () => {
+    const sister = complete({ deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "yes" } } as Partial<ProfileDraft>);
+    expect(submitBlockers(sister, { hasConfirmedWali: true })).toContainEqual({
+      step: "deen",
+      reason: "incomplete",
+    });
+  });
+
+  it("asks a brother about his beard, and will not accept hijab instead", () => {
+    const brother = complete({
+      gender: "brother",
+      deen: { salah: "fiveDaily", madhhab: "hanafi", dress: "hijab" },
+    } as Partial<ProfileDraft>);
+    expect(submitBlockers(brother, { hasConfirmedWali: false })).toContainEqual({
+      step: "deen",
+      reason: "incomplete",
+    });
+  });
+});
+
+describe("submitBlockers", () => {
+  it("passes a complete sister with a confirmed wali", () => {
+    expect(submitBlockers(complete(), { hasConfirmedWali: true })).toEqual([]);
+  });
+
+  it("blocks a complete sister whose wali has not confirmed", () => {
+    expect(submitBlockers(complete(), { hasConfirmedWali: false })).toEqual([
+      { step: "guardian", reason: "wali-not-confirmed" },
+    ]);
+  });
+
+  it("never asks a brother for a wali", () => {
+    const brother = complete({
+      gender: "brother",
+      deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "trimmed" },
+    } as Partial<ProfileDraft>);
+    expect(submitBlockers(brother, { hasConfirmedWali: false })).toEqual([]);
+  });
+
+  it("reports every unfinished step at once, not one at a time", () => {
+    const blockers = submitBlockers(draft(), { hasConfirmedWali: false });
+    expect(blockers.map((b) => b.step)).toEqual([
+      "basics",
+      "background",
+      "deen",
+      "lookingFor",
+      "guardian",
+    ]);
+  });
+
+  it("does not block on a field that is genuinely optional", () => {
+    /* Height, ethnicity, quran, family detail and the free text are all
+       unset in `complete()` and must not stand in anyone's way. */
+    expect(submitBlockers(complete(), { hasConfirmedWali: true })).toEqual([]);
+  });
+});
