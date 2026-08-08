@@ -25,6 +25,10 @@ export const COLLECTIONS = {
   messages: "messages",
   payments: "payments",
   photoExchanges: "photoExchanges",
+  /* The browse model (§3.1 D1). `introductions` is kept for the
+   * staff-created referrals that continue alongside it. */
+  connectionRequests: "connectionRequests",
+  connectionLedger: "connectionLedger",
   auditLog: "auditLog",
 
   /* §5.11 — supporting */
