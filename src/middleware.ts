@@ -34,6 +34,9 @@ const PUBLIC_EXACT = new Set([
   "/forgot-password",
   "/reset-password",
   "/verify-email",
+  /* The invitation link. He has no account until he accepts it, so
+   * requiring a session here would make it impossible to use. */
+  "/wali/invite",
 ]);
 const PUBLIC_PREFIXES = ["/legal/"];
 

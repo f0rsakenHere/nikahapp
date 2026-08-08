@@ -59,8 +59,14 @@ export const UserSchema = z.object({
     .nullable(),
 
   /* 🔒 Exact date. Matching uses `profiles.basics.birthYear` in the clear;
-   * this is the encrypted original, seen by staff during verification. */
-  dateOfBirth: z.date(),
+   * this is the encrypted original, seen by staff during verification.
+   *
+   * Null for a wali. He arrives by accepting an emailed invitation, and
+   * that screen is the most fragile in the product — an older man, on a
+   * phone, being asked to vouch for a relative. Every field it does not
+   * ask for is one fewer reason to abandon it. The 18+ gate is about
+   * people seeking marriage; his identity is checked by staff (D10). */
+  dateOfBirth: z.date().nullable(),
 
   mfa: z.object({ enabled: z.boolean(), secret: z.string().nullable() }),
 
@@ -78,6 +84,10 @@ export const UserSchema = z.object({
   .refine((u) => !mfaRequired(u.roles) || u.mfa.enabled, {
     message: "staff, verifier and admin accounts must have 2FA enabled",
     path: ["mfa", "enabled"],
+  })
+  .refine((u) => !u.roles.includes("member") || u.dateOfBirth !== null, {
+    message: "a member account must record a date of birth",
+    path: ["dateOfBirth"],
   })
   .refine((u) => u.status !== "closed" || u.closedAt !== null, {
     message: "a closed account must record when it closed",

@@ -6,6 +6,8 @@ import { fieldsForStep } from "@/lib/domain/profile-form";
 import { stepById, stepsFor, type ProfileDraft } from "@/lib/domain/profile";
 import { AuthShell } from "../../auth-shell";
 import { StepForm } from "./form";
+import { GuardianStep } from "./guardian";
+import { listGuardianshipsForMember } from "@/lib/repositories/guardianships";
 
 export const metadata: Metadata = { title: "Your profile — NikahCanada" };
 
@@ -41,6 +43,23 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
   const position = visible.findIndex((s) => s.id === step.id) + 1;
   const fields = fieldsForStep(step.id, profile.gender);
 
+  /* Only the wali step needs this, and only for a sister, so it is not
+     fetched for the other four. */
+  const outstanding =
+    step.id === "guardian"
+      ? (await listGuardianshipsForMember(session.user.id)).find((g) => g.status === "invited")
+      : undefined;
+  const pending = outstanding
+    ? {
+        name: outstanding.invited.name,
+        email: outstanding.invited.email,
+        invitedAt: new Intl.DateTimeFormat("en-CA", {
+          dateStyle: "medium",
+          timeZone: "UTC",
+        }).format(outstanding.invited.invitedAt),
+      }
+    : null;
+
   return (
     <AuthShell title={step.title} blurb={step.blurb}>
       <div className="mb-7 flex flex-col gap-2">
@@ -63,25 +82,7 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
       </div>
 
       {step.id === "guardian" ? (
-        /* The wali step is not a form: it creates a guardianship and
-         * emails an invitation, and neither exists yet. Saying so beats
-         * showing four inputs that go nowhere. */
-        <div className="flex flex-col gap-4">
-          <div className="rounded-md border border-peach/40 bg-soft-peach/60 px-4 py-4">
-            <p className="text-[14px] font-semibold text-peach-deep">Not built yet.</p>
-            <p className="mt-2 text-[13px] leading-[20px] text-text">
-              Registering your wali sends him an invitation by email, and the email service has
-              not been set up. The rest of your profile can be completed now — this step is the
-              last thing standing between it and review.
-            </p>
-          </div>
-          <a
-            href="/onboarding"
-            className="grid h-12 place-items-center rounded-pill border-2 border-accent-deep text-[14px] font-semibold text-accent-deep"
-          >
-            Back to your progress
-          </a>
-        </div>
+        <GuardianStep pending={pending} />
       ) : (
         <StepForm
           step={step.id}

@@ -45,7 +45,7 @@ function make(over: Partial<Guardianship> = {}): Guardianship {
       email: "wali@example.com",
       phone: "+15140000000",
       invitedAt: INVITED_AT,
-      token: "0123456789abcdef0123",
+      tokenHash: "a".repeat(64),
       expiresAt: EXPIRES_AT,
       remindersSent: 0,
     },
@@ -97,9 +97,10 @@ describe("GuardianshipSchema", () => {
     expect(GuardianshipSchema.safeParse(bad).success).toBe(false);
   });
 
-  it("rejects a guessable invitation token", () => {
-    const bad = make({ invited: { ...make().invited, token: "abc" } });
+  it("stores a digest, not a token — a leaked dump must not grant access", () => {
+    const bad = make({ invited: { ...make().invited, tokenHash: "abc" } });
     expect(GuardianshipSchema.safeParse(bad).success).toBe(false);
+    expect(GuardianshipSchema.safeParse(make()).success).toBe(true);
   });
 });
 

@@ -2,6 +2,7 @@
 import { ObjectId, type WithId } from "mongodb";
 import { COLLECTIONS } from "@/lib/db/collections";
 import { getDb } from "@/lib/db/client";
+import { stripUndefined } from "@/lib/db/strip";
 import { ProfileDraftSchema, completeness, type ProfileDraft } from "@/lib/domain/profile";
 
 type ProfileDoc = Omit<ProfileDraft, "id" | "userId"> & { _id: ObjectId; userId: ObjectId };
@@ -28,27 +29,6 @@ async function profiles() {
   return (await getDb()).collection<ProfileDoc>(COLLECTIONS.profiles);
 }
 
-/* Drops keys whose value is `undefined`, one level into each section.
- *
- * The client sets `ignoreUndefined`, which does the same thing — but
- * this does not depend on a connection option being right, and the
- * failure it prevents is nasty: the driver's default is to store
- * `undefined` as `null`, `null` fails every `.optional()` in the schema,
- * and the document therefore saves without complaint and then throws on
- * the next read. Two lines here for a bug that presents three screens
- * away from its cause. */
-function stripUndefined<T extends Record<string, unknown>>(value: T): T {
-  const out: Record<string, unknown> = {};
-  for (const [key, v] of Object.entries(value)) {
-    if (v === undefined) continue;
-    if (v && typeof v === "object" && !Array.isArray(v) && !(v instanceof Date)) {
-      out[key] = stripUndefined(v as Record<string, unknown>);
-    } else {
-      out[key] = v;
-    }
-  }
-  return out as T;
-}
 
 export async function findProfileByUserId(userId: string): Promise<ProfileDraft | null> {
   if (!ObjectId.isValid(userId)) return null;

@@ -8,14 +8,16 @@ export const metadata: Metadata = { title: "Sign in — NikahCanada" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; reset?: string; changed?: string; signedout?: string }>;
+  searchParams: Promise<{ next?: string; reset?: string; changed?: string; signedout?: string; wali?: string }>;
 }) {
-  const { next, reset, changed, signedout } = await searchParams;
+  const { next, reset, changed, signedout, wali } = await searchParams;
 
   /* Said here rather than on the page they came from, because all three
      end in a redirect to this screen and a message that survives the
      redirect is the only one they will see. */
-  const notice = reset
+  const notice = wali
+    ? "Thank you — you are confirmed as her wali. Sign in to see your account."
+    : reset
     ? "Your password has been reset. Sign in with the new one."
     : changed
       ? "Your password has been changed. Sign in again."

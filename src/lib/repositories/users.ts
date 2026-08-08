@@ -5,6 +5,7 @@
 import { ObjectId, type Filter, type WithId } from "mongodb";
 import { COLLECTIONS } from "@/lib/db/collections";
 import { getDb, withTransaction } from "@/lib/db/client";
+import { stripUndefined } from "@/lib/db/strip";
 import { deriveInitials } from "@/lib/domain/initials";
 import { lockoutUntil, mfaRequired, type Role, type User } from "@/lib/domain/user";
 
@@ -86,7 +87,7 @@ export async function createMemberAccount(
   try {
     await withTransaction(async (session) => {
       const db = await getDb();
-      await db.collection<UserDoc>(COLLECTIONS.users).insertOne(userDoc, { session });
+      await db.collection<UserDoc>(COLLECTIONS.users).insertOne(stripUndefined(userDoc), { session });
       await db.collection(COLLECTIONS.profiles).insertOne(
         {
           _id: profileId,

@@ -60,7 +60,12 @@ export const GuardianshipSchema = z
       email: z.email(),
       phone: z.string().min(1).optional(),
       invitedAt: z.date(),
-      token: z.string().min(16),
+      /* The digest, never the token. §7.1 calls this the most
+       * security-sensitive link in the system — it grants a man read
+       * access to a woman's private correspondence — so a leaked
+       * database dump must not hand anyone a working invitation. The
+       * plaintext exists once, in the email, and nowhere else. */
+      tokenHash: z.string().length(64),
       expiresAt: z.date(),
       remindersSent: z.number().int().min(0),
     }),
@@ -101,6 +106,26 @@ export const GuardianshipSchema = z
   });
 
 export type Guardianship = z.infer<typeof GuardianshipSchema>;
+
+/* Who a wali can be. Islamically he is a male relative on the father's
+ * side, in a defined order of precedence; "someone else" is here because
+ * that order breaks in real families — a revert with no Muslim relatives,
+ * or a woman whose father has died and whose brothers are not practising
+ * — and the answer then is usually a local imam. Staff need to see which
+ * case they are looking at, so it is a field rather than free text.
+ *
+ * ⚠ Needs the scholar's review alongside the rest of §3.4. */
+export const WALI_RELATIONSHIPS = [
+  "father",
+  "grandfather",
+  "brother",
+  "uncle",
+  "sonOfBrother",
+  "imam",
+  "other",
+] as const;
+
+export type WaliRelationship = (typeof WALI_RELATIONSHIPS)[number];
 
 /* ------------------------------------------------------------- events --- */
 

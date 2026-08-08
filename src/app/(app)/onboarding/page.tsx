@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { currentUser } from "@/lib/auth/current";
 import { logout } from "@/lib/auth/actions";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
+import { hasConfirmedWali } from "@/lib/repositories/guardianships";
 import { STEPS, stepsFor, submitBlockers } from "@/lib/domain/profile";
 import { Check } from "@/components/app/kit";
 import { AuthShell } from "../auth-shell";
@@ -23,12 +24,14 @@ export default async function OnboardingPage() {
 
   const { user } = session;
   const profile = await findProfileByUserId(user.id);
-  if (!profile) redirect("/register");
+  /* A wali has no profile of his own. He belongs in his portal, not on a
+     screen telling him to finish something he never started. */
+  if (!profile) redirect(user.roles.includes("wali") ? "/wali" : "/register");
 
   const visible = stepsFor(profile.gender);
-  /* Nothing invites a wali yet, so this is honestly false for everyone
-     until that flow exists. */
-  const blockers = submitBlockers(profile, { hasConfirmedWali: false });
+  const blockers = submitBlockers(profile, {
+    hasConfirmedWali: await hasConfirmedWali(user.id),
+  });
   const blocked = new Set(blockers.map((b) => b.step));
 
   return (

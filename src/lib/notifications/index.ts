@@ -20,12 +20,25 @@
 export type Message =
   | { to: string; kind: "verifyEmail"; name: string; link: string }
   | { to: string; kind: "resetPassword"; name: string; link: string }
-  | { to: string; kind: "passwordChanged"; name: string };
+  | { to: string; kind: "passwordChanged"; name: string }
+  | {
+      to: string;
+      kind: "waliInvitation";
+      /** His name, as she typed it. */
+      name: string;
+      /** Hers — first name only. If she mistypes his address, a stranger
+       *  learns that someone with this first name is seeking marriage,
+       *  which is recoverable. Her full name would not be. */
+      memberFirstName: string;
+      relationship: string;
+      link: string;
+    };
 
 const SUBJECTS: Record<Message["kind"], string> = {
   verifyEmail: "Confirm your email address",
   resetPassword: "Reset your NikahCanada password",
   passwordChanged: "Your NikahCanada password was changed",
+  waliInvitation: "You have been asked to act as a wali",
 };
 
 function body(message: Message): string {
@@ -49,6 +62,24 @@ function body(message: Message): string {
         "",
         "The link works once and expires in an hour. If it was not you, you can",
         "ignore this — nothing has changed.",
+      ].join("\n");
+
+    case "waliInvitation":
+      return [
+        `Assalamu alaikum ${message.name},`,
+        "",
+        `${message.memberFirstName} has registered with NikahCanada and named you as her`,
+        `wali. She recorded your relationship as: ${message.relationship}.`,
+        "",
+        "Her profile does not go live until you confirm. As her wali you will be",
+        "able to see every introduction she receives, read every message she",
+        "exchanges, approve or decline before any conversation opens, and end one",
+        "at any point.",
+        "",
+        message.link,
+        "",
+        "The link works once and expires in two weeks. If this was not expected,",
+        "you can decline on the same page.",
       ].join("\n");
 
     case "passwordChanged":
