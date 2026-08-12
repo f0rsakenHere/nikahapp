@@ -3,7 +3,13 @@ import { ObjectId, type WithId } from "mongodb";
 import { COLLECTIONS } from "@/lib/db/collections";
 import { getDb } from "@/lib/db/client";
 import { stripUndefined } from "@/lib/db/strip";
-import { ProfileDraftSchema, completeness, type ProfileDraft } from "@/lib/domain/profile";
+import {
+  ProfileDraftSchema,
+  completeness,
+  poolStatuses,
+  type ProfileDraft,
+} from "@/lib/domain/profile";
+import { DAY, NEW_DAYS, TOUCH_EVERY } from "@/lib/domain/activity";
 
 type ProfileDoc = Omit<ProfileDraft, "id" | "userId"> & { _id: ObjectId; userId: ObjectId };
 
@@ -120,6 +126,71 @@ export async function submitForReview(
     { $set: { status: "pendingReview", updatedAt: now, submittedAt: now } }
   );
   return result.matchedCount === 1 ? { ok: true } : { ok: false, error: "not-a-draft" };
+}
+
+/** Records that this member was here.
+ *
+ *  Called from the app's chrome, so it runs on every member screen and
+ *  no page has to remember to do it. Cheap enough to sit there: the
+ *  interval is in the filter, so all but one render an hour matches
+ *  nothing and writes nothing, and there is no read first — a
+ *  find-then-write would double the round trips to save nothing.
+ *
+ *  Never throws into the caller. A page that failed to render because
+ *  presence could not be recorded would be trading the whole screen for
+ *  a badge on somebody else's card. */
+export async function touchActivity(userId: string, now: Date): Promise<void> {
+  if (!ObjectId.isValid(userId)) return;
+  try {
+    await (await profiles()).updateOne(
+      {
+        userId: new ObjectId(userId),
+        $or: [
+          { lastActiveAt: { $lt: new Date(now.getTime() - TOUCH_EVERY) } },
+          { lastActiveAt: { $exists: false } },
+        ],
+      } as never,
+      { $set: { lastActiveAt: now } } as never
+    );
+  } catch {
+    /* Deliberately swallowed. See above. */
+  }
+}
+
+/** What the pool actually holds, for the screens that say so.
+ *
+ *  Counted, never estimated and never configured: a members figure that
+ *  is anything other than the number of live profiles is a lie a member
+ *  can catch by counting the cards in front of them.
+ *
+ *  Both counts are of the whole pool rather than of what one reader may
+ *  see. The reader's own view is filtered by gender, by their filters
+ *  and by who has a wali — a number that moved when you changed the age
+ *  slider would be answering a different question from the one the
+ *  sentence asks. */
+export async function poolCounts(
+  now: Date,
+  settings: { requireVerifiedToBrowse: boolean }
+): Promise<{ total: number; newThisWeek: number }> {
+  const col = await profiles();
+  const status = { $in: poolStatuses(settings) };
+  const since = new Date(now.getTime() - NEW_DAYS * DAY);
+  const [total, newThisWeek] = await Promise.all([
+    col.countDocuments({ status } as never),
+    /* Approved on one branch, submitted on the other. `liveAt` is only
+       written when staff approve, so counting it alone reported nought
+       new every week for as long as the queue went unworked — the one
+       number on the screen that would have looked most like a dead
+       product. */
+    col.countDocuments({
+      status,
+      $or: [
+        { liveAt: { $gte: since } },
+        { liveAt: { $exists: false }, submittedAt: { $gte: since } },
+      ],
+    } as never),
+  ]);
+  return { total, newThisWeek };
 }
 
 export type QueueRow = {

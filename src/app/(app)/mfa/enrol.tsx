@@ -32,7 +32,7 @@ export function MfaEnrolAtSignIn({ next }: { next?: string }) {
   const active = state.secret ? state : setup;
 
   if (!active?.secret) {
-    return <p className="text-[13px] text-text">Preparing…</p>;
+    return <p className="text-[18px] text-text">Preparing…</p>;
   }
 
   return (
@@ -41,19 +41,19 @@ export function MfaEnrolAtSignIn({ next }: { next?: string }) {
       <input type="hidden" name="secret" value={active.secret} />
       {next ? <input type="hidden" name="next" value={next} /> : null}
 
-      <code className="select-all break-all rounded-md border border-soft-green bg-mist px-3.5 py-3 font-mono text-[13px] tracking-[1px] text-black">
+      <code className="select-all break-all rounded-md border border-soft-green bg-mist px-3.5 py-3 font-mono text-[18px] tracking-[1px] text-black">
         {active.secret}
       </code>
 
       <a
         href={active.uri}
-        className="text-[13px] font-semibold text-peach-deep underline-offset-2 hover:underline"
+        className="text-[18px] font-semibold text-peach-deep underline-offset-2 hover:underline"
       >
         Or open it in your authenticator app
       </a>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
+        <span className="text-[18px] font-semibold uppercase tracking-[0.6px] text-text/70">
           The six digits it shows
         </span>
         <input

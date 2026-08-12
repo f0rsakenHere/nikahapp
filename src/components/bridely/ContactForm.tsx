@@ -11,17 +11,15 @@ import { Envelope, MapPin, PhoneVolume, User } from "./primitives/Icons";
 import { Field, SelectField, TextArea } from "./primitives/Field";
 import { RuledPaper } from "./primitives/Decor";
 
-/* Contact us — and the page's only form.
-
-   Every "Register Now" button on the page lands here, because on the live
-   site registering is sending us your profile. That is why Registration
-   is the first option in the subject select and why the body copy leads
-   with registration being free. The select still opens on a neutral
-   prompt — this is the general contact form too.
+/* Contact us — the page's only form, and no longer where registration
+   happens: every "Register Now" now goes to /register, which is the real
+   thing. This is for people who want to ask something first, so
+   Registration stays in the subject select but the form is general.
 
    The template posted to a contact-form.php. There is no endpoint here
    yet, so this validates natively, acknowledges locally and sends
    nothing — wire `onSubmit` to a real handler before this goes live.
+   ⚠ Until then this form silently drops what people write in it.
 
    A picture is deliberately not asked for: the live site is explicit that
    one is not required at registration. */

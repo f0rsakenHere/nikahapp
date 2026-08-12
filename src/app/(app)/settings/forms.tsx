@@ -13,7 +13,7 @@ import { DevLink, FormError, SubmitButton, TextField } from "@/components/app/fo
 const EMPTY: AccountState = {};
 
 const GHOST =
-  "h-12 w-full rounded-pill border-2 border-accent-deep text-[14px] font-semibold text-accent-deep";
+  "h-12 w-full rounded-pill border-2 border-accent-deep text-[18px] font-semibold text-accent-deep";
 
 export function SendVerification() {
   const [state, action] = useActionState(
@@ -22,7 +22,7 @@ export function SendVerification() {
   );
   return (
     <form action={action} className="flex flex-col gap-2">
-      {state.done ? <p className="text-[12px] text-accent-deep">{state.done}</p> : null}
+      {state.done ? <p className="text-[18px] text-accent-deep">{state.done}</p> : null}
       <DevLink href={state.devLink} />
       <button type="submit" className={GHOST}>
         Send me a confirmation link
@@ -80,17 +80,17 @@ export function SessionRow({
   return (
     <li className="flex items-center gap-3 rounded-md border border-soft-green px-3.5 py-3">
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-[13px] font-semibold text-black">
+        <span className="truncate text-[18px] font-semibold text-black">
           {device}
           {isCurrent ? <span className="ml-2 font-normal text-accent-deep">this device</span> : null}
         </span>
-        <span className="text-[11px] text-text/70">Last used {lastSeen}</span>
+        <span className="text-[18px] text-text/70">Last used {lastSeen}</span>
       </span>
       {isCurrent ? null : (
         <form action={action}>
           <button
             type="submit"
-            className="rounded-pill border border-soft-green px-3 py-1.5 text-[11px] font-semibold text-peach-deep"
+            className="rounded-pill border border-soft-green px-3 py-1.5 text-[18px] font-semibold text-peach-deep"
           >
             Sign out
           </button>

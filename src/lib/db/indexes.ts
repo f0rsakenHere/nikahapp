@@ -31,6 +31,23 @@ export const INDEXES: Partial<Record<CollectionName, Spec[]>> = {
     { keys: { status: 1, gender: 1 }, options: { name: "status_gender" } },
   ],
 
+  [COLLECTIONS.notifications]: [
+    { keys: { userId: 1, createdAt: -1 }, options: { name: "member_recent" } },
+    /* The unread count runs on every page that shows the bell, which is
+     * all of them. */
+    { keys: { userId: 1, readAt: 1 }, options: { name: "member_unread" } },
+  ],
+
+  [COLLECTIONS.browseMarks]: [
+    /* One mark per pair: saving somebody you passed on replaces the
+     * pass rather than leaving both on the record. */
+    { keys: { userId: 1, profileId: 1 }, options: { unique: true, name: "member_profile_unique" } },
+    { keys: { userId: 1, kind: 1, at: -1 }, options: { name: "member_kind_recent" } },
+    /* For erasure: a withdrawn member has to come out of everybody
+     * else's saved list too. */
+    { keys: { targetUserId: 1 }, options: { name: "target" } },
+  ],
+
   [COLLECTIONS.sessions]: [
     { keys: { tokenHash: 1 }, options: { unique: true, name: "tokenHash_unique" } },
     { keys: { userId: 1, lastSeenAt: -1 }, options: { name: "userId_lastSeen" } },
@@ -42,6 +59,18 @@ export const INDEXES: Partial<Record<CollectionName, Spec[]>> = {
       keys: { absoluteExpiresAt: 1 },
       options: { name: "absoluteExpiresAt_ttl", expireAfterSeconds: 0 },
     },
+  ],
+
+  [COLLECTIONS.conversations]: [
+    { keys: { requestId: 1 }, options: { unique: true, name: "requestId_unique" } },
+    {
+      keys: { "participants.userId": 1, state: 1, lastMessageAt: -1 },
+      options: { name: "seat_state_recent" },
+    },
+  ],
+
+  [COLLECTIONS.messages]: [
+    { keys: { conversationId: 1, sentAt: 1 }, options: { name: "thread" } },
   ],
 
   [COLLECTIONS.connectionRequests]: [

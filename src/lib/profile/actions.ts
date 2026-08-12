@@ -87,5 +87,7 @@ export async function submitProfile(): Promise<void> {
   });
 
   revalidatePath("/onboarding");
-  redirect("/onboarding?submitted=1");
+  /* Not back to the checklist. The work is done and the answer to "what
+     now" is the account, not the form that fed it. */
+  redirect("/dashboard?submitted=1");
 }

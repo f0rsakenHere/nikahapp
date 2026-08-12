@@ -11,7 +11,7 @@ import { FormError, SubmitButton } from "@/components/app/form";
 const EMPTY: MfaState = {};
 
 const GHOST =
-  "h-12 w-full rounded-pill border-2 border-accent-deep text-[14px] font-semibold text-accent-deep";
+  "h-12 w-full rounded-pill border-2 border-accent-deep text-[18px] font-semibold text-accent-deep";
 
 export function MfaSection({ enabled, required }: { enabled: boolean; required: boolean }) {
   const [setup, setSetup] = useState<MfaState | null>(null);
@@ -20,7 +20,7 @@ export function MfaSection({ enabled, required }: { enabled: boolean; required: 
 
   if (enabled) {
     return (
-      <p className="text-[12px] text-accent-deep">
+      <p className="text-[18px] text-accent-deep">
         On. You are asked for a code from your authenticator app each time you sign in.
       </p>
     );
@@ -31,7 +31,7 @@ export function MfaSection({ enabled, required }: { enabled: boolean; required: 
   if (!active?.secret) {
     return (
       <div className="flex flex-col gap-3">
-        <p className="text-[13px] leading-[20px] text-text">
+        <p className="text-[18px] leading-[26px] text-text">
           {required
             ? "Required for this account. You read other people's private correspondence, so a password on its own is not enough."
             : "Optional, and worth turning on. It means a stolen password is not enough to reach your account."}
@@ -57,7 +57,7 @@ export function MfaSection({ enabled, required }: { enabled: boolean; required: 
       <FormError>{active.error}</FormError>
       <input type="hidden" name="secret" value={active.secret} />
 
-      <p className="text-[13px] leading-[20px] text-text">
+      <p className="text-[18px] leading-[26px] text-text">
         Add this to your authenticator app, then type the code it gives you.
       </p>
 
@@ -65,19 +65,19 @@ export function MfaSection({ enabled, required }: { enabled: boolean; required: 
           dependency, and this is a staff screen used once per account —
           every authenticator app accepts manual entry. Worth replacing
           with a QR before non-technical staff are onboarded. */}
-      <code className="select-all break-all rounded-md border border-soft-green bg-mist px-3.5 py-3 font-mono text-[13px] tracking-[1px] text-black">
+      <code className="select-all break-all rounded-md border border-soft-green bg-mist px-3.5 py-3 font-mono text-[18px] tracking-[1px] text-black">
         {active.secret}
       </code>
 
       <a
         href={active.uri}
-        className="text-[13px] font-semibold text-peach-deep underline-offset-2 hover:underline"
+        className="text-[18px] font-semibold text-peach-deep underline-offset-2 hover:underline"
       >
         Or open it in your authenticator app
       </a>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
+        <span className="text-[18px] font-semibold uppercase tracking-[0.6px] text-text/70">
           The six digits it shows
         </span>
         <input

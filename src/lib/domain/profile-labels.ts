@@ -121,6 +121,32 @@ export const PROVINCE_LABELS: Labels<typeof PROVINCES> = {
   outsideCanada: "Outside Canada",
 };
 
+/* Every height the profile will accept, as something a person can
+   recognise rather than calculate.
+ *
+ * Stored in centimetres, because that is one number and never 5'8 vs
+ * 5"8 vs 5.8 — but almost nobody in Canada knows their height that way,
+ * and a box asking for it made the answer a conversion exercise. Both
+ * units are on every row, so the list can be read either way round.
+ *
+ * The feet-and-inches side is rounded and two adjacent rows can share
+ * one — 172 and 173 are both about 5′8″. The centimetres beside them
+ * are exact and are what gets stored, so nothing is actually ambiguous.
+ *
+ * The range matches `heightCm` in the profile schema. Widening one
+ * without the other gives a dropdown whose ends the schema rejects. */
+const HEIGHT_MIN_CM = 137;
+const HEIGHT_MAX_CM = 220;
+
+export const HEIGHT_OPTIONS = Array.from(
+  { length: HEIGHT_MAX_CM - HEIGHT_MIN_CM + 1 },
+  (_, i) => {
+    const cm = HEIGHT_MIN_CM + i;
+    const inches = Math.round(cm / 2.54);
+    return { value: String(cm), label: `${Math.floor(inches / 12)}′${inches % 12}″ · ${cm} cm` };
+  }
+);
+
 /** `["fiveDaily", …]` → `[{ value, label }, …]`, in declaration order. */
 export function toOptions<T extends readonly string[]>(
   values: T,

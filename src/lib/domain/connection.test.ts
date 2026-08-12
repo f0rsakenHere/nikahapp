@@ -44,8 +44,8 @@ function ctx(over: Partial<SendContext> = {}): SendContext {
     balance: 10,
     recipientPending: 0,
     existingBetweenPair: null,
-    senderVerified: true,
-    recipientVerified: true,
+    senderInPool: true,
+    recipientInPool: true,
     senderGender: "brother",
     blocked: false,
     ...over,
@@ -166,22 +166,31 @@ describe("canSend", () => {
     });
   });
 
-  it("refuses both directions of unverified when verification is required", () => {
-    expect(canSend("a", "b", ctx({ senderVerified: false }), settings())).toEqual({
+  it("refuses both directions when either is outside the pool", () => {
+    expect(canSend("a", "b", ctx({ senderInPool: false }), settings())).toEqual({
       ok: false,
       reason: "not-verified",
     });
-    expect(canSend("a", "b", ctx({ recipientVerified: false }), settings())).toEqual({
+    expect(canSend("a", "b", ctx({ recipientInPool: false }), settings())).toEqual({
       ok: false,
       reason: "recipient-not-verified",
     });
   });
 
-  it("lets an unverified pool browse when that is turned on", () => {
+  /* The regression this pair exists for: both checks used to sit behind
+     `requireVerifiedToBrowse`, so deferring approval did not widen who
+     was in the pool — it removed the question. A draft could ask. */
+  it("still refuses somebody outside the pool when approval is deferred", () => {
     const open = settings({ requireVerifiedToBrowse: false });
-    expect(canSend("a", "b", ctx({ senderVerified: false, recipientVerified: false }), open).ok).toBe(
-      true
-    );
+    expect(canSend("a", "b", ctx({ senderInPool: false }), open)).toEqual({
+      ok: false,
+      reason: "not-verified",
+    });
+    expect(canSend("a", "b", ctx({ recipientInPool: false }), open)).toEqual({
+      ok: false,
+      reason: "recipient-not-verified",
+    });
+    expect(canSend("a", "b", ctx(), open).ok).toBe(true);
   });
 });
 
@@ -296,23 +305,37 @@ describe("ConnectionRequestSchema", () => {
 /* ------------------------------------------------------------ browse -- */
 
 describe("appearsInBrowse", () => {
-  const member = { verified: true, pendingInbound: 0, status: "live" };
+  const member = { pendingInbound: 0, status: "live" };
+  /* Both spelled out rather than leaning on the default, which is the
+     product's current stance and not a fact these rules should be read
+     through — the whole point of the pair is that either may be set. */
+  const gated = settings({ requireVerifiedToBrowse: true });
+  const open = settings({ requireVerifiedToBrowse: false });
 
-  it("shows a live, verified member with room in their inbox", () => {
-    expect(appearsInBrowse(member, settings())).toBe(true);
+  it("shows a live member with room in their inbox", () => {
+    expect(appearsInBrowse(member, gated)).toBe(true);
+    expect(appearsInBrowse(member, open)).toBe(true);
   });
 
-  it("hides anyone whose profile is not live", () => {
-    for (const status of ["draft", "pendingReview", "paused", "withdrawn"]) {
-      expect(appearsInBrowse({ ...member, status }, settings())).toBe(false);
+  it("hides anyone not approved while approval is the gate", () => {
+    for (const status of ["draft", "pendingReview", "verifying", "paused", "withdrawn"]) {
+      expect(appearsInBrowse({ ...member, status }, gated)).toBe(false);
     }
   });
 
-  it("hides an unverified member when verification is required", () => {
-    expect(appearsInBrowse({ ...member, verified: false }, settings())).toBe(false);
-    expect(
-      appearsInBrowse({ ...member, verified: false }, settings({ requireVerifiedToBrowse: false }))
-    ).toBe(true);
+  it("shows a submitted profile once approval is deferred", () => {
+    for (const status of ["pendingCall", "pendingReview", "verifying", "live"]) {
+      expect(appearsInBrowse({ ...member, status }, open)).toBe(true);
+    }
+  });
+
+  /* Deferring approval widens the pool to people who have finished and
+     sent their profile in. It does not open it to a half-filled draft,
+     to somebody who paused themselves, or to anyone who has left. */
+  it("still hides a draft and anyone who has left, approval deferred or not", () => {
+    for (const status of ["draft", "paused", "matched", "withdrawn", "rejected"]) {
+      expect(appearsInBrowse({ ...member, status }, open)).toBe(false);
+    }
   });
 
   /* The whole point of the cap: demand spreads instead of piling onto

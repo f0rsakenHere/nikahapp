@@ -11,22 +11,22 @@ describe("safeNext", () => {
   });
 
   it("falls back when there is nothing to go back to", () => {
-    expect(safeNext(null)).toBe("/onboarding");
-    expect(safeNext("")).toBe("/onboarding");
-    expect(safeNext(undefined)).toBe("/onboarding");
+    expect(safeNext(null)).toBe("/dashboard");
+    expect(safeNext("")).toBe("/dashboard");
+    expect(safeNext(undefined)).toBe("/dashboard");
   });
 
   it("refuses an absolute URL to another origin", () => {
-    expect(safeNext("https://evil.example/phish")).toBe("/onboarding");
-    expect(safeNext("http://evil.example")).toBe("/onboarding");
+    expect(safeNext("https://evil.example/phish")).toBe("/dashboard");
+    expect(safeNext("http://evil.example")).toBe("/dashboard");
   });
 
   it("refuses a protocol-relative URL, which browsers treat as off-site", () => {
-    expect(safeNext("//evil.example")).toBe("/onboarding");
-    expect(safeNext("/\\evil.example")).toBe("/onboarding");
+    expect(safeNext("//evil.example")).toBe("/dashboard");
+    expect(safeNext("/\\evil.example")).toBe("/dashboard");
   });
 
   it("refuses a bare path with no leading slash", () => {
-    expect(safeNext("evil.example")).toBe("/onboarding");
+    expect(safeNext("evil.example")).toBe("/dashboard");
   });
 });

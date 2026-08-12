@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { register, type FormState } from "@/lib/auth/actions";
+import { FormDraft } from "@/components/app/draft";
 import {
   CheckboxField,
   ChoiceField,
+  DateOfBirthField,
   FormError,
   SubmitButton,
   TextField,
@@ -20,6 +22,9 @@ export function RegisterForm() {
 
   return (
     <form action={action} className="flex flex-col gap-5" noValidate>
+      {/* Everything below except the password survives a refresh. */}
+      <FormDraft name="register" />
+
       <FormError>{e._form}</FormError>
 
       {/* First, because it decides whether a wali is required and
@@ -57,12 +62,10 @@ export function RegisterForm() {
         </div>
       </div>
 
-      <TextField
-        label="Date of birth"
-        name="dateOfBirth"
-        type="date"
-        defaultValue={v.dateOfBirth}
-        autoComplete="bday"
+      <DateOfBirthField
+        legend="Date of birth"
+        name="dob"
+        value={{ day: v.dobDay, month: v.dobMonth, year: v.dobYear }}
         hint="You must be 18 or older. Only your age range is ever shown to anyone."
         error={e.dateOfBirth}
       />
@@ -86,11 +89,19 @@ export function RegisterForm() {
       />
 
       <div className="flex flex-col gap-3 border-t border-soft-green pt-5">
-        <CheckboxField name="marriageIntention" error={e.acceptedMarriageIntention}>
+        <CheckboxField
+          name="marriageIntention"
+          defaultChecked={v.marriageIntention === "on"}
+          error={e.acceptedMarriageIntention}
+        >
           I am seeking marriage, and I understand this service is for nikah only.
         </CheckboxField>
 
-        <CheckboxField name="terms" error={e.acceptedTerms}>
+        <CheckboxField
+          name="terms"
+          defaultChecked={v.terms === "on"}
+          error={e.acceptedTerms}
+        >
           I agree to the{" "}
           <Link href="/legal/privacy" className="font-semibold text-peach-deep underline-offset-2 hover:underline">
             privacy policy

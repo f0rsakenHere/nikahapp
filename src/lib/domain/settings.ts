@@ -84,10 +84,29 @@ export const SettingsSchema = z.object({
   allowRetryAfterDecline: z.boolean().default(false),
 
   /* ── D1f ────────────────────────────────────────────────────────────
-   * Whether an unverified member may browse or be browsed. Default no,
-   * both ways: a browsable pool of unverified profiles is a scam
-   * surface, and it would make the verification work pointless. */
-  requireVerifiedToBrowse: z.boolean().default(true),
+   * Whether staff approval stands between finishing a profile and using
+   * the product.
+   *
+   * True is the stricter reading and was the default: nobody is seen and
+   * nobody sees until a reviewer has run the checks and pressed approve.
+   * It is the right setting for a service whose promise is a closed,
+   * checked pool — and it costs the member a wait of unknown length that
+   * begins the moment they finish, which is exactly when their interest
+   * is highest and the screen has least to show them.
+   *
+   * False, and set false here on the client's instruction: finishing the
+   * profile puts you in the pool. Approval still happens, still runs the
+   * same checks in the same queue, and still promotes to `live` — it
+   * stops being the turnstile and becomes a fact recorded about a member
+   * who is already here. `inPool` in profile.ts is where that decision
+   * turns into who may be seen.
+   *
+   * The cost is real and worth writing down: for as long as this is
+   * false, the pool contains people nobody has telephoned. Any copy that
+   * tells a member otherwise is a claim this setting has made untrue —
+   * the screens under `(app)` now ask this before they say it, and the
+   * marketing pages have not been reworded. */
+  requireVerifiedToBrowse: z.boolean().default(false),
 
   /* ── D1g ────────────────────────────────────────────────────────────
    * Whether the wali approves before a conversation opens, or only
@@ -104,6 +123,33 @@ export const SettingsSchema = z.object({
    * without making her wait days for each conversation. */
   waliGate: z.enum(["approves", "observes"]).default("approves"),
   allowStandingApproval: z.boolean().default(true),
+
+  /* D6 — may the wali write in the conversation, or only read?
+   *
+   * The banner says he "can read every message"; the copy calls him
+   * "a participant rather than a bystander". Those are compatible
+   * with either answer, which is why §3.2 lists it as needing design.
+   * Default read-only: a guardian who can post is a third voice in a
+   * conversation between two people, and that is a bigger change to
+   * the thing than it sounds. */
+  waliCanWrite: z.boolean().default(false),
+
+  /* The account NikahCanada offers as a wali of last resort.
+   *
+   * A woman with no father, no brother and no uncle who will take this
+   * on is otherwise shut out of the product entirely — she cannot go
+   * live and no conversation can ever open for her. The classical
+   * answer to exactly that situation is the wali al-hakim: the
+   * authority, or in practice the local imam, stands in. This is that
+   * seat, and it is a real account with the same read access and the
+   * same veto as anybody's uncle, because a moderator with less than
+   * that would be a fiction.
+   *
+   * Null until somebody is appointed to it — `scripts/create-moderator-
+   * wali.cjs` makes the account and writes the id here. While it is
+   * null the option is not offered anywhere, which is the right
+   * behaviour: an unstaffed seat is worse than no seat. */
+  moderatorWaliUserId: z.string().min(1).nullable().default(null),
 
   /* §5.11's original examples. The fee is invented and flagged
    * everywhere it appears; it is here so that it is invented in exactly

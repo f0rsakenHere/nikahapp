@@ -12,7 +12,7 @@
  */
 const { chromium } = require("playwright");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const { BASE, assertOurApp } = require("./lib/base.cjs");
+const { BASE, assertOurApp, fillDob } = require("./lib/base.cjs");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
 
 loadEnv();
@@ -56,7 +56,7 @@ async function fillSignup(page, over = {}) {
   }
   await page.fill('input[name="firstName"]', v.firstName);
   await page.fill('input[name="lastName"]', v.lastName);
-  await page.fill('input[name="dateOfBirth"]', v.dateOfBirth);
+  await fillDob(page, v.dateOfBirth);
   await page.fill('input[name="email"]', v.email);
   await page.fill('input[name="password"]', v.password);
   if (v.marriageIntention !== false) await page.check('input[name="marriageIntention"]');
@@ -129,7 +129,17 @@ const mongo = new MongoClient(uri, {
       await p.click('button[type="submit"]');
       await p.waitForURL("**/onboarding", { timeout: 15_000 }).catch(() => {});
       check("register lands on /onboarding", new URL(p.url()).pathname === "/onboarding", p.url());
-      check("the page greets the new member", /Testonly/.test(await p.textContent("body")));
+      /* Registration drops them straight into the work, so the landing
+         is the profile builder rather than the dashboard. The greeting
+         by name lives on the dashboard now — this page is a tab in the
+         app, titled for what it is. Both are checked. */
+      check(
+        "and it is the profile builder, with the steps on it",
+        /Your profile/.test(await p.textContent("body")) &&
+          /About you/.test(await p.textContent("body"))
+      );
+      await p.goto(BASE + "/dashboard", { waitUntil: "networkidle" });
+      check("the dashboard greets the new member by name", /Testonly/.test(await p.textContent("body")));
 
       const user = await db.collection("users").findOne({ email: EMAIL });
       check("a user document exists", !!user);
@@ -221,19 +231,47 @@ const mongo = new MongoClient(uri, {
         p.url()
       );
 
+      /* That last attempt refused the off-site `next` but *succeeded*,
+         so this browser is now signed in — and /login sends a signed-in
+         session home rather than showing the form again. Out first. */
+      await p.goto(BASE + "/onboarding", { waitUntil: "networkidle" });
+      await p.click('button:has-text("Sign out")');
+      await p.waitForTimeout(1200);
+      check(
+        "a signed-in visitor to /login is sent home, not shown the form",
+        await (async () => {
+          const q = await browser.newPage();
+          await q.goto(BASE + "/login", { waitUntil: "networkidle" });
+          await q.fill('input[name="email"]', EMAIL);
+          await q.fill('input[name="password"]', PASSWORD);
+          await q.click('button[type="submit"]');
+          await q.waitForURL("**/dashboard", { timeout: 20_000 }).catch(() => {});
+          await q.goto(BASE + "/login", { waitUntil: "networkidle" });
+          const where = new URL(q.url()).pathname;
+          await q.close();
+          return where === "/dashboard";
+        })()
+      );
+
       /* Uppercase, to prove the lookup lowercases. */
       await p.goto(BASE + "/login", { waitUntil: "networkidle" });
       await p.fill('input[name="email"]', EMAIL.toUpperCase());
       await p.fill('input[name="password"]', PASSWORD);
       await p.click('button[type="submit"]');
-      await p.waitForURL("**/onboarding", { timeout: 15_000 }).catch(() => {});
-      check("sign in succeeds, case-insensitively", new URL(p.url()).pathname === "/onboarding", p.url());
+      await p.waitForURL("**/dashboard", { timeout: 15_000 }).catch(() => {});
+      /* The dashboard, not the profile builder: signing in answers "what
+         is happening with my account", and for most members the builder
+         is a form they finished months ago. */
+      check("sign in succeeds, case-insensitively", new URL(p.url()).pathname === "/dashboard", p.url());
 
       const reset = await db.collection("users").findOne({ email: EMAIL });
       check("the failure counter was cleared", !!reset && reset.failedLoginCount === 0);
       check("the sign-in was recorded", !!reset && !!reset.lastLoginAt);
 
       /* ---------- sign out ------------------------------------------ */
+      /* The button lives on the profile screen and in the account
+         settings, not in the app's tab chrome. */
+      await p.goto(BASE + "/onboarding", { waitUntil: "networkidle" });
       await p.click('button:has-text("Sign out")');
       await p.waitForTimeout(1200);
       check("sign out lands on the marketing site", new URL(p.url()).pathname === "/", p.url());

@@ -13,7 +13,7 @@
  *  another origin, and a sign-in page that forwards wherever it is told
  *  is the standard ingredient in a convincing phishing flow: the domain
  *  in the address bar is genuinely yours right up until the redirect. */
-export function safeNext(value: string | null | undefined, fallback = "/onboarding"): string {
+export function safeNext(value: string | null | undefined, fallback = "/dashboard"): string {
   if (!value) return fallback;
   if (!value.startsWith("/")) return fallback;
   if (value.startsWith("//") || value.startsWith("/\\")) return fallback;

@@ -62,6 +62,26 @@ export async function hasConfirmedWali(memberUserId: string): Promise<boolean> {
   return active.ok && active.guardianship !== null;
 }
 
+/** Which of these members have a confirmed wali, in one query.
+ *
+ *  For browse, which asks the question about a page of profiles at once
+ *  and must not turn that into a query each. Only `confirmed` counts —
+ *  invited, expired, declined and replaced all mean the same thing to
+ *  the person on the other side of the list, which is that no guardian
+ *  is standing behind this profile yet. */
+export async function membersWithConfirmedWali(
+  memberUserIds: string[]
+): Promise<Set<string>> {
+  if (memberUserIds.length === 0) return new Set();
+  const docs = await (await guardianships())
+    .find(
+      { status: "confirmed", memberUserId: { $in: memberUserIds } } as never,
+      { projection: { memberUserId: 1 } }
+    )
+    .toArray();
+  return new Set(docs.map((d) => String(d.memberUserId)));
+}
+
 /** Applies a domain transition and persists the result.
  *
  *  The machine decides; this only writes. `memberHasOtherConfirmedWali`
@@ -170,4 +190,22 @@ export async function confirmWithExistingAccount(
       .updateOne({ _id: new ObjectId(waliUserId) }, { $addToSet: { roles: "wali" } });
   }
   return result;
+}
+
+/** The confirmed guardianship linking this wali to one of these members.
+ *
+ *  Looked up from his side rather than hers. Finding "the member" of a
+ *  conversation and asking who her wali is picks whichever seat comes
+ *  first — which is the brother half the time, and then resolves to
+ *  nobody at all. */
+export async function findGuardianshipForWali(
+  waliUserId: string,
+  memberUserIds: string[]
+): Promise<Guardianship | null> {
+  const doc = await (await guardianships()).findOne({
+    waliUserId,
+    status: "confirmed",
+    memberUserId: { $in: memberUserIds },
+  } as never);
+  return doc ? toDomain(doc) : null;
 }

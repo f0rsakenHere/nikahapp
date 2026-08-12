@@ -25,6 +25,32 @@ describe("pause, resume, withdraw", () => {
     expect(nextStatus("live", "resume")).toEqual({ ok: false, error: "not-paused" });
   });
 
+  /* Under deferred approval a member is in the pool before anybody has
+     approved them, so they must be able to stop being seen without
+     withdrawing — which is the only other way out, and permanent. */
+  it("pauses a profile that has been sent in but not approved", () => {
+    for (const status of ["pendingCall", "pendingReview", "verifying"] as ProfileStatus[]) {
+      expect(nextStatus(status, "pause")).toEqual({ ok: true, status: "paused" });
+    }
+  });
+
+  /* The trap: resuming used to mean "go live", which would hand an
+     approval to somebody still waiting for one. */
+  it("resumes to where they paused from, never to live by default", () => {
+    expect(nextStatus("paused", "resume", "pendingReview")).toEqual({
+      ok: true,
+      status: "pendingReview",
+    });
+    expect(nextStatus("paused", "resume", "verifying")).toEqual({
+      ok: true,
+      status: "verifying",
+    });
+    /* Nothing recorded — every profile paused before this was kept. */
+    expect(nextStatus("paused", "resume")).toEqual({ ok: true, status: "live" });
+    /* And a nonsense one cannot smuggle a status in. */
+    expect(nextStatus("paused", "resume", "withdrawn")).toEqual({ ok: true, status: "live" });
+  });
+
   it("lets someone withdraw from anywhere, including halfway through", () => {
     for (const status of ["draft", "pendingReview", "verifying", "live", "paused"] as ProfileStatus[]) {
       expect(nextStatus(status, "withdraw")).toEqual({ ok: true, status: "withdrawn" });

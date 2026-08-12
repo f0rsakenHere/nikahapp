@@ -5,9 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { brand, nav } from "@/content/home";
-import { Wordmark } from "./primitives/Wordmark";
+import { Logo } from "@/components/brand/Logo";
+import { HomeIcon } from "@/components/app/icons";
 import { PillButton } from "./primitives/PillButton";
-import { Search } from "./primitives/Icons";
 
 /* The main nav bar.
 
@@ -16,7 +16,7 @@ import { Search } from "./primitives/Icons";
    breakpoint overrides, which left the logo sitting ~70px inboard of every
    other section's left rail. This uses the same shell as the rest of the
    page so the nav and the content share one rail. */
-export function Header() {
+export function Header({ signedIn = false }: { signedIn?: boolean }) {
   const [open, setOpen] = useState(false);
   const [pages, setPages] = useState(false);
   /* Which link gets the mint treatment. The template hard-coded the first
@@ -29,7 +29,7 @@ export function Header() {
     <header className="relative z-50 pt-[26px]">
       <div className="shell-b flex items-center">
         <Link href="/" className="-my-1.5 shrink-0 py-1.5" aria-label={`${brand.name} home`}>
-          <Wordmark className="text-[24px] leading-none xl:text-[30px]" />
+          <Logo className="h-8 xl:h-10" priority />
         </Link>
 
         {/* ---- desktop nav ---- */}
@@ -98,17 +98,49 @@ export function Header() {
 
         {/* ---- right cluster ---- */}
         <div className="ml-auto flex items-center gap-[5px] lg:ml-0">
-          <PillButton href={nav.cta.href} variant="nav" className="hidden sm:inline-flex">
-            {nav.cta.label}
-          </PillButton>
+          {signedIn ? (
+            <>
+              {/* The glyph alone under sm. The full pill is 150px, and a
+                  320px screen has 280 for a wordmark, this, and the
+                  hamburger — so the label goes and the way in stays,
+                  rather than the reverse. Named for a screen reader
+                  either way. */}
+              <Link
+                href={nav.dashboard.href}
+                aria-label={nav.dashboard.label}
+                className="grid h-11 w-11 place-items-center rounded-full border-2 border-accent text-[20px] text-accent transition-colors hover:bg-accent hover:text-white sm:hidden"
+              >
+                <HomeIcon />
+              </Link>
+              <div className="hidden sm:flex">
+                <PillButton href={nav.dashboard.href} variant="nav" icon={<HomeIcon />}>
+                  {nav.dashboard.label}
+                </PillButton>
+              </div>
+            </>
+          ) : (
+            /* Wrapped rather than given `hidden` directly: PillButton
+               carries its own display class, which beat the utility and
+               left a 113px button on a 320px screen — pushing the
+               hamburger, the only way into the menu there, off the right
+               edge entirely. Both live in the drawer at that size. */
+            <div className="hidden items-center gap-[5px] sm:flex">
+              <PillButton href={nav.cta.href} variant="nav">
+                {nav.cta.label}
+              </PillButton>
 
-          <a
-            href="#"
-            aria-label="Search"
-            className="hidden h-[49px] w-[50px] items-center justify-center rounded-full border-2 border-peach text-[16px] text-peach transition-colors hover:border-accent hover:text-accent sm:flex"
-          >
-            <Search />
-          </a>
+              {/* The template put a search control here. There is nothing to
+                  search — the pool is behind sign-in and is never public — so
+                  this is the returning member's way in instead, which the page
+                  otherwise had no link to at all. */}
+              <Link
+                href={nav.signIn.href}
+                className="flex h-[49px] items-center justify-center rounded-full border-2 border-peach px-5 font-jost text-[16px] text-peach transition-colors hover:border-accent hover:text-accent"
+              >
+                {nav.signIn.label}
+              </Link>
+            </div>
+          )}
 
           {/* hamburger — three bars, as in the template's toggler */}
           <button
@@ -158,11 +190,24 @@ export function Header() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-4 sm:hidden">
-                <PillButton href={nav.cta.href} variant="nav" className="w-full">
-                  {nav.cta.label}
-                </PillButton>
-              </div>
+              {/* Nothing here for a member: the dashboard is a glyph in
+                  the bar at this width, always visible, so repeating it
+                  inside the drawer would be the only item in it that is
+                  also outside it. */}
+              {signedIn ? null : (
+                <div className="mt-4 flex flex-col gap-3 sm:hidden">
+                  <PillButton href={nav.cta.href} variant="nav" className="w-full">
+                    {nav.cta.label}
+                  </PillButton>
+                  <Link
+                    href={nav.signIn.href}
+                    onClick={() => setOpen(false)}
+                    className="flex h-[49px] w-full items-center justify-center rounded-full border-2 border-peach font-jost text-[16px] text-peach"
+                  >
+                    {nav.signIn.label}
+                  </Link>
+                </div>
+              )}
             </div>
           </motion.div>
         ) : null}

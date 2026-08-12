@@ -14,6 +14,7 @@
  * so the client's answers change a value rather than this file.
  */
 import { z } from "zod";
+import { inPool } from "./profile";
 import type { Settings } from "./settings";
 
 /* ---------------------------------------------------------- ledger --- */
@@ -133,8 +134,12 @@ export type SendContext = {
   recipientPending: number;
   /** A live request between these two, in either direction. */
   existingBetweenPair: RequestState | null;
-  senderVerified: boolean;
-  recipientVerified: boolean;
+  /** Both sides are in the pool — see `inPool`. Named for what it
+   *  actually decides: under deferred approval a member is in the pool
+   *  without yet being verified, and calling that "verified" is how the
+   *  check ends up in the wrong place. */
+  senderInPool: boolean;
+  recipientInPool: boolean;
   senderGender: "brother" | "sister";
   blocked: boolean;
 };
@@ -167,10 +172,14 @@ export function canSend(
   if (from === to) return { ok: false, reason: "same-person" };
   if (ctx.blocked) return { ok: false, reason: "blocked" };
 
-  if (settings.requireVerifiedToBrowse) {
-    if (!ctx.senderVerified) return { ok: false, reason: "not-verified" };
-    if (!ctx.recipientVerified) return { ok: false, reason: "recipient-not-verified" };
-  }
+  /* Unconditional, and it did not used to be. Both checks sat behind
+     `requireVerifiedToBrowse`, so turning that off removed the only
+     thing standing between a half-filled draft and the ask button —
+     nothing else on this path looks at the sender's status at all.
+     What the setting decides is who counts as being in the pool; that
+     somebody must be *in* it to ask is not a setting. */
+  if (!ctx.senderInPool) return { ok: false, reason: "not-verified" };
+  if (!ctx.recipientInPool) return { ok: false, reason: "recipient-not-verified" };
 
   if (ctx.existingBetweenPair === "pending") {
     /* Both directions matter: if she has already asked him, the answer
@@ -296,11 +305,14 @@ export function applyRequest(
  *  Being at the cap hides them, which is the mechanism: demand spreads
  *  to everyone else instead of piling further onto the same few. */
 export function appearsInBrowse(
-  member: { verified: boolean; pendingInbound: number; status: string },
+  member: { pendingInbound: number; status: string },
   settings: Settings
 ): boolean {
-  if (member.status !== "live") return false;
-  if (settings.requireVerifiedToBrowse && !member.verified) return false;
+  /* Which statuses count is D1f's business, not this function's. The
+     `verified` flag that used to sit here was passed as a literal `true`
+     by its only caller, so it decided nothing while reading as though
+     it did. */
+  if (!inPool(member.status, settings)) return false;
   if (settings.inboundCap !== null && member.pendingInbound >= settings.inboundCap) return false;
   return true;
 }

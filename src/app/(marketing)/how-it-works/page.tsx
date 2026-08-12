@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
 import Image from "next/image";
+import { currentUser } from "@/lib/auth/current";
 import { ART, PHOTO, brand } from "@/content/home";
 import { intro, spine, stages, never, close, type ScreenSpec } from "@/content/howItWorks";
 
@@ -107,7 +108,13 @@ function ScreenRow({ spec, flip }: { spec: ScreenSpec; flip: boolean }) {
   );
 }
 
-export default function HowItWorksPage() {
+export default async function HowItWorksPage() {
+  /* Same nav as the homepage, so it has to know the same thing: a member
+     is offered their dashboard here, not an invitation to register for
+     what they already have. Reading the session makes this page render
+     per request rather than statically — the same trade the homepage
+     makes, and for the same reason. */
+  const signedIn = Boolean(await currentUser());
   let rowIndex = 0;
 
   return (
@@ -123,7 +130,7 @@ export default function HowItWorksPage() {
         >
           <BannerWash />
           <TopBar />
-          <Header />
+          <Header signedIn={signedIn} />
 
           <div className="relative pb-16 pt-14 sm:pt-20 xl:pb-[90px] xl:pt-[120px]">
             <Twinkle

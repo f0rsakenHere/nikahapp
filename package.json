@@ -13,7 +13,21 @@
     "db:ping": "node scripts/db-ping.cjs",
     "db:indexes": "node scripts/db-indexes.cjs",
     "jobs:expire": "node scripts/expire-invitations.cjs",
-    "shot": "node scripts/screenshot.cjs ."
+    "db:purge-fixtures": "node scripts/purge-fixtures.cjs",
+    "db:backfill-birth-year": "node scripts/backfill-birth-year.cjs",
+    "db:seed": "node scripts/seed-pool.cjs",
+    "db:seed-activity": "node scripts/seed-activity.cjs",
+    "db:moderator-wali": "node scripts/create-moderator-wali.cjs",
+    "check:join": "node scripts/join-flow.cjs",
+    "check:pool": "node scripts/pool-flow.cjs",
+    "check:activity": "node scripts/activity-flow.cjs",
+    "check:responsive": "node scripts/responsive-check.cjs",
+    "check:nav": "node scripts/nav-check.cjs",
+    "check:links": "node scripts/link-check.cjs",
+    "check:draft": "node scripts/draft-check.cjs",
+    "check:dashboard": "node scripts/dashboard-flow.cjs",
+    "shot": "node scripts/screenshot.cjs .",
+    "shot:phone": "node scripts/phone-shots.cjs"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",

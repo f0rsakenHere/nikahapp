@@ -10,7 +10,7 @@ const { chromium } = require("playwright");
 const { MongoClient, ObjectId, ServerApiVersion } = require("mongodb");
 const { createHmac, createHash, randomBytes } = require("node:crypto");
 const argon2 = require("@node-rs/argon2");
-const { BASE, assertOurApp } = require("./lib/base.cjs");
+const { BASE, assertOurApp, fillDob } = require("./lib/base.cjs");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
 
 loadEnv();
@@ -92,6 +92,13 @@ const mongo = new MongoClient(uri, {
     });
 
     const ctx = await browser.newContext();
+    /* The dev server compiles routes on demand, so a navigation made
+       after several other checkers have run can exceed Playwright's
+       30s default before the page exists at all. Against a production
+       build this is instant; the budget is here so a slow compile
+       reads as slow rather than as broken. */
+    ctx.setDefaultNavigationTimeout(90_000);
+    ctx.setDefaultTimeout(60_000);
     const p = await ctx.newPage();
     await p.goto(BASE + "/login", { waitUntil: "networkidle" });
     await assertOurApp(p);
@@ -114,6 +121,10 @@ const mongo = new MongoClient(uri, {
 
       const boot = await (await browser.newContext()).newPage();
       await boot.goto(`${BASE}/reset-password?token=${setupToken}`, { waitUntil: "networkidle" });
+      /* Explicit: run after several other checkers the dev server is
+         still compiling, and reading the body before the route is
+         ready fails as "the screen is wrong" rather than "not yet". */
+      await boot.waitForSelector('input[name="password"]', { timeout: 90000 });
       check("the setup link opens the password screen", /Choose a new password/.test(await boot.textContent("body")));
 
       await boot.fill('input[name="password"]', PASSWORD);
@@ -166,12 +177,25 @@ const mongo = new MongoClient(uri, {
     const secret2 = (await p.inputValue('input[name="secret"]')) || secret;
     await p.fill('input[name="code"]', totp(secret2));
     await p.click('button[type="submit"]');
-    await p.waitForTimeout(3000);
+    /* Waited for, not slept through. Enrolment lands on the console via
+       the dashboard, and on a cold dev server compiling two routes takes
+       longer than any fixed pause you would care to write — which then
+       reads as "the code was rejected". */
+    await p.waitForURL((u) => !u.pathname.startsWith("/mfa"), { timeout: 60_000 }).catch(() => {});
+    /* And then again: staff land on the console *via* the dashboard,
+       which bounces them on because they have no profile. Stopping at
+       the first URL change measures the hop, not the destination. */
+    await p.waitForURL("**/admin", { timeout: 30_000 }).catch(() => {});
+    await p.waitForLoadState("networkidle").catch(() => {});
     check(
       "a real code finishes the sign-in",
       new URL(p.url()).pathname !== "/mfa" && new URL(p.url()).pathname !== "/login",
       p.url()
     );
+    /* Staff have an account and no profile, so the member dashboard is
+       not their home — and a console operator sent to "Create your
+       account" is what happens if nobody checks. */
+    check("and lands staff in the console", new URL(p.url()).pathname === "/admin", p.url());
 
     const enrolled = await db.collection("users").findOne({ _id: staffId });
     check("the secret was stored", typeof enrolled.mfa.secret === "string");
@@ -179,6 +203,8 @@ const mongo = new MongoClient(uri, {
 
     /* ---------- signing in again now asks for a code ----------------- */
     const ctx2 = await browser.newContext();
+    ctx2.setDefaultNavigationTimeout(90_000);
+    ctx2.setDefaultTimeout(60_000);
     const q = await ctx2.newPage();
     await q.goto(BASE + "/login", { waitUntil: "networkidle" });
     await q.fill('input[name="email"]', STAFF);
@@ -203,7 +229,7 @@ const mongo = new MongoClient(uri, {
     await m.goto(BASE + "/register", { waitUntil: "networkidle" });
     await m.click('label:has(input[name="gender"][value="brother"])');
     await m.fill('input[name="firstName"]', "Testonly");
-    await m.fill('input[name="dateOfBirth"]', "1995-04-12");
+    await fillDob(m, "1995-04-12");
     await m.fill('input[name="email"]', MEMBER);
     await m.fill('input[name="password"]', PASSWORD);
     await m.check('input[name="marriageIntention"]');

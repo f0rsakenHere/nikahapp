@@ -23,13 +23,28 @@ export type LifecycleError = "cannot-pause" | "not-paused" | "already-gone";
 
 /* Pausing is reversible and keeps everything. Withdrawing is not, and
  * says so on the screen. Deleting is a third thing entirely — it removes
- * the account, and is handled below. */
-const PAUSABLE: ReadonlySet<ProfileStatus> = new Set(["live", "matched"]);
+ * the account, and is handled below.
+ *
+ * The three waiting statuses are here because of D1f. With approval
+ * deferred a member is in the pool from the moment they send their
+ * profile in, and somebody who can be seen must be able to stop being
+ * seen without withdrawing — the only other exit, and a permanent one.
+ * They are pausable under the strict setting too, where it costs
+ * nothing: pausing something invisible simply keeps it invisible. */
+const PAUSABLE: ReadonlySet<ProfileStatus> = new Set([
+  "live",
+  "matched",
+  "pendingCall",
+  "pendingReview",
+  "verifying",
+]);
 const GONE: ReadonlySet<ProfileStatus> = new Set(["withdrawn", "rejected"]);
 
 export function nextStatus(
   current: ProfileStatus,
-  event: LifecycleEvent
+  event: LifecycleEvent,
+  /** What `resume` returns to. See `pausedFrom` on the profile. */
+  pausedFrom?: ProfileStatus
 ): { ok: true; status: ProfileStatus } | { ok: false; error: LifecycleError } {
   if (GONE.has(current)) return { ok: false, error: "already-gone" };
 
@@ -40,9 +55,16 @@ export function nextStatus(
       if (!PAUSABLE.has(current)) return { ok: false, error: "cannot-pause" };
       return { ok: true, status: "paused" };
 
-    case "resume":
+    case "resume": {
       if (current !== "paused") return { ok: false, error: "not-paused" };
-      return { ok: true, status: "live" };
+      /* Back to where they were, not to `live`. Returning everybody to
+       * live would hand an approval to a member waiting for one — the
+       * pause button quietly doing what the review queue is for.
+       * `live` remains the answer when nothing was recorded, which is
+       * every profile paused before this was kept. */
+      const back = pausedFrom && PAUSABLE.has(pausedFrom) ? pausedFrom : "live";
+      return { ok: true, status: back };
+    }
 
     case "withdraw":
       /* Allowed from anywhere that is not already terminal, including a

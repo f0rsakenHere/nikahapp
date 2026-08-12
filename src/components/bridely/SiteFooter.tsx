@@ -1,17 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ART, brand, footer } from "@/content/home";
+import { ART, brand, footer, socials } from "@/content/home";
 import { PillButton } from "./primitives/PillButton";
 import { Twinkle } from "./primitives/Twinkle";
 import { FooterScroll } from "./primitives/Decor";
 import { CaretRight, ClipboardList, Facebook, Instagram } from "./primitives/Icons";
-import { Wordmark } from "./primitives/Wordmark";
+import { Logo } from "@/components/brand/Logo";
 
-/* TODO: no social accounts have been supplied, so these point nowhere. */
-const SOCIALS = [
-  { label: "Facebook", Icon: Facebook, bg: "bg-facebook" },
-  { label: "Instagram", Icon: Instagram, bg: "bg-gmail" },
-];
+/* Brand colour and glyph per account; the URLs live with the rest of the
+   copy in content/home. Only accounts that exist are rendered. */
+const CHROME = {
+  facebook: { Icon: Facebook, bg: "bg-facebook" },
+  instagram: { Icon: Instagram, bg: "bg-gmail" },
+} as const;
+
+const LIVE = socials.filter((s) => s.href);
 
 /* Closing band: the "Send us your profile" row, then the brand pill and
    two link columns. The pill is a 240px-radius mint capsule pulled 128px
@@ -63,24 +66,31 @@ export function SiteFooter() {
           {/* brand pill */}
           <div className="mx-auto w-full max-w-[434px] rounded-[240px] bg-mist px-[50px] pb-[49px] pt-[60px] text-center xl:-mt-[128px] xl:pt-[110px]">
             <Link href="/" className="inline-block" aria-label={`${brand.name} home`}>
-              <Wordmark className="text-[28px] leading-none" />
+              <Logo variant="full" className="mx-auto h-16" />
             </Link>
             <p className="mb-[22px] mt-5 font-jost text-[17px] font-light leading-[30px] text-text xl:text-[18px]">
               {footer.blurb}
             </p>
-            <ul className="flex justify-center gap-[5px]">
-              {SOCIALS.map(({ label, Icon, bg }) => (
-                <li key={label}>
-                  <a
-                    href="#"
-                    aria-label={label}
-                    className={`flex h-[33px] w-[33px] items-center justify-center rounded-full text-[12px] text-white transition-transform hover:-translate-y-0.5 ${bg}`}
-                  >
-                    <Icon />
-                  </a>
-                </li>
-              ))}
-            </ul>
+            {LIVE.length ? (
+              <ul className="flex justify-center gap-[5px]">
+                {LIVE.map(({ name, label, href }) => {
+                  const { Icon, bg } = CHROME[name];
+                  return (
+                    <li key={name}>
+                      <a
+                        href={href!}
+                        aria-label={label}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex h-[33px] w-[33px] items-center justify-center rounded-full text-[12px] text-white transition-transform hover:-translate-y-0.5 ${bg}`}
+                      >
+                        <Icon />
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
           </div>
 
           {/* link columns */}
@@ -115,14 +125,13 @@ export function SiteFooter() {
           </p>
           <ul className="flex gap-6">
             {footer.legal.map((l) => (
-              <li key={l}>
-                {/* TODO: neither policy has a page behind it yet. */}
-                <a
-                  href="#"
+              <li key={l.label}>
+                <Link
+                  href={l.href}
                   className="inline-block py-1 font-jost text-[15px] font-light text-text/70 transition-colors hover:text-accent"
                 >
-                  {l}
-                </a>
+                  {l.label}
+                </Link>
               </li>
             ))}
           </ul>

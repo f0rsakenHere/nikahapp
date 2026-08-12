@@ -8,7 +8,7 @@
  */
 const { chromium } = require("playwright");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const { BASE, assertOurApp } = require("./lib/base.cjs");
+const { BASE, assertOurApp, fillDob } = require("./lib/base.cjs");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
 
 loadEnv();
@@ -54,7 +54,7 @@ const mongo = new MongoClient(uri, {
     await p.click('label:has(input[name="gender"][value="sister"])');
     await p.fill('input[name="firstName"]', "Fatima");
     await p.fill('input[name="lastName"]', "Fixture");
-    await p.fill('input[name="dateOfBirth"]', "1995-04-12");
+    await fillDob(p, "1995-04-12");
     await p.fill('input[name="email"]', SISTER);
     await p.fill('input[name="password"]', PASSWORD);
     await p.check('input[name="marriageIntention"]');
@@ -63,7 +63,6 @@ const mongo = new MongoClient(uri, {
     await p.waitForURL("**/onboarding", { timeout: 20_000 });
 
     await p.goto(BASE + "/onboarding/basics", { waitUntil: "networkidle" });
-    await p.fill('input[name="basics.birthYear"]', "1995");
     await p.fill('input[name="basics.city"]', "Montreal");
     await p.selectOption('select[name="basics.province"]', "QC");
     await p.click('label:has(input[name="basics.citizenship"][value="citizen"])');
@@ -92,10 +91,15 @@ const mongo = new MongoClient(uri, {
     await p.goto(BASE + "/settings", { waitUntil: "networkidle" });
     check("settings offers to pause", /Pause my profile/.test(await p.textContent("body")));
     await p.click('button:has-text("Pause my profile")');
-    await p.waitForTimeout(2500);
+    /* Waited for, not slept through. The refusal is rendered by a server
+       action on a route the dev server may still be compiling, and a
+       fixed pause that expires first reads as "it was not refused". */
+    await p
+      .waitForFunction(() => /has not been sent in/i.test(document.body.innerText), null, { timeout: 45_000 })
+      .catch(() => {});
     check(
       "pausing a draft is refused, and says why",
-      /not live/i.test(await p.textContent("body"))
+      /has not been sent in/i.test(await p.textContent("body"))
     );
     check(
       "and the profile is untouched",

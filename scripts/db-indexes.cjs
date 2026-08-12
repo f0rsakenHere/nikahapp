@@ -32,6 +32,11 @@ const INDEXES = {
     [{ userId: 1, lastSeenAt: -1 }, { name: "userId_lastSeen" }],
     [{ absoluteExpiresAt: 1 }, { name: "absoluteExpiresAt_ttl", expireAfterSeconds: 0 }],
   ],
+  conversations: [
+    [{ requestId: 1 }, { unique: true, name: "requestId_unique" }],
+    [{ "participants.userId": 1, state: 1, lastMessageAt: -1 }, { name: "seat_state_recent" }],
+  ],
+  messages: [[{ conversationId: 1, sentAt: 1 }, { name: "thread" }]],
   connectionRequests: [
     [{ pairKey: 1 }, { unique: true, name: "pairKey_unique" }],
     [{ toUserId: 1, state: 1 }, { name: "inbox" }],

@@ -12,7 +12,7 @@ const { chromium } = require("playwright");
 const { MongoClient, ObjectId, ServerApiVersion } = require("mongodb");
 const { createHmac, createHash, randomBytes } = require("node:crypto");
 const argon2 = require("@node-rs/argon2");
-const { BASE, assertOurApp } = require("./lib/base.cjs");
+const { BASE, assertOurApp, fillDob } = require("./lib/base.cjs");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
 
 loadEnv();
@@ -78,7 +78,7 @@ const mongo = new MongoClient(uri, {
     await her.click('label:has(input[name="gender"][value="sister"])');
     await her.fill('input[name="firstName"]', "Fatima");
     await her.fill('input[name="lastName"]', "Fixture");
-    await her.fill('input[name="dateOfBirth"]', "1995-04-12");
+    await fillDob(her, "1995-04-12");
     await her.fill('input[name="email"]', SISTER);
     await her.fill('input[name="password"]', PASSWORD);
     await her.check('input[name="marriageIntention"]');
@@ -88,7 +88,6 @@ const mongo = new MongoClient(uri, {
 
     for (const [step, fill] of [
       ["basics", async () => {
-        await her.fill('input[name="basics.birthYear"]', "1995");
         await her.fill('input[name="basics.city"]', "Montreal");
         await her.selectOption('select[name="basics.province"]', "QC");
         await her.click('label:has(input[name="basics.citizenship"][value="citizen"])');
@@ -200,10 +199,15 @@ const mongo = new MongoClient(uri, {
     await s.fill('input[name="email"]', STAFF);
     await s.fill('input[name="password"]', PASSWORD);
     await s.click('button[type="submit"]');
-    await s.waitForTimeout(2500);
+    await s.waitForURL("**/mfa**", { timeout: 45_000 }).catch(() => {});
+    await s.waitForSelector('input[name="code"]', { timeout: 45_000 });
     await s.fill('input[name="code"]', totp(secret));
     await s.click('button[type="submit"]');
-    await s.waitForTimeout(3000);
+    /* Waited on rather than slept through: the console is a cold route
+       on a fresh dev server and takes longer to compile than any fixed
+       pause, which then reads as "the second factor was refused". */
+    await s.waitForURL("**/admin", { timeout: 60_000 }).catch(() => {});
+    await s.waitForLoadState("networkidle").catch(() => {});
     check("staff land in the console after the second factor", new URL(s.url()).pathname === "/admin", s.url());
 
     const queue = await s.textContent("body");
@@ -368,7 +372,7 @@ const mongo = new MongoClient(uri, {
       await b.goto(BASE + "/register", { waitUntil: "networkidle" });
       await b.click('label:has(input[name="gender"][value="brother"])');
       await b.fill('input[name="firstName"]', "Yusuf");
-      await b.fill('input[name="dateOfBirth"]', "1993-01-05");
+      await fillDob(b, "1993-01-05");
       await b.fill('input[name="email"]', brotherEmail);
       await b.fill('input[name="password"]', PASSWORD);
       await b.check('input[name="marriageIntention"]');

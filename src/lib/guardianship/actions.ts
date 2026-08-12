@@ -12,6 +12,8 @@ import { hashToken } from "@/lib/auth/tokens";
 import { MIN_PASSWORD_LENGTH } from "@/lib/domain/user";
 import { WALI_RELATIONSHIPS, activeGuardianship } from "@/lib/domain/guardianship";
 import { mayRevealLinks, send } from "@/lib/notifications";
+import { record } from "@/lib/audit";
+import { readSettings } from "@/lib/repositories/connections";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
 import { findUserByEmail, findUserById } from "@/lib/repositories/users";
 import {
@@ -62,7 +64,10 @@ export async function inviteWali(_prev: WaliState, form: FormData): Promise<Wali
 
   const profile = await findProfileByUserId(session.user.id);
   if (!profile) redirect("/onboarding");
-  if (profile.gender !== "sister") redirect("/onboarding");
+  /* No gender check. A brother may name a wali too — it is optional for
+     him rather than forbidden, and the guardianship this writes is the
+     same document either way. What differs is only what depends on it:
+     her profile cannot go live without one, his can. */
 
   const values = {
     name: String(form.get("name") ?? ""),
@@ -153,6 +158,98 @@ export async function inviteWali(_prev: WaliState, form: FormData): Promise<Wali
 
   revalidatePath("/onboarding");
   return { done: `Invitation sent to ${email}.`, devLink: mayRevealLinks() ? link : undefined };
+}
+
+/** Names NikahCanada's moderator as her wali, there and then.
+ *
+ *  No invitation, no token, no waiting for an email: the seat is already
+ *  staffed by an account this service controls, so the guardianship is
+ *  created confirmed. Everything downstream — the gate on conversations,
+ *  browse, the banner naming him in the thread — is unchanged, because
+ *  this produces exactly the same document that accepting an invitation
+ *  produces. The moderator is a wali, not an exception to having one.
+ *
+ *  For the woman with nobody to ask. That is not a rare case and the
+ *  product had no answer to it: without a wali she could not go live,
+ *  and a service that tells her to come back when she has a father is
+ *  not serving her. */
+export async function nominateModeratorAsWali(): Promise<WaliState> {
+  const session = await currentUser();
+  if (!session) redirect("/login?next=/onboarding/guardian");
+
+  const profile = await findProfileByUserId(session.user.id);
+  if (!profile) redirect("/onboarding");
+
+  const settings = await readSettings();
+  const moderatorId = settings.moderatorWaliUserId;
+  if (!moderatorId) {
+    return { error: "No moderator is available to act as a wali at the moment." };
+  }
+  /* The seat can be emptied by deleting the account without clearing the
+     setting. Better to say so than to write a guardianship pointing at
+     nobody. */
+  const moderator = await findUserById(moderatorId);
+  if (!moderator) {
+    return { error: "No moderator is available to act as a wali at the moment." };
+  }
+  if (moderatorId === session.user.id) {
+    return { error: "You cannot be your own wali." };
+  }
+
+  const existing = await listGuardianshipsForMember(session.user.id);
+  const active = activeGuardianship(existing);
+  if (!active.ok) {
+    return { error: "Something is wrong with your wali records. Please contact us." };
+  }
+  if (active.guardianship) {
+    return { error: "You already have a confirmed wali. Remove him before naming another." };
+  }
+  if (existing.some((g) => g.status === "invited")) {
+    return { error: "An invitation is already outstanding. Cancel it before naming a moderator." };
+  }
+
+  const now = new Date();
+  await createGuardianship({
+    memberUserId: session.user.id,
+    memberProfileId: profile.id,
+    waliUserId: moderatorId,
+    invited: {
+      name: `${moderator.legalName.first}${moderator.legalName.last ? ` ${moderator.legalName.last}` : ""}`,
+      relationship: "other",
+      email: moderator.email,
+      invitedAt: now,
+      /* Nothing was sent, so no token exists. The column wants a
+         digest, and the digest of a value that was never issued and is
+         thrown away here is the honest thing to store: it can never
+         match an incoming link. */
+      tokenHash: hashToken(randomBytes(32).toString("base64url")),
+      expiresAt: new Date(now.getTime() + INVITATION_TTL_MS),
+      remindersSent: 0,
+    },
+    status: "confirmed",
+    confirmedAt: now,
+    declinedAt: null,
+    declineReason: null,
+    revokedAt: null,
+    revokedBy: null,
+    expiredAt: null,
+    /* He is staff. His identity is not in question the way an uncle's
+       is, which is the whole reason D10 asks for wali verification. */
+    verification: { state: "verified", verifiedAt: now, method: "moderator" },
+    replacesGuardianshipId: null,
+    replacedByGuardianshipId: null,
+  });
+
+  await record({
+    action: "guardianship.moderatorAppointed",
+    subject: { type: "user", id: session.user.id },
+    actor: { userId: session.user.id, role: "member" },
+    meta: { moderatorUserId: moderatorId },
+  });
+
+  revalidatePath("/onboarding");
+  revalidatePath("/dashboard");
+  return { done: "A NikahCanada moderator is now your wali." };
 }
 
 export async function cancelInvitation(): Promise<void> {
@@ -319,7 +416,7 @@ export async function replaceWali(_prev: WaliState, form: FormData): Promise<Wal
   if (!session) redirect("/login?next=/onboarding/guardian");
 
   const profile = await findProfileByUserId(session.user.id);
-  if (!profile || profile.gender !== "sister") redirect("/onboarding");
+  if (!profile) redirect("/onboarding");
 
   const all = await listGuardianshipsForMember(session.user.id);
   const active = activeGuardianship(all);

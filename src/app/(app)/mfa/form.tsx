@@ -15,7 +15,7 @@ export function MfaChallengeForm({ next }: { next?: string }) {
       {next ? <input type="hidden" name="next" value={next} /> : null}
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
+        <span className="text-[18px] font-semibold uppercase tracking-[0.6px] text-text/70">
           Six-digit code
         </span>
         <input

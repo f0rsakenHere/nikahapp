@@ -29,6 +29,9 @@ export const COLLECTIONS = {
    * staff-created referrals that continue alongside it. */
   connectionRequests: "connectionRequests",
   connectionLedger: "connectionLedger",
+  /* Saved and passed-on profiles. Private to the member who marked
+   * them; nobody is ever told they were passed over. */
+  browseMarks: "browseMarks",
   auditLog: "auditLog",
 
   /* §5.11 — supporting */

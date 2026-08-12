@@ -87,6 +87,51 @@ export const PROFILE_STATUSES = [
 
 export type ProfileStatus = (typeof PROFILE_STATUSES)[number];
 
+/* ------------------------------------------------------------- the pool -- */
+
+/** Approved. Staff have run the checks and admitted this profile. */
+const APPROVED: readonly ProfileStatus[] = ["live"];
+
+/** Finished and sent in — waiting on that decision, or already past it.
+ *
+ *  Never `draft`: an unsubmitted profile is somebody's private working
+ *  copy, and nobody has agreed to be listed. Never `paused`, `matched`,
+ *  `withdrawn` or `rejected` either — each of those is a decision to be
+ *  out of the pool, and none of them is undone by this setting. */
+const SUBMITTED: readonly ProfileStatus[] = [
+  "pendingCall",
+  "pendingReview",
+  "verifying",
+  "live",
+];
+
+/** Which statuses are in the pool: shown to others, allowed to look,
+ *  allowed to ask.
+ *
+ *  D1f, in one place, because it used to be in four. `status: "live"`
+ *  was written directly into the browse query, the single-profile
+ *  lookup, the ask rules and the pool counts — so turning the setting
+ *  off opened the door and left the room empty behind it. The only
+ *  members it admitted were the ones who no longer needed admitting.
+ *
+ *  With approval required, the pool is what staff have approved. With it
+ *  deferred, the pool is everyone who has finished and sent their
+ *  profile in; approval still happens, still runs the same checks, and
+ *  still promotes to `live` — it stops being the turnstile and becomes
+ *  a fact recorded about a member who is already here. */
+export function poolStatuses(settings: {
+  requireVerifiedToBrowse: boolean;
+}): readonly ProfileStatus[] {
+  return settings.requireVerifiedToBrowse ? APPROVED : SUBMITTED;
+}
+
+export function inPool(
+  status: string,
+  settings: { requireVerifiedToBrowse: boolean }
+): boolean {
+  return (poolStatuses(settings) as readonly string[]).includes(status);
+}
+
 /* -------------------------------------------------------------- schema -- */
 
 const optionalText = (max: number) => z.string().trim().max(max).optional();
@@ -100,6 +145,15 @@ export const ProfileDraftSchema = z.object({
   userId: z.string().min(1),
   gender: z.enum(["brother", "sister"]),
   status: z.enum(PROFILE_STATUSES),
+  /* Where `resume` goes back to.
+   *
+   * `paused` used to be reachable only from `live`, so coming back could
+   * only mean live. Under deferred approval a member is in the pool
+   * before anybody has approved them, and resuming had no business
+   * granting an approval nobody made — so the status they paused from is
+   * kept, and given back. Absent on every profile paused before this
+   * existed, which is what the fallback in `nextStatus` is for. */
+  pausedFrom: z.enum(PROFILE_STATUSES).optional(),
   initials: z.string().nullable(),
 
   basics: z
@@ -312,12 +366,34 @@ export const STEPS: readonly Step[] = [
   },
 ] as const;
 
-/* Which of the two fourth steps each gender sees. Both have five: the
- * slot is the same, the check inside it is not. */
-const HIDDEN_FROM: Record<"brother" | "sister", StepId> = {
+/* A sister is not asked for a reference: her wali is the person who
+ * vouches for her, and asking for both is asking twice. */
+const HIDDEN_FROM: Record<"brother" | "sister", StepId | null> = {
   sister: "reference",
-  brother: "guardian",
+  brother: null,
 };
+
+/* The wali step is shown to a brother but never demanded of him.
+ *
+ * He can name one — plenty of men want a father or an elder brother
+ * seeing what they send, and a service that refuses to record that is
+ * making the decision for him. It is not a condition of his profile
+ * going live, because the wali in this product is the woman's guardian
+ * (§5.2) and requiring one of him would be inventing an obligation the
+ * scholars were not asked about.
+ *
+ * "Optional" here means exactly one thing: it is not counted, in either
+ * half of the fraction. Counting it as done would tick a step he has
+ * not taken; counting it as outstanding would park him below 100% with
+ * nothing he is obliged to do about it. */
+const OPTIONAL_FOR: Record<"brother" | "sister", ReadonlySet<StepId>> = {
+  brother: new Set<StepId>(["guardian"]),
+  sister: new Set<StepId>(),
+};
+
+export function isOptionalStep(id: StepId, gender: "brother" | "sister"): boolean {
+  return OPTIONAL_FOR[gender].has(id);
+}
 
 /** The steps this member is actually shown. */
 export function stepsFor(gender: "brother" | "sister"): readonly Step[] {
@@ -337,7 +413,9 @@ export function completeness(
   p: ProfileDraft,
   ctx: StepContext = NO_WALI
 ): { step: number; of: number; percent: number } {
-  const steps = stepsFor(p.gender);
+  /* Optional steps are still shown — they are just not part of the
+     progress they are shown next to. */
+  const steps = stepsFor(p.gender).filter((s) => !isOptionalStep(s.id, p.gender));
   const done = steps.filter((s) => s.required(p, ctx));
   const firstUnfinished = steps.find((s) => !s.required(p, ctx));
   return {
@@ -370,6 +448,7 @@ export function submitBlockers(p: ProfileDraft, context: StepContext): SubmitBlo
      * not replied to an email yet. The reference step is hers to
      * finish, so it is not excluded. */
     if (step.id === "guardian") continue;
+    if (isOptionalStep(step.id, p.gender)) continue;
     if (!step.required(p, context)) blockers.push({ step: step.id, reason: "incomplete" });
   }
 

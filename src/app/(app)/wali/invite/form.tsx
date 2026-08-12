@@ -33,7 +33,7 @@ export function InvitationForm({
 
   if (decline.done === "declined") {
     return (
-      <p className="rounded-md border border-soft-green bg-mist px-4 py-4 text-[14px] leading-[22px] text-black">
+      <p className="rounded-md border border-soft-green bg-mist px-4 py-4 text-[18px] leading-[26px] text-black">
         You have declined. We have let her know, and you will hear nothing further from us
         about this.
       </p>
@@ -45,19 +45,19 @@ export function InvitationForm({
       {/* He arrives cold. This email is very likely the first he has
           heard of us, and asking a man to vouch for a relative before
           telling him who is asking is how the message gets deleted. */}
-      <p className="text-[13px] leading-[20px] text-text">
+      <p className="text-[18px] leading-[26px] text-text">
         NikahCanada is a Muslim marriage and matrimony service, based in Montreal and operating
         across Canada. A wali is required for every woman who registers, from the beginning of
         the process rather than the end of it.
       </p>
 
       <div>
-        <p className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
+        <p className="text-[18px] font-semibold uppercase tracking-[0.6px] text-text/70">
           What this asks of you
         </p>
         <ul className="mt-3 flex flex-col gap-2.5">
           {POWERS.map((p) => (
-            <li key={p} className="flex gap-2.5 text-[13px] leading-[19px] text-black/80">
+            <li key={p} className="flex gap-2.5 text-[18px] leading-[26px] text-black/80">
               <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-peach" />
               {p}
             </li>
@@ -76,14 +76,14 @@ export function InvitationForm({
           />
           <button
             type="submit"
-            className="h-12 w-full rounded-pill border-2 border-soft-green text-[14px] font-semibold text-text"
+            className="h-12 w-full rounded-pill border-2 border-soft-green text-[18px] font-semibold text-text"
           >
             Confirm that you are declining
           </button>
           <button
             type="button"
             onClick={() => setDeclining(false)}
-            className="text-[13px] text-text underline-offset-2 hover:underline"
+            className="text-[18px] text-text underline-offset-2 hover:underline"
           >
             Go back
           </button>
@@ -94,13 +94,13 @@ export function InvitationForm({
 
           {accept.error === "sign-in-required" ? (
             <div className="rounded-md border border-peach/40 bg-soft-peach/60 px-3.5 py-3">
-              <p className="text-[13px] leading-[19px] text-text">
+              <p className="text-[18px] leading-[26px] text-text">
                 You already have a NikahCanada account on this address. Sign in first, then open
                 this link again — we will not ask you for a new password.
               </p>
               <Link
                 href="/login"
-                className="mt-2 inline-block text-[13px] font-semibold text-peach-deep underline-offset-2 hover:underline"
+                className="mt-2 inline-block text-[18px] font-semibold text-peach-deep underline-offset-2 hover:underline"
               >
                 Sign in
               </Link>
@@ -110,7 +110,7 @@ export function InvitationForm({
           )}
 
           {hasAccount ? (
-            <p className="text-[13px] leading-[19px] text-text">
+            <p className="text-[18px] leading-[26px] text-text">
               Signed in as {waliName}? Confirming will add her to your account.
             </p>
           ) : (
@@ -128,7 +128,7 @@ export function InvitationForm({
           <button
             type="button"
             onClick={() => setDeclining(true)}
-            className="text-center text-[13px] text-text underline-offset-2 hover:underline"
+            className="text-center text-[18px] text-text underline-offset-2 hover:underline"
           >
             I cannot do this
           </button>

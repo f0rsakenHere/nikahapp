@@ -5,6 +5,9 @@ import {
   ProfileDraftSchema,
   STEPS,
   completeness,
+  inPool,
+  isOptionalStep,
+  poolStatuses,
   stepById,
   stepsFor,
   submitBlockers,
@@ -143,24 +146,43 @@ describe("stepsFor", () => {
     ]);
   });
 
-  it("swaps the wali step for a reference step, for a brother", () => {
+  it("shows a brother the reference step and the wali step, in that order", () => {
     expect(stepsFor("brother").map((s) => s.id)).toEqual([
       "basics",
       "background",
       "deen",
+      "guardian",
       "reference",
       "lookingFor",
     ]);
   });
 
-  it("never shows a sister the reference step, nor a brother the wali step", () => {
+  it("never shows a sister the reference step — her wali vouches for her", () => {
     expect(stepsFor("sister").map((s) => s.id)).not.toContain("reference");
-    expect(stepsFor("brother").map((s) => s.id)).not.toContain("guardian");
   });
 
-  it("gives both genders the same number of steps", () => {
-    expect(stepsFor("brother")).toHaveLength(5);
-    expect(stepsFor("sister")).toHaveLength(5);
+  it("offers a brother the wali step without demanding it", () => {
+    expect(stepsFor("brother").map((s) => s.id)).toContain("guardian");
+    expect(isOptionalStep("guardian", "brother")).toBe(true);
+    expect(isOptionalStep("guardian", "sister")).toBe(false);
+  });
+
+  it("leaves an optional step out of the progress it sits next to", () => {
+    /* A brother with everything else done is finished, whatever he has
+       or has not done about a wali. Counting it would park him below
+       100% with nothing he is obliged to do. */
+    const full = draft({
+      gender: "brother",
+      basics: { birthYear: 1995, city: "Montreal", province: "QC", citizenship: "citizen" },
+      background: { maritalStatus: "neverMarried", children: "none", languages: ["English"] },
+      education: { level: "bachelor" },
+      deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "yes" },
+      reference: { name: "Imam", relationship: "Imam", phone: "+15145550100" },
+      lookingFor: { ageMin: 25, ageMax: 40, provinces: ["QC"], maritalStatus: [], madhhab: [] },
+    } as Partial<ProfileDraft>);
+
+    expect(completeness(full, { hasConfirmedWali: false }).percent).toBe(100);
+    expect(submitBlockers(full, { hasConfirmedWali: false })).toEqual([]);
   });
 
   it("matches the mock-ups: deen is step 3 of 5, the wali step 4", () => {
@@ -301,5 +323,45 @@ describe("completeness with the guardianship in view", () => {
      not claim she is finished. */
   it("assumes no wali when it is not told", () => {
     expect(completeness(complete()).percent).toBe(80);
+  });
+});
+
+/* ------------------------------------------------------------ the pool -- */
+
+describe("who is in the pool", () => {
+  const gated = { requireVerifiedToBrowse: true };
+  const open = { requireVerifiedToBrowse: false };
+
+  it("is only the approved while approval is the gate", () => {
+    expect(poolStatuses(gated)).toEqual(["live"]);
+    expect(inPool("live", gated)).toBe(true);
+    for (const status of ["draft", "pendingCall", "pendingReview", "verifying"]) {
+      expect(inPool(status, gated)).toBe(false);
+    }
+  });
+
+  it("adds everyone who has finished and sent it in once approval is deferred", () => {
+    for (const status of ["pendingCall", "pendingReview", "verifying", "live"]) {
+      expect(inPool(status, open)).toBe(true);
+    }
+  });
+
+  /* Deferring approval is a decision about the queue, not about consent
+     or about anybody's choice to be out. A draft has never been offered
+     to anyone, and the last four are all somebody having left. */
+  it("never includes a draft, or anyone who is out by their own or our decision", () => {
+    for (const settings of [gated, open]) {
+      for (const status of ["draft", "paused", "matched", "withdrawn", "rejected"]) {
+        expect(inPool(status, settings)).toBe(false);
+      }
+    }
+  });
+
+  /* If a status is added and nobody decides which side of this it falls
+     on, it silently falls outside — which is the safe direction, and
+     this is here so the omission is at least visible. */
+  it("accounts for every status that exists", () => {
+    const decided = new Set([...poolStatuses(open), "draft", "paused", "matched", "withdrawn", "rejected"]);
+    expect([...PROFILE_STATUSES].filter((s) => !decided.has(s))).toEqual([]);
   });
 });

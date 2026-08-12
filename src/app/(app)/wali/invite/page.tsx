@@ -42,7 +42,7 @@ export default async function WaliInvitePage({
       <AuthShell title="That link did not work" blurb={blurb}>
         <Link
           href="/"
-          className="grid h-12 place-items-center rounded-pill border-2 border-accent-deep text-[14px] font-semibold text-accent-deep"
+          className="grid h-12 place-items-center rounded-pill border-2 border-accent-deep text-[18px] font-semibold text-accent-deep"
         >
           About NikahCanada
         </Link>

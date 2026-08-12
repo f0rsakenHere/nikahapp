@@ -24,10 +24,10 @@ function Row({ label, value }: { label: string; value?: string | number | null }
   if (!value) return null;
   return (
     <div className="flex flex-col gap-0.5 border-b border-soft-green py-2.5">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-text/60">
+      <span className="text-[18px] font-semibold uppercase tracking-[0.6px] text-text/60">
         {label}
       </span>
-      <span className="text-[13px] leading-[19px] text-black">{value}</span>
+      <span className="text-[18px] leading-[26px] text-black">{value}</span>
     </div>
   );
 }
@@ -37,10 +37,12 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
   const session = await currentUser();
   if (!session) redirect(`/login?next=/browse/${id}`);
 
-  const p = await browseProfile(session.user.id, id);
+  /* Read before the lookup, not after: who is in the pool is a setting,
+     so the lookup needs it. */
+  const settings = await readSettings();
+  const p = await browseProfile(session.user.id, id, settings);
   if (!p) notFound();
 
-  const settings = await readSettings();
   const existing = await findBetween(session.user.id, String(p.userId));
   const balance = await balanceFor(session.user.id);
 
@@ -54,7 +56,7 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
 
   return (
     <AppFrame active="browse" title={`${p.gender === "sister" ? "Sister" : "Brother"}${basics.birthYear ? ` · ${YEAR - Number(basics.birthYear)}` : ""}`}>
-      <Link href="/browse" className="text-[13px] text-text underline-offset-2 hover:underline">
+      <Link href="/browse" className="text-[18px] text-text underline-offset-2 hover:underline">
         ← Back to browse
       </Link>
 
@@ -65,11 +67,11 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
         className="mt-5 flex flex-col items-center gap-1 border border-dashed border-soft-green bg-mist py-5 text-center"
         style={{ borderRadius: "30px 0 30px 0" }}
       >
-        <span className="font-playfair text-[20px] font-bold text-peach-deep">
+        <span className="font-manrope text-[20px] font-bold text-peach-deep">
           {(p.initials as string) ?? "—"}
         </span>
-        <span className="text-[12px] font-semibold text-black">Photograph locked</span>
-        <span className="max-w-[240px] text-[11px] leading-[15px] text-text">
+        <span className="text-[18px] font-semibold text-black">Photograph locked</span>
+        <span className="max-w-[240px] text-[18px] leading-[26px] text-text">
           Shared once a connection is accepted, and only after the wali approves.
         </span>
       </div>

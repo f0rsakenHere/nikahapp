@@ -3,10 +3,19 @@
 import { useActionState, useState } from "react";
 import { answerConnection, type ConnectState } from "@/lib/connections/actions";
 import { FormError } from "@/components/app/form";
+import { CheckIcon, ChatIcon } from "@/components/app/icons";
 
 const EMPTY: ConnectState = {};
 
-const BTN = "h-10 flex-1 rounded-pill text-[13px] font-semibold";
+/* Sized to the words in it.
+ *
+ * These were `flex-1`, which on a phone gave two halves of a card and on
+ * a monitor gave two five-hundred-pixel slabs — the same markup reading
+ * as a sensible pair of buttons at one width and as a landing page at
+ * another. A button's job is to be found and pressed, and past a certain
+ * size more pixels stop helping and start shouting. */
+const BTN =
+  "flex h-11 items-center justify-center gap-2 rounded-pill px-5 text-[18px] font-semibold transition-colors";
 
 export function AnswerForm({ requestId, side }: { requestId: string; side: "in" | "out" }) {
   const [state, action] = useActionState(answerConnection.bind(null, requestId), EMPTY);
@@ -14,7 +23,8 @@ export function AnswerForm({ requestId, side }: { requestId: string; side: "in" 
 
   if (state.done) {
     return (
-      <p className="mt-3 text-[13px] text-text">
+      <p className="flex w-full items-start gap-2.5 rounded-lg bg-mist px-3.5 py-3 text-[18px] leading-[26px] text-text">
+        <CheckIcon className="mt-1 shrink-0 text-[19px] text-accent-deep" />
         {state.done === "accepted"
           ? "Accepted. The conversation opens once the wali approves."
           : state.done === "withdrawn"
@@ -26,11 +36,17 @@ export function AnswerForm({ requestId, side }: { requestId: string; side: "in" 
 
   if (side === "out") {
     return (
-      <form action={action} className="mt-3">
+      /* A bordered control, not a sentence pretending to be one. It was
+         set as plain underlined text, which on a card of plain text is
+         indistinguishable from the card. */
+      <form action={action} className="flex shrink-0 flex-col items-end gap-2">
         <FormError>{state.error}</FormError>
         <input type="hidden" name="answer" value="withdraw" />
-        <button type="submit" className="text-[13px] text-text underline-offset-2 hover:underline">
-          Withdraw this request
+        <button
+          type="submit"
+          className="h-11 rounded-pill border-2 border-soft-green px-5 text-[18px] font-semibold text-text transition-colors hover:border-peach-deep hover:text-peach-deep"
+        >
+          Withdraw
         </button>
       </form>
     );
@@ -38,18 +54,17 @@ export function AnswerForm({ requestId, side }: { requestId: string; side: "in" 
 
   if (declining) {
     return (
-      <form action={action} className="mt-3 flex flex-col gap-2">
+      /* Full width while it is asking a question, because the box it is
+         asking into needs the room. */
+      <form action={action} className="flex w-full flex-col gap-2">
         <FormError>{state.error}</FormError>
         <input type="hidden" name="answer" value="decline" />
         <input
           name="reason"
           placeholder="Anything you want us to know (optional, never shown to them)"
-          className="h-11 w-full rounded-md border border-soft-green bg-white px-3 text-[13px] text-black outline-none focus:border-accent-deep"
+          className="h-11 w-full rounded-md border border-soft-green bg-white px-3 text-[18px] text-black outline-none focus:border-accent-deep"
         />
-        <div className="flex gap-2">
-          <button type="submit" className={`${BTN} border-2 border-soft-green text-peach-deep`}>
-            Confirm
-          </button>
+        <div className="flex flex-wrap justify-end gap-2">
           <button
             type="button"
             onClick={() => setDeclining(false)}
@@ -57,13 +72,16 @@ export function AnswerForm({ requestId, side }: { requestId: string; side: "in" 
           >
             Go back
           </button>
+          <button type="submit" className={`${BTN} bg-soft-peach text-peach-deep hover:opacity-90`}>
+            Confirm
+          </button>
         </div>
       </form>
     );
   }
 
   return (
-    <form action={action} className="mt-3 flex flex-col gap-2">
+    <form action={action} className="flex shrink-0 flex-col items-end gap-2">
       <FormError>{state.error}</FormError>
       {/* A hidden input rather than the submit button's name and value.
           The button carries one answer and the form carries the other,
@@ -71,16 +89,20 @@ export function AnswerForm({ requestId, side }: { requestId: string; side: "in" 
           fine in a browser, and one more thing to be wrong. This way the
           form says what it means, and works without JavaScript. */}
       <input type="hidden" name="answer" value="accept" />
-      <div className="flex gap-2">
-        <button type="submit" className={`${BTN} bg-peach text-black`}>
-          Accept
-        </button>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {/* The gentler answer first, in the reading order of a decision:
+            you are not being asked to accept, you are being asked to
+            choose. The accepting one carries the colour. */}
         <button
           type="button"
           onClick={() => setDeclining(true)}
-          className={`${BTN} border-2 border-soft-green text-text`}
+          className={`${BTN} border-2 border-soft-green text-text hover:border-text/40`}
         >
           Not for me
+        </button>
+        <button type="submit" className={`${BTN} bg-peach text-black hover:opacity-90`}>
+          <ChatIcon className="text-[19px]" />
+          Accept
         </button>
       </div>
       {/* Blocking is a different act from declining and is not offered

@@ -12,7 +12,7 @@
  */
 const { chromium } = require("playwright");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const { BASE, assertOurApp } = require("./lib/base.cjs");
+const { BASE, assertOurApp, fillDob } = require("./lib/base.cjs");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
 
 loadEnv();
@@ -39,7 +39,13 @@ async function signIn(page, password) {
   await page.fill('input[name="email"]', EMAIL);
   await page.fill('input[name="password"]', password);
   await page.click('button[type="submit"]');
-  await page.waitForTimeout(2500);
+  /* Waited on, not slept through. A correct password lands on the
+     dashboard, and on a cold dev server that route can take longer to
+     compile than any fixed pause — which then reads as "the password
+     was rejected". A refusal keeps us on /login, so this settles either
+     way. */
+  await page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 45_000 }).catch(() => {});
+  await page.waitForLoadState("networkidle").catch(() => {});
   return new URL(page.url()).pathname;
 }
 
@@ -72,7 +78,7 @@ const mongo = new MongoClient(uri, {
     await assertOurApp(p);
     await p.click('label:has(input[name="gender"][value="brother"])');
     await p.fill('input[name="firstName"]', "Testonly");
-    await p.fill('input[name="dateOfBirth"]', "1995-04-12");
+    await fillDob(p, "1995-04-12");
     await p.fill('input[name="email"]', EMAIL);
     await p.fill('input[name="password"]', PASSWORD);
     await p.check('input[name="marriageIntention"]');
@@ -209,7 +215,7 @@ const mongo = new MongoClient(uri, {
     );
 
     check("the old password no longer works", (await signIn(r, PASSWORD)) === "/login");
-    check("the new password does", (await signIn(r, NEW_PASSWORD)) === "/onboarding");
+    check("the new password does", (await signIn(r, NEW_PASSWORD)) === "/dashboard");
 
     /* ---------- change password ------------------------------------- */
     await r.goto(BASE + "/settings", { waitUntil: "networkidle" });
@@ -231,7 +237,7 @@ const mongo = new MongoClient(uri, {
       "and destroys every session",
       (await db.collection("sessions").countDocuments({ userId: String(user._id) })) === 0
     );
-    check("the new one works", (await signIn(r, "another-good-passphrase")) === "/onboarding");
+    check("the new one works", (await signIn(r, "another-good-passphrase")) === "/dashboard");
 
     /* ---------- the device list ------------------------------------- */
     await r.goto(BASE + "/settings", { waitUntil: "networkidle" });

@@ -19,7 +19,7 @@ import { eraseEverything, exportEverything } from "@/lib/repositories/erasure";
 export type LifecycleState = { error?: string; done?: string };
 
 const MESSAGES: Record<string, string> = {
-  "cannot-pause": "There is nothing to pause yet — your profile is not live.",
+  "cannot-pause": "There is nothing to pause yet — your profile has not been sent in.",
   "not-paused": "Your profile is not paused.",
   "already-gone": "Your profile has already been withdrawn.",
 };
@@ -35,7 +35,7 @@ export async function changeLifecycle(
   const profile = await findProfileByUserId(session.user.id);
   if (!profile) return { error: "You have no profile to change." };
 
-  const result = nextStatus(profile.status, event);
+  const result = nextStatus(profile.status, event, profile.pausedFrom);
   if (!result.ok) return { error: MESSAGES[result.error] ?? "That is not possible right now." };
 
   /* Withdrawing is not reversible and the button says so, so it asks for
@@ -53,7 +53,18 @@ export async function changeLifecycle(
     .collection(COLLECTIONS.profiles)
     .updateOne(
       { _id: new ObjectId(profile.id) },
-      { $set: { status: result.status, updatedAt: now, [`${event}dAt`]: now } }
+      {
+        $set: {
+          status: result.status,
+          updatedAt: now,
+          [`${event}dAt`]: now,
+          /* Remembered on the way out so resuming can put them back
+             exactly where they were, and cleared on the way in so a
+             stale one cannot outlive the pause it belonged to. */
+          ...(event === "pause" ? { pausedFrom: profile.status } : {}),
+        },
+        ...(event === "resume" ? { $unset: { pausedFrom: "" } } : {}),
+      }
     );
 
   await record({

@@ -98,6 +98,17 @@ export async function createMemberAccount(
             first: input.legalName.first,
             last: input.legalName.last,
           }),
+          /* Derived, never asked for again. Sign-up already took the
+           * exact date; the profile only ever needs the year, and asking
+           * a second time is both a wasted question and a way for the
+           * two to end up disagreeing — a member whose account says 1996
+           * and whose profile says 1998 is shown the wrong age and slips
+           * past the 18+ gate.
+           *
+           * UTC, because the date is stored as midnight UTC and a local
+           * reading of it moves a 1 January birthday into the year
+           * before. */
+          basics: { birthYear: input.dateOfBirth.getUTCFullYear() },
           completeness: { step: 1, of: 5, percent: 0 },
           createdAt: now,
           updatedAt: now,

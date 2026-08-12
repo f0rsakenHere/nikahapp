@@ -15,7 +15,7 @@ export function ForgotPasswordForm() {
   if (state.done) {
     return (
       <div className="flex flex-col gap-4">
-        <p className="rounded-md border border-soft-green bg-mist px-4 py-4 text-[14px] leading-[22px] text-black">
+        <p className="rounded-md border border-soft-green bg-mist px-4 py-4 text-[18px] leading-[26px] text-black">
           {state.done}
         </p>
         <DevLink href={state.devLink} />

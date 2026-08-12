@@ -5,7 +5,7 @@ import { MADHHAB, PROVINCES } from "@/lib/domain/profile";
 import { MADHHAB_LABELS, PROVINCE_LABELS } from "@/lib/domain/profile-labels";
 
 const FIELD =
-  "h-11 rounded-md border border-soft-green bg-white px-3 text-[13px] text-black outline-none focus:border-accent-deep";
+  "h-11 rounded-md border border-soft-green bg-white px-3 text-[18px] text-black outline-none focus:border-accent-deep";
 
 /* Filters in the URL rather than in state.
  *
@@ -31,8 +31,13 @@ export function Filters({
   const any = Boolean(current.ageMin || current.ageMax || current.province || current.madhhab);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-2 gap-2">
+    <div
+      /* Four across where there is room: two rows of two is the right
+         shape on a phone, and the same two rows on a monitor look like
+         a form that ran out of ideas. */
+      className="flex flex-col gap-2 lg:flex-row lg:items-center"
+    >
+      <div className="grid flex-1 grid-cols-2 gap-2">
         <input
           type="number"
           inputMode="numeric"
@@ -53,7 +58,11 @@ export function Filters({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      {/* Two abreast from 360. On a 320 screen each half is 136px and
+          "Any madhhab" needs 152 with its own arrow, so the placeholder
+          read "Any madhh" — a native select truncates without an
+          ellipsis and without telling anyone. */}
+      <div className="grid flex-1 grid-cols-1 gap-2 min-[360px]:grid-cols-2">
         <select
           value={current.province ?? ""}
           onChange={(e) => set("province", e.target.value)}
@@ -87,7 +96,7 @@ export function Filters({
         <button
           type="button"
           onClick={() => router.push("/browse")}
-          className="self-start text-[12px] text-text underline-offset-2 hover:underline"
+          className="self-start text-[18px] text-text underline-offset-2 hover:underline"
         >
           Clear filters
         </button>

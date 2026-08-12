@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { MotionProvider } from "@/components/bridely/primitives/MotionProvider";
 
 /* ------------------------------------------------------------------
    THE PRODUCT — member app and wali portal.
@@ -25,5 +26,13 @@ export const metadata: Metadata = {
 };
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  return <div className="min-h-dvh bg-white font-jost text-black">{children}</div>;
+  /* One place for the reduced-motion contract, so no screen has to
+     remember it. `user` drops transform and layout animation for readers
+     who have asked for that and keeps opacity — see the note in
+     MotionProvider on why this cannot be a per-component check. */
+  return (
+    <MotionProvider>
+      <div className="min-h-dvh bg-white font-manrope text-black">{children}</div>
+    </MotionProvider>
+  );
 }

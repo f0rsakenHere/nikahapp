@@ -12,7 +12,7 @@
  */
 const { chromium } = require("playwright");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const { BASE, assertOurApp } = require("./lib/base.cjs");
+const { BASE, assertOurApp, fillDob } = require("./lib/base.cjs");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
 
 loadEnv();
@@ -41,7 +41,7 @@ async function register(page, gender) {
   await page.click(`label:has(input[name="gender"][value="${isSister ? "sister" : "brother"}"])`);
   await page.fill('input[name="firstName"]', "Testonly");
   await page.fill('input[name="lastName"]', "Fixture");
-  await page.fill('input[name="dateOfBirth"]', "1995-04-12");
+  await fillDob(page, "1995-04-12");
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', PASSWORD);
   await page.check('input[name="marriageIntention"]');
@@ -80,11 +80,10 @@ const mongo = new MongoClient(uri, {
 
       /* --- step 1, filled properly ---------------------------------- */
       await p.goto(BASE + "/onboarding/basics", { waitUntil: "networkidle" });
-      await p.fill('input[name="basics.birthYear"]', "1995");
       await p.fill('input[name="basics.city"]', "Montreal");
       await p.selectOption('select[name="basics.province"]', "QC");
       await p.click('label:has(input[name="basics.citizenship"][value="refugee"])');
-      await p.fill('input[name="basics.heightCm"]', "163");
+      await p.selectOption('select[name="basics.heightCm"]', "163");
       await p.click('button[type="submit"]');
       await p.waitForURL("**/onboarding/background", { timeout: 20_000 });
       check("saving step one moves to step two", p.url().endsWith("/onboarding/background"));
@@ -92,6 +91,13 @@ const mongo = new MongoClient(uri, {
       const user = await db.collection("users").findOne({ email });
       let profile = await db.collection("profiles").findOne({ userId: user._id });
       check("the answers reached the database", profile?.basics?.city === "Montreal");
+      /* Never typed on this step — it is derived from the date of birth
+         given at sign-up, and the form no longer asks a second time. */
+      check("the year of birth came from sign-up", profile?.basics?.birthYear === 1995);
+      /* Strict: a dropdown posts a string, and centimetres stored as
+         "163" would fail the profile schema the moment anything read
+         it back. */
+      check("height is stored as a number", profile?.basics?.heightCm === 163);
       check(
         "a citizenship a guessed list would have rejected survives",
         profile?.basics?.citizenship === "refugee"
@@ -168,12 +174,14 @@ const mongo = new MongoClient(uri, {
       const email = await register(p, "brother");
 
       const steps = await p.locator("ol li a").count();
-      check("a brother sees five steps too", steps === 5, `saw ${steps}`);
+      /* Six: his five, plus the wali step, which he is offered and never
+         required to take. */
+      check("a brother sees six steps", steps === 6, `saw ${steps}`);
       check("a brother starts at 0% too", (await p.textContent("body")).includes("0%"));
       check(
-        "his fourth step is a reference, not a wali",
+        "he is shown both a reference and a wali",
         /Your reference/.test(await p.textContent("body")) &&
-          !/Your wali/.test(await p.textContent("body"))
+          /Your wali/.test(await p.textContent("body"))
       );
 
       await p.goto(BASE + "/onboarding/deen", { waitUntil: "networkidle" });
@@ -195,14 +203,16 @@ const mongo = new MongoClient(uri, {
       const bProfile = await db.collection("profiles").findOne({ userId: brother._id });
       check("his reference was stored", bProfile?.reference?.name === "Imam Suleiman Diallo");
 
-      /* A sister must never be shown the reference step. */
-      /* Typing the wali step's URL must not show it to him. */
+      /* The wali step is his to use if he wants it — and it says so,
+         rather than implying his profile is waiting on somebody. */
       await p.goto(BASE + "/onboarding/guardian", { waitUntil: "networkidle" });
+      const waliStep = await p.textContent("body");
       check(
-        "a brother typing the wali step's URL is sent back",
-        new URL(p.url()).pathname === "/onboarding",
+        "a brother reaches the wali step",
+        new URL(p.url()).pathname === "/onboarding/guardian",
         p.url()
       );
+      check("and it is marked optional for him", /optional/i.test(waliStep), waliStep.slice(0, 160));
 
       /* And a step that does not exist is a 404, not a blank form. */
       const res = await p.goto(BASE + "/onboarding/nonsense", { waitUntil: "networkidle" });

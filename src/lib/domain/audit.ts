@@ -44,12 +44,24 @@ export const AUDIT_ACTIONS = [
   "connection.accepted",
   "connection.declined",
 
+  /* conversations */
+  "conversation.opened",
+  "conversation.waliApproved",
+  "conversation.waliDeclined",
+  "conversation.closed",
+  "conversation.messageSent",
+  "staff.readConversation",
+
   /* the wali */
   "guardianship.invited",
   "guardianship.confirmed",
   "guardianship.declined",
   "guardianship.revoked",
   "guardianship.replaced",
+  /* Separate from `confirmed` on purpose: "she named the service as her
+     wali" is a different fact from "a relative accepted", and a year
+     from now somebody will need to count the first without the second. */
+  "guardianship.moderatorAppointed",
 
   /* staff — every one of these touches somebody's private information */
   "staff.viewedIdentityDocuments",
@@ -68,6 +80,7 @@ export const AUDIT_SUBJECTS = [
   "session",
   "verification",
   "connectionRequest",
+  "conversation",
 ] as const;
 
 export type AuditSubjectType = (typeof AUDIT_SUBJECTS)[number];
@@ -159,6 +172,7 @@ const WALI_VISIBLE: ReadonlySet<AuditAction> = new Set([
   "guardianship.declined",
   "guardianship.revoked",
   "guardianship.replaced",
+  "guardianship.moderatorAppointed",
   "profile.submitted",
   "profile.approved",
   "profile.rejected",

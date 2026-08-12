@@ -12,7 +12,7 @@
  */
 const { chromium } = require("playwright");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const { BASE, assertOurApp } = require("./lib/base.cjs");
+const { BASE, assertOurApp, fillDob } = require("./lib/base.cjs");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
 
 loadEnv();
@@ -41,7 +41,7 @@ async function register(page, email, gender) {
   await page.click(`label:has(input[name="gender"][value="${gender}"])`);
   await page.fill('input[name="firstName"]', gender === "sister" ? "Fatima" : "Yusuf");
   await page.fill('input[name="lastName"]', "Fixture");
-  await page.fill('input[name="dateOfBirth"]', "1995-04-12");
+  await fillDob(page, "1995-04-12");
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', PASSWORD);
   await page.check('input[name="marriageIntention"]');
@@ -194,7 +194,7 @@ const mongo = new MongoClient(uri, {
     await him.goto(BASE + "/wali", { waitUntil: "networkidle" });
     const portal = await him.textContent("body");
     check("his portal lists his ward", /Fatima/.test(portal), him.url());
-    check("and says nothing needs him yet", /Nothing needs you yet/.test(portal));
+    check("and says nothing needs him yet", /Nothing needs you/i.test(portal));
     check(
       "it does not claim she is verified when she is not",
       /awaiting our checks/.test(portal)
@@ -316,7 +316,6 @@ const mongo = new MongoClient(uri, {
 
     for (const [step, fill] of [
       ["basics", async () => {
-        await her.fill('input[name="basics.birthYear"]', "1995");
         await her.fill('input[name="basics.city"]', "Montreal");
         await her.selectOption('select[name="basics.province"]', "QC");
         await her.click('label:has(input[name="basics.citizenship"][value="citizen"])');
@@ -386,9 +385,15 @@ const mongo = new MongoClient(uri, {
     const submitted = await db.collection("profiles").findOne({ userId: sister._id });
     check("the profile moved to pendingReview", submitted.status === "pendingReview");
     check("and recorded when", !!submitted.submittedAt);
+    /* Still "what happens next" rather than a bare thank-you — but with
+       approval deferred (D1f) what happens next is that she is in the
+       pool, with our checks running behind her rather than in front. */
+    const afterSubmit = await her.textContent("body");
     check(
       "the screen says what happens next, not just thank you",
-      /telephone you before any matching/.test(await her.textContent("body"))
+      /telephones|telephone you before any matching/.test(afterSubmit) &&
+        /In the pool|With our team/.test(afterSubmit),
+      afterSubmit.replace(/\s+/g, " ").slice(0, 140)
     );
     check(
       "and stops offering to submit again",

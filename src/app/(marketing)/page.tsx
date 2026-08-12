@@ -1,3 +1,4 @@
+import { currentUser } from "@/lib/auth/current";
 import { ART } from "@/content/home";
 import { TopBar } from "@/components/bridely/TopBar";
 import { Header } from "@/components/bridely/Header";
@@ -19,7 +20,22 @@ import { MotionProvider } from "@/components/bridely/primitives/MotionProvider";
 /* The top bar, nav, banner and About share one watercolour backdrop —
    the template's `.home-header-section`. It is a 1102x1187 PNG pinned to
    the top-left at its natural size, not stretched. */
-export default function HomePage() {
+export default async function HomePage() {
+  /* Read, not enforced. This used to redirect a signed-in member to the
+     dashboard, which meant a member could not reach their own service's
+     homepage at all — not to re-read the pricing, not to check the
+     process before explaining it to a relative, not to follow a link
+     somebody had sent them. The nav answers instead: it offers the
+     dashboard where it would have offered "Register Now".
+   *
+   * The session is read properly rather than sniffed from the cookie in
+   * middleware. Middleware runs on the edge with no database and can
+   * only see that *a* cookie exists, so a stale one would put a
+   * member's chrome on a stranger's screen. The cost is that this page
+   * renders per request rather than statically — worth revisiting if the
+   * marketing site ever needs to be served from a CDN. */
+  const signedIn = Boolean(await currentUser());
+
   return (
     <MotionProvider>
       <div className="bg-white font-jost text-[16px] leading-6 text-black">
@@ -29,7 +45,7 @@ export default function HomePage() {
         >
           <BannerWash />
           <TopBar />
-          <Header />
+          <Header signedIn={signedIn} />
           <Hero />
           <About />
         </div>

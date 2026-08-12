@@ -40,7 +40,7 @@ export default async function VerifyEmailPage({
     <AuthShell title={copy.title} blurb={copy.blurb}>
       <Link
         href={result === "invalid" ? "/settings" : "/onboarding"}
-        className="grid h-12 place-items-center rounded-pill bg-peach text-[14px] font-semibold text-black"
+        className="grid h-12 place-items-center rounded-pill bg-peach text-[18px] font-semibold text-black"
       >
         {result === "invalid" ? "Go to your account" : "Continue"}
       </Link>

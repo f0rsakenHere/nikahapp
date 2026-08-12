@@ -12,11 +12,17 @@ import { useFormStatus } from "react-dom";
 import type { ReactNode } from "react";
 import type { FieldSpec } from "@/lib/domain/profile-form";
 
-const CONTROL =
-  "h-12 w-full rounded-md border border-soft-green bg-white px-3.5 text-[15px] text-black " +
+/* Split, because two utilities for the same property in one class list
+   are settled by the order Tailwind emits them, not the order they are
+   written — so a control that wants tighter sides has to start from a
+   base that has none rather than try to override px-3.5. */
+const CONTROL_BASE =
+  "h-12 w-full rounded-md border border-soft-green bg-white text-[18px] text-black " +
   "outline-none transition-colors placeholder:text-text/45 focus:border-accent-deep";
 
-const LABEL = "text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70";
+const CONTROL = `${CONTROL_BASE} px-3.5`;
+
+const LABEL = "text-[18px] font-semibold uppercase tracking-[0.6px] text-text/70";
 
 export function TextField({
   label,
@@ -31,7 +37,11 @@ export function TextField({
 }: {
   label: string;
   name: string;
-  type?: "text" | "email" | "password" | "date";
+  /* No `date`. A native date input is a calendar anchored on today, and
+     a date of birth is thirty-odd years of clicking back from there; it
+     also renders in the *browser's* locale, so a Canadian on a US-set
+     machine is asked for mm/dd/yyyy. `DateOfBirthField` below. */
+  type?: "text" | "email" | "password";
   defaultValue?: string;
   placeholder?: string;
   hint?: string;
@@ -59,16 +69,157 @@ export function TextField({
         className={`${CONTROL} ${error ? "border-peach-deep" : ""}`}
       />
       {hint ? (
-        <span id={`${name}-hint`} className="text-[11px] leading-[15px] text-text/70">
+        <span id={`${name}-hint`} className="text-[18px] leading-[26px] text-text/70">
           {hint}
         </span>
       ) : null}
       {error ? (
-        <span id={`${name}-error`} className="text-[11px] leading-[15px] text-peach-deep">
+        <span id={`${name}-error`} className="text-[18px] leading-[26px] text-peach-deep">
           {error}
         </span>
       ) : null}
     </label>
+  );
+}
+
+/* Long enough to read, short enough not to wrap the row. */
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/** Day, month and year, as three things a person already knows.
+ *
+ *  Not a date input. That control is a calendar that opens on this
+ *  month, and a birth date is a few hundred clicks back from there —
+ *  the year dropdown hidden behind a caret is the only usable way in,
+ *  and most people never find it. It also formats itself from the
+ *  browser's locale rather than the page's, so a Canadian whose laptop
+ *  came set to en-US is asked for mm/dd/yyyy on an en-CA site, and
+ *  05/06 means two different days to the two of them.
+ *
+ *  The month is named for that reason: with "June" on screen there is
+ *  no order to get wrong. Day and year are plain text with a numeric
+ *  keypad rather than `type="number"`, which on a phone is the same
+ *  keypad plus spinner arrows and a scroll wheel that silently changes
+ *  the answer.
+ *
+ *  Three separate names go to the server and the server puts them back
+ *  together — no hidden field assembled by script, so this still works
+ *  with JavaScript off, as the rest of this form does. */
+export function DateOfBirthField({
+  legend,
+  name,
+  value,
+  hint,
+  error,
+}: {
+  legend: string;
+  /** Prefix: the parts arrive as `${name}Day`, `${name}Month`, `${name}Year`. */
+  name: string;
+  value?: { day?: string; month?: string; year?: string };
+  hint?: string;
+  error?: string;
+}) {
+  const describedBy = [error && `${name}-error`, hint && `${name}-hint`]
+    .filter(Boolean)
+    .join(" ");
+  /* Tighter sides than the full-width fields: every pixel of padding
+     here is a pixel the month name does not get, and "September" has to
+     fit on a 360px phone. */
+  const box = `${CONTROL_BASE} px-2.5 ${error ? "border-peach-deep" : ""}`;
+  const part = "text-[18px] leading-[26px] text-text/70";
+
+  return (
+    <fieldset className="flex flex-col gap-1.5" aria-describedby={describedBy || undefined}>
+      <legend className={LABEL}>{legend}</legend>
+
+      {/* Widths sized to their content — a two-digit box that could hold
+          twelve characters invites twelve characters — and what is left
+          goes to the month, which is the only one holding a word.
+          It wraps rather than clips: below about 340px there is not room
+          for three across, and Year dropping to a second line is better
+          than "Septeml". */}
+      <div className="mt-1.5 flex flex-wrap items-end gap-1.5">
+        <label className="flex w-[54px] shrink-0 flex-col gap-1">
+          <span className={part}>Day</span>
+          <input
+            id={`${name}Day`}
+            name={`${name}Day`}
+            type="text"
+            inputMode="numeric"
+            maxLength={2}
+            defaultValue={value?.day}
+            placeholder="11"
+            autoComplete="bday-day"
+            aria-invalid={error ? true : undefined}
+            className={`${box} text-center`}
+          />
+        </label>
+
+        {/* Capped, not stretched: a date is a short answer, and a month
+            box running the width of the card looks like somewhere to
+            write a sentence. It still shrinks on a narrow phone. */}
+        <label className="flex min-w-[118px] max-w-[190px] flex-1 basis-[118px] flex-col gap-1">
+          <span className={part}>Month</span>
+          <select
+            id={`${name}Month`}
+            name={`${name}Month`}
+            defaultValue={value?.month ?? ""}
+            autoComplete="bday-month"
+            aria-invalid={error ? true : undefined}
+            /* Grey while it still says "Choose…", like the two
+               placeholders beside it, and black once it is an answer.
+               Done in CSS so it holds without JavaScript. */
+            className={`${box} has-[option[value='']:checked]:text-text/45`}
+          >
+            <option value="">Choose…</option>
+            {MONTHS.map((label, i) => (
+              <option key={label} value={String(i + 1)}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex w-[72px] shrink-0 flex-col gap-1">
+          <span className={part}>Year</span>
+          <input
+            id={`${name}Year`}
+            name={`${name}Year`}
+            type="text"
+            inputMode="numeric"
+            maxLength={4}
+            defaultValue={value?.year}
+            placeholder="1996"
+            autoComplete="bday-year"
+            aria-invalid={error ? true : undefined}
+            className={`${box} text-center`}
+          />
+        </label>
+      </div>
+
+      {hint ? (
+        <span id={`${name}-hint`} className="text-[18px] leading-[26px] text-text/70">
+          {hint}
+        </span>
+      ) : null}
+      {error ? (
+        <span id={`${name}-error`} className="text-[18px] leading-[26px] text-peach-deep">
+          {error}
+        </span>
+      ) : null}
+    </fieldset>
   );
 }
 
@@ -108,7 +259,7 @@ export function ChoiceField({
               defaultChecked={defaultValue === o.value}
               className="peer sr-only"
             />
-            <span className="block rounded-pill py-2 text-[13px] font-semibold text-text peer-checked:text-black peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#141212]">
+            <span className="block rounded-pill py-2 text-[18px] font-semibold text-text peer-checked:text-black peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#141212]">
               {o.label}
             </span>
           </label>
@@ -118,9 +269,9 @@ export function ChoiceField({
           it reads as a complaint about something the reader has not done
           yet — then stacks a second peach line under it when a real
           error appears, and neither one looks like the important one. */}
-      {hint ? <span className="text-[11px] leading-[15px] text-text/70">{hint}</span> : null}
+      {hint ? <span className="text-[18px] leading-[26px] text-text/70">{hint}</span> : null}
       {error ? (
-        <span className="text-[11px] leading-[15px] text-peach-deep">{error}</span>
+        <span className="text-[18px] leading-[26px] text-peach-deep">{error}</span>
       ) : null}
     </fieldset>
   );
@@ -139,17 +290,20 @@ export function CheckboxField({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="flex cursor-pointer items-start gap-3">
+      {/* `min-h-11`: the box is 20px and the label is the target, so on a
+          one-line consent the whole thing was a 26px strip to hit with a
+          thumb. The padding is invisible and makes it 44. */}
+      <label className="flex min-h-11 cursor-pointer items-start gap-3 py-1.5">
         <input
           type="checkbox"
           name={name}
           defaultChecked={defaultChecked}
           className="mt-0.5 h-5 w-5 shrink-0 rounded-[6px] border border-soft-green accent-peach"
         />
-        <span className="text-[13px] leading-[19px] text-text">{children}</span>
+        <span className="text-[18px] leading-[26px] text-text">{children}</span>
       </label>
       {error ? (
-        <span className="ml-8 text-[11px] leading-[15px] text-peach-deep">{error}</span>
+        <span className="ml-8 text-[18px] leading-[26px] text-peach-deep">{error}</span>
       ) : null}
     </div>
   );
@@ -183,7 +337,7 @@ export function SpecField({
           {spec.required ? "" : <span className="ml-2 normal-case text-text/50">optional</span>}
         </legend>
         {spec.hint ? (
-          <span className="text-[11px] leading-[15px] text-text/70">{spec.hint}</span>
+          <span className="text-[18px] leading-[26px] text-text/70">{spec.hint}</span>
         ) : null}
         <div className="mt-1 flex flex-col gap-1.5">
           {(spec.options ?? []).map((o) => (
@@ -198,12 +352,12 @@ export function SpecField({
                 defaultChecked={multiple ? selected.includes(o.value) : value === o.value}
                 className="h-4 w-4 shrink-0 accent-accent-deep"
               />
-              <span className="text-[14px] text-black">{o.label}</span>
+              <span className="text-[18px] text-black">{o.label}</span>
             </label>
           ))}
         </div>
         {error ? (
-          <span className="text-[11px] leading-[15px] text-peach-deep">{error}</span>
+          <span className="text-[18px] leading-[26px] text-peach-deep">{error}</span>
         ) : null}
       </fieldset>
     );
@@ -223,8 +377,16 @@ export function SpecField({
         {spec.required ? "" : <span className="ml-2 normal-case text-text/50">optional</span>}
       </span>
 
-      {spec.kind === "select" ? (
-        <select {...common} defaultValue={value === undefined ? "" : String(value)}>
+      {/* A number with a fixed list of answers is a dropdown too: height
+          is stored in centimetres but nobody wants to be asked for it
+          that way, so the list carries both units and the value stays a
+          number. */}
+      {spec.kind === "select" || spec.options ? (
+        <select
+          {...common}
+          className={`${common.className} has-[option[value='']:checked]:text-text/45`}
+          defaultValue={value === undefined ? "" : String(value)}
+        >
           <option value="">Choose…</option>
           {(spec.options ?? []).map((o) => (
             <option key={o.value} value={o.value}>
@@ -235,7 +397,7 @@ export function SpecField({
       ) : spec.kind === "textarea" ? (
         <textarea
           {...common}
-          className={`${common.className} h-40 resize-y py-3 leading-[22px]`}
+          className={`${common.className} h-40 resize-y py-3 leading-[26px]`}
           maxLength={spec.max}
           placeholder={spec.placeholder}
           defaultValue={value === undefined ? "" : String(value)}
@@ -255,9 +417,9 @@ export function SpecField({
       )}
 
       {spec.hint ? (
-        <span className="text-[11px] leading-[15px] text-text/70">{spec.hint}</span>
+        <span className="text-[18px] leading-[26px] text-text/70">{spec.hint}</span>
       ) : null}
-      {error ? <span className="text-[11px] leading-[15px] text-peach-deep">{error}</span> : null}
+      {error ? <span className="text-[18px] leading-[26px] text-peach-deep">{error}</span> : null}
     </label>
   );
 }
@@ -270,7 +432,7 @@ export function SubmitButton({ children }: { children: ReactNode }) {
     <button
       type="submit"
       disabled={pending}
-      className="h-12 w-full rounded-pill bg-peach text-[14px] font-semibold text-black transition-opacity disabled:opacity-60"
+      className="h-12 w-full rounded-pill bg-peach text-[18px] font-semibold text-black transition-opacity disabled:opacity-60"
     >
       {pending ? "One moment…" : children}
     </button>
@@ -282,7 +444,7 @@ export function FormError({ children }: { children?: string }) {
   return (
     <p
       role="alert"
-      className="rounded-md border border-peach/40 bg-soft-peach/60 px-3.5 py-3 text-[13px] leading-[19px] text-peach-deep"
+      className="rounded-md border border-peach/40 bg-soft-peach/60 px-3.5 py-3 text-[18px] leading-[26px] text-peach-deep"
     >
       {children}
     </p>
@@ -301,10 +463,10 @@ export function DevLink({ href }: { href?: string }) {
   if (!href) return null;
   return (
     <div className="rounded-md border-2 border-dashed border-peach-deep/50 bg-soft-peach/40 px-3.5 py-3">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.6px] text-peach-deep">
+      <p className="text-[18px] font-semibold uppercase tracking-[0.6px] text-peach-deep">
         No email service — link shown here instead
       </p>
-      <a href={href} className="mt-1 block break-all text-[12px] leading-[17px] text-black underline">
+      <a href={href} className="mt-1 block break-all text-[18px] leading-[26px] text-black underline">
         {href}
       </a>
     </div>

@@ -45,12 +45,20 @@ export const brand = {
      company's branding and is licensed as demo content. */
 };
 
+/* The one place social accounts are named, for both the top strip and the
+   footer. No accounts have been supplied for NikahCanada, so both URLs
+   are null and both rows render nothing — an icon that looks tappable and
+   goes nowhere is worse than no icon. Put a real URL here and the row
+   comes back in both places at once. Nothing is guessed: a wrong handle
+   sends people to somebody else's page under this business's name. */
+export const socials = [
+  { name: "facebook", label: "Facebook", href: null as string | null },
+  { name: "instagram", label: "Instagram", href: null as string | null },
+] as const;
+
 export const topBar = {
   note: "Based in Montreal, operating across Canada",
   followLabel: "Follow us on:",
-  /* TODO: no social accounts have been supplied, so these point nowhere.
-     Give each a real URL or drop `socials` to hide the row entirely. */
-  socials: ["facebook", "instagram"] as const,
 };
 
 export const nav = {
@@ -69,7 +77,12 @@ export const nav = {
       { label: "For guardians", href: "/#wali" },
     ],
   },
-  cta: { label: "Register Now", href: "/#contact" },
+  cta: { label: "Register Now", href: "/register" },
+  signIn: { label: "Sign in", href: "/login" },
+  /* What the same two slots say to somebody who is already a member.
+     Offering "Register Now" to a signed-in member is the site failing to
+     recognise its own customer. */
+  dashboard: { label: "Dashboard", href: "/dashboard" },
 };
 
 export const hero = {
@@ -78,7 +91,7 @@ export const hero = {
   body:
     "Send us your profile for free and we will help you find a match according to your " +
     "preferences. A personalised matrimonial service based in Montreal, operating across Canada.",
-  cta: { label: "Register Now", href: "/#contact" },
+  cta: { label: "Register Now", href: "/register" },
   image: { src: `${PHOTO}/hero.jpg`, w: 475, h: 540, alt: "White flowers in a vase" },
 };
 
@@ -135,7 +148,7 @@ export const reservation = {
   note:
     "Because both parties pay before contact details are exchanged, the fee also confirms the " +
     "interest is mutual.",
-  cta: { label: "Register Now", href: "/#contact" },
+  cta: { label: "Register Now", href: "/register" },
   images: [
     { src: `${PHOTO}/reservation-1.jpg`, w: 635, h: 540, alt: "Flowers hanging from a ceiling" },
     { src: `${PHOTO}/reservation-2.jpg`, w: 445, h: 300, alt: "Vases of assorted flowers" },
@@ -251,7 +264,7 @@ export const gallery = {
 
 export const footer = {
   planning: "Send us your profile.",
-  primary: { label: "Register Now", href: "/#contact" },
+  primary: { label: "Register Now", href: "/register" },
   secondary: { label: "How it works", href: "/how-it-works" },
   blurb:
     "A Muslim marriage match and matrimony service. Based in Montreal, operating across Canada, " +
@@ -266,7 +279,7 @@ export const footer = {
       { label: "Developed with scholars", href: "/#scholars" },
     ],
     [
-      { label: "Registration", href: "/#contact" },
+      { label: "Registration", href: "/register" },
       { label: "For guardians", href: "/#wali" },
       { label: "Confidentiality", href: "/#safety" },
       { label: "Contact Us", href: "/#contact" },
@@ -276,5 +289,13 @@ export const footer = {
      been supplied for NikahCanada, so the contact block is omitted rather
      than filled with something invented. Add real details and it returns. */
   copyright: `NikahCanada © ${new Date().getFullYear()}`,
-  legal: ["Privacy Policy", "Terms and Conditions"],
+  /* Both pages exist and both say, truthfully, that the document has not
+     been published yet — see the note in (marketing)/legal/[doc]. Linking
+     to that is right: the sign-up form asks people to agree to these two
+     documents by name, and the footer of the page that sold them the
+     service must reach the same place the consent checkbox does. */
+  legal: [
+    { label: "Privacy Policy", href: "/legal/privacy" },
+    { label: "Terms and Conditions", href: "/legal/terms" },
+  ],
 };

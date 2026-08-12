@@ -73,27 +73,60 @@ async function startSession(
 
 /* --------------------------------------------------------------- signup - */
 
+/** The three boxes on the form, back into one date.
+ *
+ *  Assembled here rather than by a script on the page, so the form keeps
+ *  working with JavaScript off. Anything that is not a plausible day,
+ *  month and year comes back empty and fails validation as a date —
+ *  including 31 February, which `Date` rejects for us because an ISO
+ *  string is parsed strictly. */
+function isoDate(day: string, month: string, year: string): string {
+  const [d, m, y] = [day, month, year].map((s) => Number(s.trim()));
+  if (![d, m, y].every(Number.isInteger)) return "";
+  if (d < 1 || d > 31 || m < 1 || m > 12 || y < 1000 || y > 9999) return "";
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
 export async function register(_prev: FormState, form: FormData): Promise<FormState> {
+  const dob = {
+    day: String(form.get("dobDay") ?? "").trim(),
+    month: String(form.get("dobMonth") ?? "").trim(),
+    year: String(form.get("dobYear") ?? "").trim(),
+  };
+
   const raw = {
     gender: String(form.get("gender") ?? ""),
     email: String(form.get("email") ?? ""),
     password: String(form.get("password") ?? ""),
     firstName: String(form.get("firstName") ?? ""),
     lastName: String(form.get("lastName") ?? ""),
-    dateOfBirth: String(form.get("dateOfBirth") ?? ""),
+    dateOfBirth: isoDate(dob.day, dob.month, dob.year),
   };
 
   /* Echoed back so a rejected form does not make them retype everything.
-   * The password is deliberately not among them. */
+   * The password is deliberately not among them.
+   *
+   * The two agreements are echoed like any other answer. Ticking a box,
+   * being told the date of birth is wrong, and finding the box you
+   * ticked cleared is the form losing an answer that was given — and
+   * without this the only thing restoring them is JavaScript, which
+   * this form does not require. */
   const values = {
     gender: raw.gender,
     email: raw.email,
     firstName: raw.firstName,
     lastName: raw.lastName,
-    dateOfBirth: raw.dateOfBirth,
+    /* The three boxes go back as three boxes: putting a normalised date
+       into a field they typed in pieces is how you get a form that
+       argues with the person filling it in. */
+    dobDay: dob.day,
+    dobMonth: dob.month,
+    dobYear: dob.year,
+    marriageIntention: form.get("marriageIntention") === "on" ? "on" : "",
+    terms: form.get("terms") === "on" ? "on" : "",
   };
 
-  const dob = raw.dateOfBirth ? new Date(`${raw.dateOfBirth}T00:00:00Z`) : new Date("invalid");
+  const born = raw.dateOfBirth ? new Date(`${raw.dateOfBirth}T00:00:00Z`) : new Date("invalid");
 
   const validated = validateSignup(
     {
@@ -101,7 +134,7 @@ export async function register(_prev: FormState, form: FormData): Promise<FormSt
       email: raw.email,
       password: raw.password,
       legalName: { first: raw.firstName, last: raw.lastName || undefined },
-      dateOfBirth: dob,
+      dateOfBirth: born,
       locale: "en-CA",
       acceptedMarriageIntention: form.get("marriageIntention") === "on",
       acceptedTerms: form.get("terms") === "on",
@@ -113,6 +146,12 @@ export async function register(_prev: FormState, form: FormData): Promise<FormSt
     const errors: Record<string, string> = {};
     for (const e of validated.errors) {
       errors[e.field] = MESSAGES[`${e.field}:${e.code}`] ?? "Please check this.";
+    }
+    /* A blank date reaches validation looking identical to a wrong one,
+       and "please check the date of birth" is a strange thing to read
+       above three empty boxes. */
+    if (errors.dateOfBirth && !(dob.day && dob.month && dob.year)) {
+      errors.dateOfBirth = "Please give the day, month and year you were born.";
     }
     return { errors, values };
   }

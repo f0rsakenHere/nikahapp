@@ -8,7 +8,7 @@
  */
 const { chromium } = require("playwright");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const { BASE, assertOurApp } = require("./lib/base.cjs");
+const { BASE, assertOurApp, fillDob } = require("./lib/base.cjs");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
 
 loadEnv();
@@ -48,10 +48,15 @@ async function makeMember(browser, db, gender, name, over = {}) {
   emails.push(email);
   const page = await (await browser.newContext()).newPage();
   await page.goto(BASE + "/register", { waitUntil: "networkidle" });
+  /* Explicit, and generous. Run last in a sequence the dev server is
+     still compiling routes, and Playwright's 30s default expires on a
+     cold /register — which then reads as "the gender control is missing"
+     rather than "the page was not ready". */
+  await page.waitForSelector('label:has(input[name="gender"])', { timeout: 90000 });
   await page.click(`label:has(input[name="gender"][value="${gender}"])`);
   await page.fill('input[name="firstName"]', name);
   await page.fill('input[name="lastName"]', "Fixture");
-  await page.fill('input[name="dateOfBirth"]', "1995-04-12");
+  await fillDob(page, "1995-04-12");
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', PASSWORD);
   await page.check('input[name="marriageIntention"]');
@@ -91,31 +96,37 @@ async function makeMember(browser, db, gender, name, over = {}) {
     const sister = await makeMember(browser, db, "sister", "Fatima");
     const other = await makeMember(browser, db, "sister", "Aisha");
 
-    /* A confirmed wali for Fatima, so she can accept. */
-    await db.collection("guardianships").insertOne({
-      memberUserId: String(sister.user._id),
-      memberProfileId: "x",
-      waliUserId: "wali-fixture",
-      invited: {
-        name: "Ahmed",
-        relationship: "father",
-        email: `browse+wali${STAMP}@example.invalid`,
-        invitedAt: new Date(),
-        tokenHash: "b".repeat(64),
-        expiresAt: new Date(Date.now() + 86_400_000),
-        remindersSent: 0,
-      },
-      status: "confirmed",
-      confirmedAt: new Date(),
-      declinedAt: null,
-      declineReason: null,
-      revokedAt: null,
-      revokedBy: null,
-      expiredAt: null,
-      verification: { state: "verified", verifiedAt: new Date(), method: "test" },
-      replacesGuardianshipId: null,
-      replacedByGuardianshipId: null,
-    });
+    /* A confirmed wali for each of them.
+       Not optional any more: a sister with no confirmed wali is hidden
+       from browse and her profile page 404s, so a fixture without one
+       is a fixture nobody can see. Fatima also needs him in order to
+       accept. */
+    for (const her of [sister, other]) {
+      await db.collection("guardianships").insertOne({
+        memberUserId: String(her.user._id),
+        memberProfileId: "x",
+        waliUserId: `wali-fixture-${her.user._id}`,
+        invited: {
+          name: "Ahmed",
+          relationship: "father",
+          email: `browse+wali${STAMP}.${her.user._id}@example.invalid`,
+          invitedAt: new Date(),
+          tokenHash: "b".repeat(64),
+          expiresAt: new Date(Date.now() + 86_400_000),
+          remindersSent: 0,
+        },
+        status: "confirmed",
+        confirmedAt: new Date(),
+        declinedAt: null,
+        declineReason: null,
+        revokedAt: null,
+        revokedBy: null,
+        expiredAt: null,
+        verification: { state: "verified", verifiedAt: new Date(), method: "test" },
+        replacesGuardianshipId: null,
+        replacedByGuardianshipId: null,
+      });
+    }
 
     /* ---------- browse shows the other gender only ------------------- */
     const b = brother.page;
@@ -139,10 +150,16 @@ async function makeMember(browser, db, gender, name, over = {}) {
       .countDocuments({ userId: String(brother.user._id), reason: "monthlyGrant" });
     check("and is not given again on the next visit", twice === 1);
 
-    /* ---------- filters ---------------------------------------------- */
-    await b.goto(BASE + "/browse?province=ON", { waitUntil: "networkidle" });
+    /* ---------- filters ----------------------------------------------
+       Filtered to somewhere nobody can be rather than merely somewhere
+       this run's fixtures are not. Browse reads the whole `profiles`
+       collection, so "no results" is only a safe assertion when the
+       filter excludes every profile that could exist — including a
+       seeded testing pool (`scripts/seed-pool.cjs`) sitting in the same
+       database. Nunavut and an age of 100 are not used by either. */
+    await b.goto(BASE + "/browse?province=NU", { waitUntil: "networkidle" });
     check("a filter that matches nobody says so", /Nobody matches/.test(await b.textContent("body")));
-    await b.goto(BASE + "/browse?ageMin=60", { waitUntil: "networkidle" });
+    await b.goto(BASE + "/browse?ageMin=100", { waitUntil: "networkidle" });
     check("an age filter narrows it too", /Nobody matches/.test(await b.textContent("body")));
 
     /* ---------- sending ---------------------------------------------- */
@@ -280,10 +297,7 @@ async function makeMember(browser, db, gender, name, over = {}) {
       /not being shown to anyone new/.test(await o.textContent("body"))
     );
 
-    /* ---------- a sister with no wali cannot accept ------------------- */
-    await db
-      .collection("guardianships")
-      .updateOne({ memberUserId: String(other.user._id) }, { $set: { status: "revoked" } });
+    /* ---------- the cap refuses politely ----------------------------- */
     const third = await makeMember(browser, db, "brother", "Idris");
     const t = third.page;
     await t.goto(`${BASE}/browse/${otherProfile._id.toHexString()}`, { waitUntil: "networkidle" });
@@ -308,6 +322,26 @@ async function makeMember(browser, db, gender, name, over = {}) {
       "a refused request costs nothing",
       noCharge.reduce((sum, e) => sum + e.delta, 0) === 10
     );
+
+    /* ---------- a sister who loses her wali leaves the pool ----------- */
+    /* Not merely "cannot accept": she is not shown and her page does not
+       resolve. Otherwise a brother spends a connection asking somebody
+       whose answer can never open a conversation. Done last, because it
+       takes her out of everything above. */
+    await db
+      .collection("guardianships")
+      .updateOne({ memberUserId: String(other.user._id) }, { $set: { status: "revoked" } });
+
+    const gone = await t.goto(`${BASE}/browse/${otherProfile._id.toHexString()}`, {
+      waitUntil: "networkidle",
+    });
+    check(
+      "her profile stops resolving once the wali is revoked",
+      gone.status() === 404,
+      String(gone.status())
+    );
+    await t.goto(BASE + "/browse", { waitUntil: "networkidle" });
+    check("and she is not in the list either", !(await visible(t)).includes("A.F"));
   } finally {
     await browser.close();
     for (const email of emails) {
@@ -321,6 +355,14 @@ async function makeMember(browser, db, gender, name, over = {}) {
       await db.collection("connectionRequests").deleteMany({
         $or: [{ fromUserId: id }, { toUserId: id }],
       });
+      /* Accepting a request opens a conversation. Leaving it behind
+         broke the conversation checker, which selected the first one
+         it found. */
+      const convs = await db.collection("conversations").find({ "participants.userId": id }).toArray();
+      for (const c of convs) {
+        await db.collection("messages").deleteMany({ conversationId: c._id.toHexString() });
+        await db.collection("conversations").deleteOne({ _id: c._id });
+      }
       await db.collection("profiles").deleteMany({ userId: u._id });
       await db.collection("auditLog").deleteMany({ "actor.userId": id });
       await db.collection("users").deleteOne({ _id: u._id });

@@ -26,6 +26,7 @@ import {
   CITIZENSHIP_LABELS,
   DRESS_LABELS,
   EDUCATION_LABELS,
+  HEIGHT_OPTIONS,
   MADHHAB_LABELS,
   MARITAL_STATUS_LABELS,
   PROVINCE_LABELS,
@@ -60,19 +61,14 @@ export type FieldSpec = {
   only?: "brother" | "sister";
 };
 
-const YEAR_NOW = 2026; // replaced by a passed-in clock when the builder needs one
-
+/* `basics.birthYear` is not here on purpose. It is set from the date of
+   birth given at sign-up (see `createMemberAccount`) and never asked
+   for again: a second question about the same fact is one the person
+   has already answered, and two answers that can disagree. It is still
+   part of the profile — browse filters and the admin table read it —
+   just not something this form collects. */
 export const STEP_FIELDS: Record<Exclude<StepId, "guardian">, FieldSpec[]> = {
   basics: [
-    {
-      path: "basics.birthYear",
-      kind: "number",
-      label: "Year of birth",
-      required: true,
-      min: YEAR_NOW - 100,
-      max: YEAR_NOW - 18,
-      hint: "Only the year is stored here. Nobody is ever shown your exact date of birth.",
-    },
     { path: "basics.city", kind: "text", label: "City", required: true, placeholder: "Montreal" },
     {
       path: "basics.province",
@@ -96,12 +92,15 @@ export const STEP_FIELDS: Record<Exclude<StepId, "guardian">, FieldSpec[]> = {
       options: toOptions(RELOCATE, RELOCATE_LABELS),
     },
     {
+      /* Still a number, and still stored in centimetres — the options
+         only change how it is asked. A number field carrying a fixed
+         list renders as a dropdown; see `SpecField`. */
       path: "basics.heightCm",
       kind: "number",
-      label: "Height in centimetres",
+      label: "Height",
       min: 137,
       max: 220,
-      hint: "Optional. In centimetres so it is unambiguous — 5'8\" is 173.",
+      options: HEIGHT_OPTIONS,
     },
   ],
 

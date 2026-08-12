@@ -11,6 +11,9 @@
 @theme {
   --font-playfair: var(--font-playfair-display), Georgia, serif;
   --font-jost: var(--font-jost-sans), ui-sans-serif, system-ui, sans-serif;
+  /* The product's only family. See the note in app/layout.tsx on why the
+     app does not borrow the marketing site's display face. */
+  --font-manrope: var(--font-manrope-sans), ui-sans-serif, system-ui, sans-serif;
 
   --color-accent: #9accc9; /* mint — nav, buttons, rules */
   --color-peach: #f4a492; /* primary CTA */
@@ -168,6 +171,26 @@
     scroll-behavior: smooth;
   }
 
+  /* A hand over anything that can be pressed.
+     `<button>` has never had `cursor: pointer` by default — that belongs
+     to `<a href>` — and Tailwind's preflight does not add one, so every
+     button in this product showed an arrow and read as decoration. Set
+     once here rather than as a class on each control, because the one
+     that gets forgotten is the one nobody realises is clickable.
+     Disabled controls say so instead: a hand over a button that will not
+     respond is a worse lie than an arrow. */
+  button:not(:disabled),
+  summary,
+  [role="button"]:not([aria-disabled="true"]),
+  select:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
   body {
     /* Both routes paint their own ground on their outermost wrapper; these
        are the fallbacks underneath, so an unstyled edge reads as the page
@@ -187,6 +210,20 @@
     color: #000;
     font-weight: 700;
     text-wrap: balance;
+  }
+
+  /* The product opts out of the display face entirely.
+     Inheriting Manrope from the app shell is not enough: the rule above
+     targets the elements directly, and a direct rule beats an inherited
+     value however far down the tree it sits. So the app's headings are
+     named here rather than relying on a class being remembered on every
+     one of them. */
+  .app-type h1,
+  .app-type h2,
+  .app-type h3,
+  .app-type h4 {
+    font-family: var(--font-manrope);
+    letter-spacing: -0.2px;
   }
 
   ::selection {

@@ -30,7 +30,7 @@ export function ConnectButton({
 
   if (state.done || existing === "open") {
     return (
-      <p className="rounded-md border border-soft-green bg-mist px-4 py-4 text-[14px] leading-[21px] text-black">
+      <p className="rounded-md border border-soft-green bg-mist px-4 py-4 text-[18px] leading-[26px] text-black">
         Your request is with them. You will hear when they answer — and nothing is shared until
         they do.
       </p>
@@ -39,7 +39,7 @@ export function ConnectButton({
 
   if (existing === "accepted") {
     return (
-      <p className="rounded-md border border-soft-green bg-mist px-4 py-4 text-[14px] leading-[21px] text-black">
+      <p className="rounded-md border border-soft-green bg-mist px-4 py-4 text-[18px] leading-[26px] text-black">
         They accepted. The conversation opens once the wali approves.
       </p>
     );
@@ -51,7 +51,7 @@ export function ConnectButton({
        other person's decision, and "no longer available" is both kinder
        and safer than "she said no". */
     return (
-      <p className="rounded-md border border-soft-green bg-mist px-4 py-4 text-[14px] leading-[21px] text-text">
+      <p className="rounded-md border border-soft-green bg-mist px-4 py-4 text-[18px] leading-[26px] text-text">
         This one is closed. We do not pass on a second request.
       </p>
     );
@@ -65,7 +65,7 @@ export function ConnectButton({
         {charge === "onAccept" ? "Ask to talk" : "Ask to talk · uses 1 connection"}
       </SubmitButton>
 
-      <p className="text-center text-[12px] leading-[17px] text-text/70">
+      <p className="text-center text-[18px] leading-[26px] text-text/70">
         {charge === "reserve"
           ? `You have ${balance}. It is held while they decide, and returned if they decline or do not answer.`
           : `You have ${balance}.`}

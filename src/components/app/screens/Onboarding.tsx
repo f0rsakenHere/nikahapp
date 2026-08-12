@@ -1,15 +1,13 @@
 import { AppBar, Btn, Chip, Field, Progress, Segmented } from "@/components/app/kit";
 import { HomeBar } from "@/components/app/Phone";
-import { Wordmark } from "@/components/bridely/primitives/Wordmark";
+import { Logo } from "@/components/brand/Logo";
 
 /* 1 — Sign up. Gender is asked first because it determines whether a
    wali is required, and that shapes the rest of onboarding. */
 export function SignUp() {
   return (
     <div className="flex h-full flex-col px-6 pb-10 pt-4">
-      {/* not leading-none: Playfair's line box is taller than 1em and the
-          wordmark loses its descender to the clip */}
-      <Wordmark className="text-[22px] leading-[1.3]" />
+      <Logo className="h-5" />
 
       <h3 className="mt-6 font-playfair text-[28px] font-bold leading-tight text-black">
         Create your account

@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import {
   cancelInvitation,
   inviteWali,
+  nominateModeratorAsWali,
   replaceWali,
   resendInvitation,
   type WaliState,
@@ -34,8 +35,11 @@ const POWERS = [
   "End a conversation at any point",
 ];
 
+/* `min-h-12` rather than `h-12`: at 320 the label wraps, and a fixed
+   height sent the second line across the border. See the same note in
+   settings/lifecycle.tsx. */
 const GHOST =
-  "h-12 w-full rounded-pill border-2 border-accent-deep text-[14px] font-semibold text-accent-deep";
+  "flex min-h-12 w-full items-center justify-center rounded-pill border-2 border-accent-deep px-4 py-2 text-center text-[18px] font-semibold leading-[26px] text-accent-deep";
 
 export type Pending = { name: string; email: string; invitedAt: string; reminders: number };
 export type Confirmed = { name: string; email: string; relationship: string; confirmedAt: string };
@@ -53,7 +57,7 @@ function WaliFields({ v }: { v: NonNullable<WaliState["values"]> }) {
       />
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
+        <span className="text-[18px] font-semibold uppercase tracking-[0.6px] text-text/70">
           Who he is to you
         </span>
         <select
@@ -65,7 +69,7 @@ function WaliFields({ v }: { v: NonNullable<WaliState["values"]> }) {
           key={`relationship-${v.relationship ?? ""}`}
           name="relationship"
           defaultValue={v.relationship ?? ""}
-          className="h-12 w-full rounded-md border border-soft-green bg-white px-3.5 text-[15px] text-black outline-none focus:border-accent-deep"
+          className="h-12 w-full rounded-md border border-soft-green bg-white px-3.5 text-[18px] text-black outline-none focus:border-accent-deep"
         >
           <option value="">Choose…</option>
           {WALI_RELATIONSHIPS.map((r) => (
@@ -100,11 +104,21 @@ function WaliFields({ v }: { v: NonNullable<WaliState["values"]> }) {
 export function GuardianStep({
   pending,
   confirmed,
+  moderatorAvailable,
+  optional = false,
 }: {
   pending: Pending | null;
   confirmed: Confirmed | null;
+  /** Whether anybody is actually sitting in the moderator's seat. */
+  moderatorAvailable: boolean;
+  /** True for a brother: he may name a wali, and nothing waits on it. */
+  optional?: boolean;
 }) {
   const [state, action] = useActionState(inviteWali, EMPTY);
+  const [moderatorState, moderatorAction] = useActionState(
+    async () => nominateModeratorAsWali(),
+    EMPTY
+  );
   const [resendState, resendAction] = useActionState(
     async (prev: WaliState) => resendInvitation(prev),
     EMPTY
@@ -117,8 +131,8 @@ export function GuardianStep({
     return (
       <div className="flex flex-col gap-5">
         <div className="rounded-md border border-soft-green bg-mist px-4 py-4">
-          <p className="text-[14px] font-semibold text-black">{confirmed.name}</p>
-          <p className="mt-1 text-[13px] leading-[20px] text-text">
+          <p className="text-[18px] font-semibold text-black">{confirmed.name}</p>
+          <p className="mt-1 text-[18px] leading-[26px] text-text">
             Confirmed {confirmed.confirmedAt}. He sees everything you do, and no conversation
             opens without him.
           </p>
@@ -129,8 +143,8 @@ export function GuardianStep({
             leave. This is the way out, and it is deliberately not hidden
             behind a support email. */}
         <div className="rounded-md border border-soft-green px-4 py-4">
-          <p className="text-[13px] font-semibold text-black">If he can no longer act for you</p>
-          <p className="mt-1 text-[13px] leading-[20px] text-text">
+          <p className="text-[18px] font-semibold text-black">If he can no longer act for you</p>
+          <p className="mt-1 text-[18px] leading-[26px] text-text">
             Someone else can take his place. He loses access immediately, and the person who
             replaces him does not see anything from before he confirms.
           </p>
@@ -148,8 +162,8 @@ export function GuardianStep({
       return (
         <div className="flex flex-col gap-5">
           <div className="rounded-md border border-soft-green bg-mist px-4 py-4">
-            <p className="text-[14px] font-semibold text-black">Waiting on him</p>
-            <p className="mt-1 text-[13px] leading-[20px] text-text">{replaceState.done}</p>
+            <p className="text-[18px] font-semibold text-black">Waiting on him</p>
+            <p className="mt-1 text-[18px] leading-[26px] text-text">{replaceState.done}</p>
           </div>
           <DevLink href={replaceState.devLink} />
         </div>
@@ -160,7 +174,7 @@ export function GuardianStep({
       <form action={replaceAction} className="flex flex-col gap-6" noValidate>
         <FormError>{replaceState.error}</FormError>
         <div className="rounded-md border border-peach/40 bg-soft-peach/60 px-4 py-4">
-          <p className="text-[13px] leading-[19px] text-black/75">
+          <p className="text-[18px] leading-[26px] text-black/75">
             {confirmed?.name} loses access the moment you send this. Your profile stops being
             shown until the new wali confirms.
           </p>
@@ -170,7 +184,7 @@ export function GuardianStep({
         <button
           type="button"
           onClick={() => setReplacing(false)}
-          className="text-center text-[13px] text-text underline-offset-2 hover:underline"
+          className="text-center text-[18px] text-text underline-offset-2 hover:underline"
         >
           Never mind
         </button>
@@ -183,14 +197,14 @@ export function GuardianStep({
     return (
       <div className="flex flex-col gap-5">
         <div className="rounded-md border border-soft-green bg-mist px-4 py-4">
-          <p className="text-[14px] font-semibold text-black">Waiting on him</p>
-          <p className="mt-1 text-[13px] leading-[20px] text-text">
+          <p className="text-[18px] font-semibold text-black">Waiting on him</p>
+          <p className="mt-1 text-[18px] leading-[26px] text-text">
             {pending
               ? `We have written to ${pending.name} at ${pending.email}. Your profile goes to review once he confirms.`
               : state.done}
           </p>
           {pending ? (
-            <p className="mt-2 text-[11px] text-text/70">
+            <p className="mt-2 text-[18px] text-text/70">
               Sent {pending.invitedAt}
               {pending.reminders ? ` · reminded ${pending.reminders} time${pending.reminders === 1 ? "" : "s"}` : ""}
             </p>
@@ -203,7 +217,7 @@ export function GuardianStep({
           <form action={resendAction}>
             <FormError>{resendState.error}</FormError>
             {resendState.done ? (
-              <p className="mb-2 text-[12px] text-accent-deep">{resendState.done}</p>
+              <p className="mb-2 text-[18px] text-accent-deep">{resendState.done}</p>
             ) : null}
             <button type="submit" className={GHOST}>
               Send it to him again
@@ -222,23 +236,61 @@ export function GuardianStep({
 
   /* ---------------------------------------------- nobody named yet -- */
   return (
-    <form action={action} className="flex flex-col gap-6" noValidate>
-      <FormError>{state.error}</FormError>
+    <div className="flex flex-col gap-7">
+      <form action={action} className="flex flex-col gap-6" noValidate>
+        <FormError>{state.error}</FormError>
 
-      <div className="rounded-md border border-peach/40 bg-soft-peach/60 px-4 py-4">
-        <p className="text-[13px] font-semibold text-peach-deep">He will be able to:</p>
-        <ul className="mt-2 flex flex-col gap-1.5">
-          {POWERS.map((p) => (
-            <li key={p} className="text-[13px] leading-[19px] text-black/75">
-              · {p}
-            </li>
-          ))}
-        </ul>
-      </div>
+        <div className="rounded-md border border-peach/40 bg-soft-peach/60 px-4 py-4">
+          <p className="text-[18px] font-semibold text-peach-deep">He will be able to:</p>
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {POWERS.map((p) => (
+              <li key={p} className="text-[18px] leading-[26px] text-black/75">
+                · {p}
+              </li>
+            ))}
+          </ul>
+          {optional ? (
+            /* Said plainly rather than left to be discovered. A
+               conversation carries one guardian's seat and it is the
+               sister's; naming someone here records him and shows him to
+               our team, and does not yet put him in the thread. */
+            <p className="mt-3 border-t border-peach/40 pt-3 text-[18px] leading-[26px] text-black/75">
+              Not yet, though — a conversation currently seats the sister&apos;s wali only. Naming
+              someone here records him for our team. We will tell you when he can read alongside
+              her wali.
+            </p>
+          ) : null}
+        </div>
 
-      <WaliFields v={state.values ?? {}} />
+        <WaliFields v={state.values ?? {}} />
 
-      <SubmitButton>Send his invitation</SubmitButton>
-    </form>
+        <SubmitButton>Send his invitation</SubmitButton>
+      </form>
+
+      {/* The way through for a woman with nobody to ask. Offered second,
+          not first: where there is a father or a brother, he is the
+          right answer, and leading with the service would quietly
+          replace a family's role with a company's. Shown only when the
+          seat is actually staffed. */}
+      {moderatorAvailable ? (
+        <div className="rounded-md border border-soft-green bg-mist px-4 py-4">
+          <p className="text-[18px] font-semibold text-black">If there is nobody you can ask</p>
+          <p className="mt-1 text-[18px] leading-[26px] text-text">
+            A NikahCanada moderator can act as your wali. He has exactly the powers listed above —
+            he reads everything and approves before any conversation opens — and you can replace him
+            with a relative at any time.
+          </p>
+          <form action={moderatorAction} className="mt-3">
+            <FormError>{moderatorState.error}</FormError>
+            {moderatorState.done ? (
+              <p className="mb-2 text-[18px] text-accent-deep">{moderatorState.done}</p>
+            ) : null}
+            <button type="submit" className={GHOST}>
+              Ask a NikahCanada moderator
+            </button>
+          </form>
+        </div>
+      ) : null}
+    </div>
   );
 }

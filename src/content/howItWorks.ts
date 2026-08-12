@@ -247,6 +247,6 @@ export const never = {
 export const close = {
   title: "That is the whole process.",
   body: "Registration is free and takes about ten minutes. We will speak with you by phone before any matching begins.",
-  cta: { label: "Register Now", href: "/#contact" },
+  cta: { label: "Register Now", href: "/register" },
   note: "Questions from a parent or guardian? Contact us and we will walk through it with you.",
 };
