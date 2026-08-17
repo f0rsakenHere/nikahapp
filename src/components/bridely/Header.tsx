@@ -28,8 +28,19 @@ export function Header({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <header className="relative z-50 pt-[26px]">
       <div className="shell-b flex items-center">
-        <Link href="/" className="-my-1.5 shrink-0 py-1.5" aria-label={`${brand.name} home`}>
-          <Logo className="h-8 xl:h-10" priority />
+        {/* The padding carries the tap target, not the artwork. A 20px
+            wordmark inside `py-1.5` is a 32px link, and 40 is the floor —
+            so the padding grew as the logo shrank, and the negative
+            margin keeps the header the height it was. */}
+        <Link href="/" className="-my-2.5 shrink-0 py-2.5" aria-label={`${brand.name} home`}>
+          {/* Sized to the width the header was built around, not to the
+              old height. The ringed mark was 1282×248 and stacked the
+              rings above the script; the wordmark is 1282×163 and is all
+              script, so h-8 went from 165px wide to 252 and pushed the
+              right cluster off a 320px screen. h-5 is the same 157px it
+              always was — and because none of that height is rings any
+              more, the lettering is bigger than it was before. */}
+          <Logo className="h-5 xl:h-7" priority />
         </Link>
 
         {/* ---- desktop nav ---- */}

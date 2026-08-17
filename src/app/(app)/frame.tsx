@@ -125,8 +125,14 @@ export async function AppFrame({
       <div className="flex min-h-dvh w-full flex-col lg:flex-row">
         {/* ---- pane one: where you can go --------------------------- */}
         <aside className="hidden w-[264px] shrink-0 flex-col border-r border-soft-green bg-mist/40 px-4 py-6 lg:flex">
-          <Link href="/dashboard" aria-label="NikahCanada" className="px-3">
-            <Logo className="h-7" priority />
+          <Link href="/dashboard" aria-label="NikahCanada" className="-my-2.5 px-3 py-2.5">
+            {/* The rail is 264px less 32 of its own padding and 24 of the
+                link's, so 208 is all there is. The wordmark at h-7 is
+                220 and would have run into the border — and the
+                responsive sweep would never have said so, because the
+                rail only exists from lg up and that sweep stops at 768.
+                Measured here instead. */}
+            <Logo className="h-5" priority />
           </Link>
 
           <SideNav active={active} />
@@ -145,8 +151,8 @@ export async function AppFrame({
 
         {/* ---- the phone's header: no room for a rail --------------- */}
         <header className="fixed inset-x-0 top-0 z-20 flex items-center justify-between border-b border-soft-green bg-white/95 px-5 py-3 backdrop-blur lg:hidden">
-          <Link href="/dashboard" aria-label="NikahCanada" className="-my-2 flex items-center py-2">
-            <Logo className="h-6" priority />
+          <Link href="/dashboard" aria-label="NikahCanada" className="-my-3 flex items-center py-3">
+            <Logo className="h-4" priority />
           </Link>
           <div className="flex items-center gap-5">
             <Bell compact />

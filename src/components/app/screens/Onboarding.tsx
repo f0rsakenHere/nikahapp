@@ -7,7 +7,7 @@ import { Logo } from "@/components/brand/Logo";
 export function SignUp() {
   return (
     <div className="flex h-full flex-col px-6 pb-10 pt-4">
-      <Logo className="h-5" />
+      <Logo className="h-3.5" />
 
       <h3 className="mt-6 font-playfair text-[28px] font-bold leading-tight text-black">
         Create your account

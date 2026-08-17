@@ -8,8 +8,16 @@
     both light and dark browser chrome, and the brand mint is too pale to
     carry a white letterform (1.77:1).
 
-    TODO: no logo file has been supplied. This is a typographic stand-in
-    matching primitives/Wordmark.tsx; replace it when a real mark exists.
+    The logo is not in here, and that is deliberate. What was supplied is
+    a wordmark — "NikahCanada.com" in script, 1282×163 — and eight times
+    wider than it is tall does not go into a 32px square. Squashed it is
+    unreadable; cropped it is the letter N, which is what this already
+    is, drawn to fit.
+
+    The August artwork also dropped the interlocking rings, which were
+    the one part of the brand that could have carried a tile. So there is
+    still nothing square to use, and a square mark is what to ask the
+    client for — not another crop of this file.
   -->
   <path d="M11 0H32V21A11 11 0 0 1 21 32H0V11A11 11 0 0 1 11 0Z" fill="#2F6F6B"/>
   <path d="M9 23V9H13L19 18.5V9H23V23H19L13 13.5V23Z" fill="#FFFFFF"/>

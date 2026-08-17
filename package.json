@@ -27,6 +27,8 @@
     "check:links": "node scripts/link-check.cjs",
     "check:draft": "node scripts/draft-check.cjs",
     "check:dashboard": "node scripts/dashboard-flow.cjs",
+    "check:logo": "node scripts/logo-check.cjs",
+    "brand:crop": "node scripts/brand-crop.cjs",
     "shot": "node scripts/screenshot.cjs .",
     "shot:phone": "node scripts/phone-shots.cjs"
   },

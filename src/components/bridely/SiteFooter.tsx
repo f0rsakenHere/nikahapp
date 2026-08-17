@@ -65,8 +65,15 @@ export function SiteFooter() {
         <div className="grid gap-12 xl:grid-cols-[434px_1fr_1fr] xl:gap-[30px]">
           {/* brand pill */}
           <div className="mx-auto w-full max-w-[434px] rounded-[240px] bg-mist px-[50px] pb-[49px] pt-[60px] text-center xl:-mt-[128px] xl:pt-[110px]">
-            <Link href="/" className="inline-block" aria-label={`${brand.name} home`}>
-              <Logo variant="full" className="mx-auto h-16" />
+            {/* `-my-2 py-2` for the tap target: the mark drops to 32px on
+                a phone so the pill can hold it without squashing, and 32
+                is under the 40px floor a link has to clear. */}
+            <Link href="/" className="-my-2 inline-block py-2" aria-label={`${brand.name} home`}>
+              {/* The pill's inner width is 190px at 320, and the lockup
+                  at h-12 wants 259. `object-contain` in Logo stops that
+                  being a squash; this stops it being a logo floating in
+                  a box a third taller than itself. */}
+              <Logo variant="full" className="mx-auto h-8 sm:h-12" />
             </Link>
             <p className="mb-[22px] mt-5 font-jost text-[17px] font-light leading-[30px] text-text xl:text-[18px]">
               {footer.blurb}
