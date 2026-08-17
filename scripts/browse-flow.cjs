@@ -19,6 +19,15 @@ const STAMP = Date.now();
 const PASSWORD = "a-long-enough-passphrase";
 const emails = [];
 
+/* `grantPerMonth` in src/lib/domain/settings.ts — D1a, three a month.
+   The ledger assertions below were written as bare numbers (9, 9, 9, 10)
+   against a grant of ten, so changing the setting turned four passing
+   checks into four failures that said nothing about the setting. They
+   are relative to this now, and the grant itself is asserted below, so
+   a mismatch between this constant and the product shows up as one
+   named failure rather than four arithmetic ones. */
+const GRANT = 3;
+
 const findings = [];
 let checks = 0;
 /* What a person can actually read. `textContent` includes the RSC
@@ -135,14 +144,21 @@ async function makeMember(browser, db, gender, name, over = {}) {
     check("a brother sees sisters", /Sister/.test(list));
     check("and not other brothers", !/Brother ·/.test(list));
     check("nor himself", !/Yusuf/.test(list));
-    check("the balance is shown", /10 connections left/.test(list), list.slice(0, 200));
+    check("the balance is shown", new RegExp(`${GRANT} connections left`).test(list), list.slice(0, 200));
     check("initials only, no names", !/Fatima/.test(list) && !/Fixture/.test(list));
 
     const granted = await db
       .collection("connectionLedger")
       .find({ userId: String(brother.user._id) })
       .toArray();
-    check("the monthly grant was given once", granted.length === 1 && granted[0].delta === 10);
+    /* Three, not ten — D1a, decided. Asserted on the delta rather than
+       only on the row count so that a grant of the wrong size cannot
+       pass as a grant that happened. */
+    check(
+      `the monthly grant was given once, and it is ${GRANT}`,
+      granted.length === 1 && granted[0].delta === GRANT,
+      `${granted.length} row(s), delta ${granted[0] && granted[0].delta}`
+    );
 
     await b.reload({ waitUntil: "networkidle" });
     const twice = await db
@@ -187,7 +203,7 @@ async function makeMember(browser, db, gender, name, over = {}) {
       .find({ userId: String(brother.user._id) })
       .toArray();
     const balance = afterSend.reduce((t, e) => t + e.delta, 0);
-    check("the connection was reserved, not spent", balance === 9);
+    check("the connection was reserved, not spent", balance === GRANT - 1, String(balance));
     check(
       "and the entry names the request it is held against",
       afterSend.some((e) => e.reason === "reservedForRequest" && e.requestId === request._id.toHexString())
@@ -218,7 +234,7 @@ async function makeMember(browser, db, gender, name, over = {}) {
       .toArray();
     check(
       "the held connection is now spent, not double-charged",
-      afterAccept.reduce((t, e) => t + e.delta, 0) === 9
+      afterAccept.reduce((t, e) => t + e.delta, 0) === GRANT - 1
     );
     check(
       "and the ledger reads as one story",
@@ -244,7 +260,7 @@ async function makeMember(browser, db, gender, name, over = {}) {
       .toArray();
     check(
       "declining returns the connection",
-      declinedLedger.reduce((t, e) => t + e.delta, 0) === 9,
+      declinedLedger.reduce((t, e) => t + e.delta, 0) === GRANT - 1,
       String(declinedLedger.reduce((t, e) => t + e.delta, 0))
     );
     check(
@@ -320,7 +336,7 @@ async function makeMember(browser, db, gender, name, over = {}) {
       .toArray();
     check(
       "a refused request costs nothing",
-      noCharge.reduce((sum, e) => sum + e.delta, 0) === 10
+      noCharge.reduce((sum, e) => sum + e.delta, 0) === GRANT
     );
 
     /* ---------- a sister who loses her wali leaves the pool ----------- */

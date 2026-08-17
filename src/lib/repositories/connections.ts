@@ -52,6 +52,17 @@ export function periodOf(now: Date): string {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
+/** When the next grant lands: the first of the following month.
+ *
+ *  Beside `periodOf` because the two are the same rule read in opposite
+ *  directions — the period is keyed to the calendar month, so that is
+ *  when more connections appear. Defining the date the member is shown
+ *  anywhere else is how a screen ends up promising a day the ledger
+ *  does not honour. */
+export function nextGrantAt(now: Date): Date {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+}
+
 /** Gives this month's connections if they have not been given.
  *
  *  Lazy rather than scheduled: there is no job runner, and a grant that

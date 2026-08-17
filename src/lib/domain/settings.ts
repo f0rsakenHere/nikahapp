@@ -41,11 +41,24 @@ export const SettingsSchema = z.object({
    * Where connections come from. `grantPerMonth` is what everyone gets
    * for nothing; `purchasable` says whether more can be bought.
    *
-   * Ten is the number the client used in conversation, and it is
-   * explicitly an example rather than a decision. If connections are
-   * sold, the fee copy on the marketing site is no longer the whole
-   * pricing story and needs a second line — flagged in home.ts. */
-  grantPerMonth: z.number().int().min(0).max(200).default(10),
+   * Three, on the client's instruction. Ten was a number from a
+   * conversation and never a decision; three is the decision, and it is
+   * a different product. Under `connectionCharge: "reserve"` a member
+   * can have three asks in flight and no more, so three people who never
+   * answer take the whole month — `requestExpiryDays` is what hands them
+   * back, and at 14 days that is half the month gone before the third is
+   * returned. Worth watching in the ledger rather than worth softening
+   * here.
+   *
+   * It is a top-up, not a reset: `balanceOf` sums the ledger, so an
+   * unspent month rolls into the next one and someone who never asks
+   * anybody accrues 36 a year. That was invisible at ten a month and is
+   * the whole balance at three.
+   *
+   * If connections are ever sold, the fee copy on the marketing site is
+   * no longer the whole pricing story and needs a second line — flagged
+   * in home.ts. */
+  grantPerMonth: z.number().int().min(0).max(200).default(3),
   purchasable: z.boolean().default(false),
 
   /* ── D1c ────────────────────────────────────────────────────────────
@@ -169,8 +182,11 @@ export const DEFAULT_SETTINGS: Settings = SettingsSchema.parse({});
  *  somewhere people look, rather than in a document nobody opens. */
 export const OPEN_DECISIONS: { key: keyof Settings; question: string; risk: string }[] = [
   {
-    key: "grantPerMonth",
-    question: "D1a — how many connections does someone get, and can they buy more?",
+    /* Half of D1a is answered: three a month, decided by the client.
+       What is left is whether more can be bought, which is the half
+       that touches the published pricing. */
+    key: "purchasable",
+    question: "D1a — may a member buy more than the three connections a month they are given?",
     risk: "If they are sold, the published pricing copy is incomplete.",
   },
   {

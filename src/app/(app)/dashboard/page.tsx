@@ -12,6 +12,7 @@ import {
   countPendingInbound,
   ensureMonthlyGrant,
   listRequests,
+  nextGrantAt,
   readSettings,
 } from "@/lib/repositories/connections";
 import { listConversationsFor } from "@/lib/repositories/conversations";
@@ -531,8 +532,14 @@ export default async function DashboardPage({
                 <p className="mt-2 font-manrope text-[38px] font-bold leading-none text-peach-deep">
                   {balance}
                 </p>
+                {/* The date the next three arrive, not today's date.
+                    `periodOf` keys the grant to the calendar month, so
+                    it is the first of the next one — printing `now`
+                    here put today beside the word "renews", which reads
+                    as the renewal day. Nobody looked twice at that
+                    while the number was ten; at three they will. */}
                 <p className="mt-2 text-[18px] leading-[26px] text-text">
-                  Renews monthly · {day(now)}
+                  {settings.grantPerMonth} more on {day(nextGrantAt(now))}
                 </p>
                 {/* The three charging rules differ in when the connection
                     leaves the account, and a member who is deciding

@@ -160,7 +160,20 @@ const body = (p) => p.innerText("body");
     check("with the pool offered", /Browse the pool/.test(liveText));
     check("and the closed-pool notice withdrawn", !/Browsing opens once/.test(liveText));
     check("the monthly quota is shown once she can spend it", /Requests left/i.test(liveText));
-    check("with the date it renews", /Renews monthly/i.test(liveText));
+    /* The date the next grant actually lands, not today's. It used to
+       print `now` beside the word "renews", which reads as the renewal
+       day — so this asserts the first of a month, and that it is not
+       today. */
+    const renews = /(\d+) more on ([A-Z][a-z]{2} 1, \d{4})/.exec(liveText);
+    check("it says when the next connections arrive", Boolean(renews), liveText.slice(0, 200));
+    check(
+      "and that date is not today",
+      Boolean(renews) && renews[2] !== new Intl.DateTimeFormat("en-CA", {
+        dateStyle: "medium",
+        timeZone: "UTC",
+      }).format(new Date()),
+      renews && renews[2]
+    );
     /* Still three counts, and still no fourth box for the quota. */
     for (const label of ["Waiting on you", "Conversations", "You asked"]) {
       check(`the "${label}" count survives going live`, new RegExp(label, "i").test(liveText));
