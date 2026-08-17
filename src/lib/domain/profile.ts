@@ -366,34 +366,27 @@ export const STEPS: readonly Step[] = [
   },
 ] as const;
 
-/* A sister is not asked for a reference: her wali is the person who
- * vouches for her, and asking for both is asking twice. */
-const HIDDEN_FROM: Record<"brother" | "sister", StepId | null> = {
+/* One voucher each, and never the other's.
+ *
+ * A sister names a wali: he confirms by email, holds a veto, and reads
+ * her correspondence. A brother names a reference, whom staff telephone
+ * once. Asking either of them for both is asking twice.
+ *
+ * The wali step used to be shown to a brother too — optional, uncounted,
+ * on the reasoning that a man who wants his father watching should be
+ * able to record it. It is gone. A step that sits in his checklist,
+ * offers him a form and writes a guardianship is a wali system whatever
+ * the word "optional" above it says, and the wali in this product is the
+ * woman's guardian (§5.2). Nothing downstream ever seated his: a
+ * conversation carries one guardian's seat and it is hers, go-live has
+ * never asked him for one, and the admin screen shows him a reference
+ * where it shows her a wali. So what the step collected was an
+ * obligation-shaped nothing — a man invited by email, told he could
+ * approve and read, who then held no such power. */
+const HIDDEN_FROM: Record<"brother" | "sister", StepId> = {
   sister: "reference",
-  brother: null,
+  brother: "guardian",
 };
-
-/* The wali step is shown to a brother but never demanded of him.
- *
- * He can name one — plenty of men want a father or an elder brother
- * seeing what they send, and a service that refuses to record that is
- * making the decision for him. It is not a condition of his profile
- * going live, because the wali in this product is the woman's guardian
- * (§5.2) and requiring one of him would be inventing an obligation the
- * scholars were not asked about.
- *
- * "Optional" here means exactly one thing: it is not counted, in either
- * half of the fraction. Counting it as done would tick a step he has
- * not taken; counting it as outstanding would park him below 100% with
- * nothing he is obliged to do about it. */
-const OPTIONAL_FOR: Record<"brother" | "sister", ReadonlySet<StepId>> = {
-  brother: new Set<StepId>(["guardian"]),
-  sister: new Set<StepId>(),
-};
-
-export function isOptionalStep(id: StepId, gender: "brother" | "sister"): boolean {
-  return OPTIONAL_FOR[gender].has(id);
-}
 
 /** The steps this member is actually shown. */
 export function stepsFor(gender: "brother" | "sister"): readonly Step[] {
@@ -413,9 +406,7 @@ export function completeness(
   p: ProfileDraft,
   ctx: StepContext = NO_WALI
 ): { step: number; of: number; percent: number } {
-  /* Optional steps are still shown — they are just not part of the
-     progress they are shown next to. */
-  const steps = stepsFor(p.gender).filter((s) => !isOptionalStep(s.id, p.gender));
+  const steps = stepsFor(p.gender);
   const done = steps.filter((s) => s.required(p, ctx));
   const firstUnfinished = steps.find((s) => !s.required(p, ctx));
   return {
@@ -445,10 +436,9 @@ export function submitBlockers(p: ProfileDraft, context: StepContext): SubmitBlo
      * true of it. Listing it here as well would tell a sister her
      * guardian step is "incomplete" — which reads as something she
      * forgot to fill in, when what it means is that someone else has
-     * not replied to an email yet. The reference step is hers to
+     * not replied to an email yet. The reference step is his to
      * finish, so it is not excluded. */
     if (step.id === "guardian") continue;
-    if (isOptionalStep(step.id, p.gender)) continue;
     if (!step.required(p, context)) blockers.push({ step: step.id, reason: "incomplete" });
   }
 

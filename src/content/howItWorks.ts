@@ -221,7 +221,7 @@ export const stages: {
           "the wali — at the same moment.",
         pins: [
           { n: 1, x: 0, y: 46, text: "Only now does a real name appear. Everything before this was initials." },
-          { n: 2, x: 0, y: 63, text: "His wali or reference is included, so both families can speak directly." },
+          { n: 2, x: 0, y: 63, text: "His reference is included, so both families can speak directly." },
           { n: 3, x: 0, y: 82, text: "Her guardian receives the identical details at the same moment." },
         ],
       },

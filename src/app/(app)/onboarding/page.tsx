@@ -6,13 +6,7 @@ import { logout } from "@/lib/auth/actions";
 import { submitProfile } from "@/lib/profile/actions";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
 import { hasConfirmedWali } from "@/lib/repositories/guardianships";
-import {
-  STEPS,
-  completeness,
-  isOptionalStep,
-  stepsFor,
-  submitBlockers,
-} from "@/lib/domain/profile";
+import { STEPS, completeness, stepsFor, submitBlockers } from "@/lib/domain/profile";
 import { Check } from "@/components/app/kit";
 import { AppFrame } from "../frame";
 
@@ -49,18 +43,7 @@ export default async function OnboardingPage({
   const progress = completeness(profile, ctx);
   const blocked = new Set(blockers.map((b) => b.step));
 
-  /* An optional step is never in `blockers` — that is what optional
-     means — so asking the blockers whether it is done answers "yes"
-     about something nobody has touched. It gets asked directly. */
-  const isDone = (id: (typeof visible)[number]["id"]) => {
-    const step = visible.find((s) => s.id === id)!;
-    return isOptionalStep(id, profile.gender) ? step.required(profile, ctx) : !blocked.has(id);
-  };
-
-  /* Counted over the steps the percentage is counted over, so the two
-     cannot disagree. "1 of 6 done" beside "0%" is the sort of thing a
-     reader spots instantly. */
-  const counted = visible.filter((s) => !isOptionalStep(s.id, profile.gender));
+  const isDone = (id: (typeof visible)[number]["id"]) => !blocked.has(id);
 
   const blurb =
     profile.status !== "draft"
@@ -80,7 +63,7 @@ export default async function OnboardingPage({
       title="Your profile"
       aside={
         <span className="text-[18px] text-text">
-          {counted.filter((s) => isDone(s.id)).length} of {counted.length} steps done
+          {visible.filter((s) => isDone(s.id)).length} of {visible.length} steps done
         </span>
       }
     >
@@ -97,8 +80,13 @@ export default async function OnboardingPage({
           </p>
           <p className="mt-2 text-[18px] leading-[26px] text-text">
             Someone will read your profile and telephone you before any matching begins. We check
-            identity and speak to your reference or your wali first. You can still change your
-            answers below.
+            identity and speak to{" "}
+            {/* Named, not offered as a pair. He has a reference and she has
+                a wali, and this screen knows which of the two is reading
+                it — "your reference or your wali" asks somebody to work
+                out which half was meant for them. */}
+            {profile.gender === "sister" ? "your wali" : "your reference"} first. You can still
+            change your answers below.
           </p>
         </div>
       ) : null}
@@ -110,7 +98,7 @@ export default async function OnboardingPage({
             `incomplete` blockers without being finished. */}
         <div className="flex items-center justify-between text-[18px] font-semibold uppercase tracking-[1px] text-text/70">
           <span>
-            {counted.filter((s) => isDone(s.id)).length} of {counted.length} done
+            {visible.filter((s) => isDone(s.id)).length} of {visible.length} done
           </span>
           <span className="text-peach-deep">{progress.percent}%</span>
         </div>
@@ -130,9 +118,10 @@ export default async function OnboardingPage({
       >
         {visible.map((step) => {
           const done = isDone(step.id);
-          const optional = isOptionalStep(step.id, profile.gender);
-          /* Only hers waits on anybody. His is simply not required. */
-          const waitingOnWali = step.id === "guardian" && !done && !optional;
+          /* The one step nobody can finish alone, and only a sister has
+             it. Reported as waiting on somebody rather than as her
+             failure to fill something in. */
+          const waitingOnWali = step.id === "guardian" && !done;
 
           return (
             <li key={step.id}>
@@ -152,13 +141,7 @@ export default async function OnboardingPage({
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="text-[18px] font-semibold text-black">{step.title}</span>
                   <span className="text-[18px] leading-[26px] text-text/70">
-                    {waitingOnWali
-                      ? "Waiting on your wali"
-                      : done
-                        ? "Done"
-                        : optional
-                          ? "Optional"
-                          : step.blurb}
+                    {waitingOnWali ? "Waiting on your wali" : done ? "Done" : step.blurb}
                   </span>
                 </span>
               </Link>

@@ -217,12 +217,29 @@ async function signIn(context, email) {
      strength of a query that never matched. Wrong on both counts now:
      the id is cast, and a missing wali is a failure rather than a
      silently shorter run. */
-  const guardianship = await db.collection("guardianships").findOne({ status: "confirmed" });
+  /* And the ward has to be a sister. The wali step is hers alone now, so
+     a guardianship picked at random could belong to a brother left over
+     from when the step was offered to him — his account would be signed
+     in, bounced off /onboarding/guardian, and the screen would go
+     unmeasured while the run reported it covered. */
+  let guardianship = null;
+  let sister = null;
+  for (const g of await db.collection("guardianships").find({ status: "confirmed" }).toArray()) {
+    const owner = await db
+      .collection("profiles")
+      .findOne({ userId: new ObjectId(String(g.memberUserId)) }, { projection: { gender: 1 } });
+    if (owner?.gender !== "sister") continue;
+    sister = await db.collection("users").findOne({ _id: new ObjectId(String(g.memberUserId)) });
+    if (sister) {
+      guardianship = g;
+      break;
+    }
+  }
   const wali = guardianship
     ? await db.collection("users").findOne({ _id: new ObjectId(String(guardianship.waliUserId)) })
     : null;
-  if (!wali) {
-    console.error("\nFAIL  no confirmed wali to sign in as — the wali screens would go unmeasured.");
+  if (!wali || !sister) {
+    console.error("\nFAIL  no sister with a confirmed wali — the wali screens would go unmeasured.");
     console.error("      Run: node scripts/seed-activity.cjs --for <member email> --approve\n");
     process.exitCode = 1;
     await client.close();
@@ -258,9 +275,13 @@ async function signIn(context, email) {
       "/onboarding/basics",
       "/onboarding/deen",
       "/onboarding/lookingFor",
-      "/onboarding/guardian",
+      /* His slot-4 screen. He used to be sent to /onboarding/guardian
+         here, which is a sister's screen and is no longer his. */
+      "/onboarding/reference",
       "/settings",
     ].filter(Boolean),
+    /* The wali step, measured as the only person who has one. */
+    sister: ["/onboarding", "/onboarding/guardian"],
     wali: ["/wali"],
   };
 
@@ -272,6 +293,7 @@ async function signIn(context, email) {
       if (!paths.length) continue;
       const context = await browser.newContext({ viewport: { width: widths[0], height: 900 } });
       if (role === "member") await signIn(context, MEMBER);
+      if (role === "sister") await signIn(context, sister.email);
       if (role === "wali") await signIn(context, wali.email);
 
       const page = await context.newPage();

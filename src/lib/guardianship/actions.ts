@@ -58,16 +58,28 @@ async function origin(): Promise<string> {
 
 /* ------------------------------------------------------- her side ------ */
 
-export async function inviteWali(_prev: WaliState, form: FormData): Promise<WaliState> {
+/** Who may name a wali: a signed-in sister with a profile, and nobody
+ *  else.
+ *
+ *  A brother has no wali step (HIDDEN_FROM in domain/profile.ts) and the
+ *  step page turns him away, so nothing in the app leads him here. This
+ *  is the door refusing rather than the corridor being unlit — a
+ *  bookmarked URL, a tab left open from before the change, or a POST put
+ *  together by hand all end up back at his own checklist instead of
+ *  writing a guardianship nothing downstream would ever honour. */
+async function sisterNamingWali() {
   const session = await currentUser();
   if (!session) redirect("/login?next=/onboarding/guardian");
 
   const profile = await findProfileByUserId(session.user.id);
   if (!profile) redirect("/onboarding");
-  /* No gender check. A brother may name a wali too — it is optional for
-     him rather than forbidden, and the guardianship this writes is the
-     same document either way. What differs is only what depends on it:
-     her profile cannot go live without one, his can. */
+  if (profile.gender !== "sister") redirect("/onboarding");
+
+  return { session, profile };
+}
+
+export async function inviteWali(_prev: WaliState, form: FormData): Promise<WaliState> {
+  const { session, profile } = await sisterNamingWali();
 
   const values = {
     name: String(form.get("name") ?? ""),
@@ -174,11 +186,7 @@ export async function inviteWali(_prev: WaliState, form: FormData): Promise<Wali
  *  and a service that tells her to come back when she has a father is
  *  not serving her. */
 export async function nominateModeratorAsWali(): Promise<WaliState> {
-  const session = await currentUser();
-  if (!session) redirect("/login?next=/onboarding/guardian");
-
-  const profile = await findProfileByUserId(session.user.id);
-  if (!profile) redirect("/onboarding");
+  const { session, profile } = await sisterNamingWali();
 
   const settings = await readSettings();
   const moderatorId = settings.moderatorWaliUserId;
@@ -412,11 +420,7 @@ export async function resendInvitation(_prev: WaliState): Promise<WaliState> {
  *  correspondence.
  */
 export async function replaceWali(_prev: WaliState, form: FormData): Promise<WaliState> {
-  const session = await currentUser();
-  if (!session) redirect("/login?next=/onboarding/guardian");
-
-  const profile = await findProfileByUserId(session.user.id);
-  if (!profile) redirect("/onboarding");
+  const { session, profile } = await sisterNamingWali();
 
   const all = await listGuardianshipsForMember(session.user.id);
   const active = activeGuardianship(all);

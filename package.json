@@ -15,6 +15,7 @@
     "jobs:expire": "node scripts/expire-invitations.cjs",
     "db:purge-fixtures": "node scripts/purge-fixtures.cjs",
     "db:backfill-birth-year": "node scripts/backfill-birth-year.cjs",
+    "db:revoke-brother-walis": "node scripts/revoke-brother-walis.cjs",
     "db:seed": "node scripts/seed-pool.cjs",
     "db:seed-activity": "node scripts/seed-activity.cjs",
     "db:moderator-wali": "node scripts/create-moderator-wali.cjs",

@@ -6,7 +6,6 @@ import {
   STEPS,
   completeness,
   inPool,
-  isOptionalStep,
   poolStatuses,
   stepById,
   stepsFor,
@@ -146,12 +145,11 @@ describe("stepsFor", () => {
     ]);
   });
 
-  it("shows a brother the reference step and the wali step, in that order", () => {
+  it("shows a brother the reference step where she has her wali", () => {
     expect(stepsFor("brother").map((s) => s.id)).toEqual([
       "basics",
       "background",
       "deen",
-      "guardian",
       "reference",
       "lookingFor",
     ]);
@@ -161,16 +159,15 @@ describe("stepsFor", () => {
     expect(stepsFor("sister").map((s) => s.id)).not.toContain("reference");
   });
 
-  it("offers a brother the wali step without demanding it", () => {
-    expect(stepsFor("brother").map((s) => s.id)).toContain("guardian");
-    expect(isOptionalStep("guardian", "brother")).toBe(true);
-    expect(isOptionalStep("guardian", "sister")).toBe(false);
+  it("never shows a brother the wali step — the wali is her guardian", () => {
+    /* It used to be there, optional and uncounted. An optional step that
+       invites a man by email and tells him he may approve and read is a
+       wali system whatever the label says, and nothing downstream ever
+       gave him a seat. */
+    expect(stepsFor("brother").map((s) => s.id)).not.toContain("guardian");
   });
 
-  it("leaves an optional step out of the progress it sits next to", () => {
-    /* A brother with everything else done is finished, whatever he has
-       or has not done about a wali. Counting it would park him below
-       100% with nothing he is obliged to do. */
+  it("finishes a brother at 100% without anybody being asked to confirm", () => {
     const full = draft({
       gender: "brother",
       basics: { birthYear: 1995, city: "Montreal", province: "QC", citizenship: "citizen" },

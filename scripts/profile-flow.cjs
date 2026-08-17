@@ -174,15 +174,13 @@ const mongo = new MongoClient(uri, {
       const email = await register(p, "brother");
 
       const steps = await p.locator("ol li a").count();
-      /* Six: his five, plus the wali step, which he is offered and never
-         required to take. */
-      check("a brother sees six steps", steps === 6, `saw ${steps}`);
+      /* Five, the same as hers. The reference sits where her wali does;
+         he is not shown both, and he is not shown a sixth. */
+      check("a brother sees five steps", steps === 5, `saw ${steps}`);
       check("a brother starts at 0% too", (await p.textContent("body")).includes("0%"));
-      check(
-        "he is shown both a reference and a wali",
-        /Your reference/.test(await p.textContent("body")) &&
-          /Your wali/.test(await p.textContent("body"))
-      );
+      const brotherSteps = await p.textContent("body");
+      check("he is shown the reference step", /Your reference/.test(brotherSteps));
+      check("and not a wali step alongside it", !/Your wali/.test(brotherSteps));
 
       await p.goto(BASE + "/onboarding/deen", { waitUntil: "networkidle" });
       const deen = await p.textContent("body");
@@ -203,16 +201,34 @@ const mongo = new MongoClient(uri, {
       const bProfile = await db.collection("profiles").findOne({ userId: brother._id });
       check("his reference was stored", bProfile?.reference?.name === "Imam Suleiman Diallo");
 
-      /* The wali step is his to use if he wants it — and it says so,
-         rather than implying his profile is waiting on somebody. */
+      /* The wali is her guardian, and he has no step for one. The URL
+         was live until recently — a bookmark or an open tab still points
+         at it — so this is walked rather than assumed. */
       await p.goto(BASE + "/onboarding/guardian", { waitUntil: "networkidle" });
-      const waliStep = await p.textContent("body");
       check(
-        "a brother reaches the wali step",
-        new URL(p.url()).pathname === "/onboarding/guardian",
+        "a brother typing the wali step's URL is sent back",
+        new URL(p.url()).pathname === "/onboarding",
         p.url()
       );
-      check("and it is marked optional for him", /optional/i.test(waliStep), waliStep.slice(0, 160));
+
+      /* And his checklist does not mention one at all — not as a step,
+         not as an optional extra, not as a link he could follow. */
+      const checklist = await p.textContent("body");
+      check("his checklist names no wali", !/wali/i.test(checklist), checklist.slice(0, 200));
+      check(
+        "and offers no way through to one",
+        (await p.locator('a[href="/onboarding/guardian"]').count()) === 0
+      );
+
+      /* The dashboard is the other screen that used to invite him to
+         name one, in a card of its own. */
+      await p.goto(BASE + "/dashboard", { waitUntil: "networkidle" });
+      const brotherHome = await p.textContent("body");
+      check("his dashboard does not ask him to name a wali", !/Name your wali/i.test(brotherHome));
+      check(
+        "and carries no wali card",
+        (await p.locator('a[href="/onboarding/guardian"]').count()) === 0
+      );
 
       /* And a step that does not exist is a 404, not a blank form. */
       const res = await p.goto(BASE + "/onboarding/nonsense", { waitUntil: "networkidle" });

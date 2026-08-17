@@ -101,18 +101,17 @@ function WaliFields({ v }: { v: NonNullable<WaliState["values"]> }) {
   );
 }
 
+/** Hers alone. A brother has no wali step and cannot reach this screen —
+ *  see HIDDEN_FROM in domain/profile.ts. */
 export function GuardianStep({
   pending,
   confirmed,
   moderatorAvailable,
-  optional = false,
 }: {
   pending: Pending | null;
   confirmed: Confirmed | null;
   /** Whether anybody is actually sitting in the moderator's seat. */
   moderatorAvailable: boolean;
-  /** True for a brother: he may name a wali, and nothing waits on it. */
-  optional?: boolean;
 }) {
   const [state, action] = useActionState(inviteWali, EMPTY);
   const [moderatorState, moderatorAction] = useActionState(
@@ -249,17 +248,6 @@ export function GuardianStep({
               </li>
             ))}
           </ul>
-          {optional ? (
-            /* Said plainly rather than left to be discovered. A
-               conversation carries one guardian's seat and it is the
-               sister's; naming someone here records him and shows him to
-               our team, and does not yet put him in the thread. */
-            <p className="mt-3 border-t border-peach/40 pt-3 text-[18px] leading-[26px] text-black/75">
-              Not yet, though — a conversation currently seats the sister&apos;s wali only. Naming
-              someone here records him for our team. We will tell you when he can read alongside
-              her wali.
-            </p>
-          ) : null}
         </div>
 
         <WaliFields v={state.values ?? {}} />

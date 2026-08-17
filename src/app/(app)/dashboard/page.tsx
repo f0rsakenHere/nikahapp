@@ -234,7 +234,12 @@ export default async function DashboardPage({
   const now = new Date();
   await ensureMonthlyGrant(user.id, settings, now);
 
-  const ctx = { hasConfirmedWali: await hasConfirmedWali(user.id) };
+  /* Not asked about a brother. He has no wali step for the answer to
+     feed, and a query whose result is discarded is a query that will one
+     day be read by mistake. */
+  const ctx = {
+    hasConfirmedWali: me.gender === "sister" ? await hasConfirmedWali(user.id) : false,
+  };
   const progress = completeness(me, ctx);
   const blockers = submitBlockers(me, ctx);
   const nextStep = stepsFor(me.gender).find((s) => blockers.some((b) => b.step === s.id));
@@ -263,13 +268,11 @@ export default async function DashboardPage({
   const isDraft = me.status === "draft";
   const isWaiting = WAITING.includes(me.status);
   const canBrowse = inPool(me.status, settings);
-  /* Both are offered one now; only hers is required. His card is a
-     quiet suggestion, hers is a blocker, and the copy below says which
-     is which rather than showing one alarm to two different people. */
-  const needsWali = !ctx.hasConfirmedWali;
-  const waliRequired = me.gender === "sister";
+  /* Hers alone. This card used to greet a brother with "Name your wali"
+     and a form, which is a wali system with the word "optional" on it. */
+  const needsWali = me.gender === "sister" && !ctx.hasConfirmedWali;
   /* Required, and no longer something she can get to in her own time. */
-  const urgent = waliRequired && !isDraft;
+  const urgent = needsWali && !isDraft;
   const moderatorAvailable = Boolean(settings.moderatorWaliUserId);
 
   /* The one thing worth saying about the pool that is not already a
@@ -344,10 +347,10 @@ export default async function DashboardPage({
           the colour this app uses for "something is wrong", and it is
           earned only once naming him is the thing standing between her
           and going live — she has sent the profile in, or it is already
-          out there. While it is still hers to finish, and for a brother
-          it is optional throughout, this is the mint accent: present,
-          not alarmed. A warning shown on day one about a step nobody has
-          reached is how a warning colour stops meaning anything. */}
+          out there. While it is still hers to finish, this is the mint
+          accent: present, not alarmed. A warning shown on day one about
+          a step nobody has reached is how a warning colour stops
+          meaning anything. */}
       {needsWali ? (
         <div
           className={`mb-5 flex flex-col gap-4 rounded-lg border-2 p-5 lg:flex-row lg:items-center ${
@@ -367,11 +370,9 @@ export default async function DashboardPage({
               {urgent ? "Your wali has not confirmed" : "Name your wali"}
             </p>
             <p className="mt-1.5 max-w-[75ch] text-[18px] leading-[26px] text-text">
-              {waliRequired
-                ? settings.waliGate === "approves"
-                  ? "Your profile cannot go live, and no conversation can open, until he confirms."
-                  : "He reads your conversations once they open."
-                : "Optional for you. If you would like a father or an elder brother overseeing your side, name him."}
+              {settings.waliGate === "approves"
+                ? "Your profile cannot go live, and no conversation can open, until he confirms."
+                : "He reads your conversations once they open."}
               {moderatorAvailable
                 ? " If there is nobody you can ask, a NikahCanada moderator can act as your wali."
                 : ""}
@@ -444,7 +445,9 @@ export default async function DashboardPage({
                 <p className="mt-3 max-w-[62ch] text-[18px] leading-[26px] text-text">
                   {canBrowse
                     ? "Your profile is in, and you can see everybody else who is. Our team reads every profile and telephones — that happens alongside you now rather than before you."
-                    : "Someone will read your profile and telephone you before any matching begins. We check identity and speak to your reference or your wali first. You can still change your answers."}
+                    : `Someone will read your profile and telephone you before any matching begins. We check identity and speak to ${
+                        me.gender === "sister" ? "your wali" : "your reference"
+                      } first. You can still change your answers.`}
                 </p>
                 <div className="mt-5 flex flex-wrap items-center gap-2.5">
                   {canBrowse ? (
@@ -566,7 +569,7 @@ export default async function DashboardPage({
             {[
               "You finish your profile and send it to us.",
               "We read it, and telephone you.",
-              "We speak to your reference, or to your wali.",
+              me.gender === "sister" ? "We speak to your wali." : "We speak to your reference.",
               "Your profile goes live, and the pool opens.",
             ].map((step, i) => {
               const here = (isDraft && i === 0) || (isWaiting && i === 1);
