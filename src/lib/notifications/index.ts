@@ -1,12 +1,17 @@
-/* Sending mail — or, for now, not sending it.
+/* Sending mail.
  *
- * ⚠ NOTHING LEAVES THIS MACHINE. The client has not supplied an email
- * account, so the transport prints the message to the server log. That
- * is a deliberate placeholder, not an oversight: it lets the whole
- * verification, reset and wali-invitation flow be built and tested now,
- * and swapping in Postmark or Resend later is one function.
+ * Resend when `EMAIL_PROVIDER_API_KEY` is set; otherwise the message is
+ * printed to the server log so the whole verification, reset and
+ * wali-invitation flow can be walked locally without an account. The
+ * checkers depend on that second path — they read the link off the page
+ * via `mayRevealLinks()` — so it is a supported mode, not a leftover.
  *
- * Two rules the real transport must keep:
+ * Plain `fetch` rather than the SDK. It is one POST to one endpoint, and
+ * a dependency that ships an HTTP client, a retry policy and a React
+ * renderer to do it is a poor trade in a codebase that has neither an
+ * ODM nor a component library.
+ *
+ * Two rules the transport keeps:
  *
  *   1. The caller never learns whether delivery succeeded in a way it
  *      can show a user. "We sent you a link" must be said identically
@@ -110,11 +115,58 @@ export function emailIsConfigured(): boolean {
   return Boolean(process.env.EMAIL_PROVIDER_API_KEY);
 }
 
+/* Who it comes from. A verified Resend domain is required — an
+ * unverified one is refused with a 403, which is the expected state
+ * until the DNS records are in. */
+function from(): string {
+  return process.env.EMAIL_FROM ?? "NikahCanada <noreply@nikahcanada.ca>";
+}
+
+/** Hands one message to Resend.
+ *
+ *  Never throws. §7.1 requires "we sent you a link" to read identically
+ *  whether or not the address exists, so a caller that could distinguish
+ *  a delivered message from a rejected one would be a way to enumerate
+ *  members. Failures are logged for us and invisible to them.
+ *
+ *  What is logged is the kind, the status and Resend's own message —
+ *  never the body, because every body carries a live credential. */
+async function viaResend(message: Message): Promise<void> {
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.EMAIL_PROVIDER_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: from(),
+        to: [message.to],
+        subject: SUBJECTS[message.kind],
+        text: body(message),
+      }),
+      /* A provider that hangs must not hang a server action with a
+         member waiting on it. */
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      console.error(
+        `[email] ${message.kind} rejected by Resend: ${response.status} ${detail.slice(0, 300)}`
+      );
+    }
+  } catch (err) {
+    console.error(
+      `[email] ${message.kind} could not be sent: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+}
+
 export async function send(message: Message): Promise<void> {
   if (emailIsConfigured()) {
-    /* TODO: Postmark or Resend. Deliverability matters more than price
-     * here — the wali invitation is load-bearing (§4.1). */
-    throw new Error("EMAIL_PROVIDER_API_KEY is set but no transport is implemented yet");
+    await viaResend(message);
+    return;
   }
 
   console.log(
