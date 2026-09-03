@@ -22,6 +22,14 @@
  *      logged in production, and the link must not appear in Sentry.
  */
 
+import {
+  renderPasswordChanged,
+  renderResetPassword,
+  renderVerifyEmail,
+  renderWaliInvitation,
+  type Rendered,
+} from "./template";
+
 export type Message =
   | { to: string; kind: "verifyEmail"; name: string; link: string }
   | { to: string; kind: "resetPassword"; name: string; link: string }
@@ -98,6 +106,37 @@ function body(message: Message): string {
   }
 }
 
+/** The same message, dressed.
+ *
+ *  Sent alongside `body()` rather than instead of it: a multipart message
+ *  lets the client choose, and the text part is what a screen reader, a
+ *  plain-text client and a spam filter all read. An HTML-only send is
+ *  both less accessible and more likely to be scored as junk.
+ *
+ *  The origin is where the logo is fetched from and where the footer
+ *  links, so it must be the address a recipient can actually reach. That
+ *  is the same value the links themselves are built from. */
+function html(message: Message): Rendered {
+  const origin = (process.env.APP_ORIGIN ?? "https://nikahcanada.ca").replace(/\/$/, "");
+
+  switch (message.kind) {
+    case "verifyEmail":
+      return renderVerifyEmail({ origin, name: message.name, link: message.link });
+    case "resetPassword":
+      return renderResetPassword({ origin, name: message.name, link: message.link });
+    case "passwordChanged":
+      return renderPasswordChanged({ origin, name: message.name });
+    case "waliInvitation":
+      return renderWaliInvitation({
+        origin,
+        name: message.name,
+        memberFirstName: message.memberFirstName,
+        relationship: message.relationship,
+        link: message.link,
+      });
+  }
+}
+
 /** Whether a link may be shown on screen instead of emailed.
  *
  *  Only with no provider configured AND outside production — both, not
@@ -144,6 +183,7 @@ async function viaResend(message: Message): Promise<void> {
         to: [message.to],
         subject: SUBJECTS[message.kind],
         text: body(message),
+        html: html(message).html,
       }),
       /* A provider that hangs must not hang a server action with a
          member waiting on it. */
