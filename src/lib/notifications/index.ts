@@ -161,6 +161,23 @@ function from(): string {
   return process.env.EMAIL_FROM ?? "NikahCanada <noreply@nikahcanada.ca>";
 }
 
+/** Where a reply should land.
+ *
+ *  The sender is `noreply@`, which is honest — nothing is watching that
+ *  address — but people reply to it anyway, and the ones who do here are
+ *  the ones least able to shrug it off: a father who has been told he is
+ *  now responsible for his daughter's correspondence and wants to ask a
+ *  question about it. Without this, his reply bounces.
+ *
+ *  Unset means no header, which is the current behaviour. Point it at an
+ *  inbox somebody actually reads — it does not have to be on this
+ *  domain, and until there is a mailbox on this domain it should not
+ *  be. */
+function replyTo(): string | undefined {
+  const address = process.env.EMAIL_REPLY_TO?.trim();
+  return address ? address : undefined;
+}
+
 /** Hands one message to Resend.
  *
  *  Never throws. §7.1 requires "we sent you a link" to read identically
@@ -181,6 +198,7 @@ async function viaResend(message: Message): Promise<void> {
       body: JSON.stringify({
         from: from(),
         to: [message.to],
+        ...(replyTo() ? { reply_to: replyTo() } : {}),
         subject: SUBJECTS[message.kind],
         text: body(message),
         html: html(message).html,
