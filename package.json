@@ -29,6 +29,7 @@
     "check:dashboard": "node scripts/dashboard-flow.cjs",
     "check:logo": "node scripts/logo-check.cjs",
     "check:signup-email": "node scripts/signup-email-check.cjs",
+    "check:verify-email": "node scripts/verify-email-flow.cjs",
     "brand:crop": "node scripts/brand-crop.cjs",
     "shot": "node scripts/screenshot.cjs .",
     "shot:phone": "node scripts/phone-shots.cjs"
