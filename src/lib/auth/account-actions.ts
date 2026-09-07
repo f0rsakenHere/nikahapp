@@ -1,11 +1,11 @@
 "use server";
 
 /* Email verification, password reset, password change, device revoke. */
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { MIN_PASSWORD_LENGTH } from "@/lib/domain/user";
-import { mayRevealLinks, send } from "@/lib/notifications";
+import { send } from "@/lib/notifications";
+import { issueLink } from "./issue-link";
 import {
   findUserByEmail,
   findUserById,
@@ -21,7 +21,7 @@ import {
 import { deleteSession, deleteSessionsForUser } from "@/lib/repositories/sessions";
 import { currentUser } from "./current";
 import { hashPassword, verifyPassword } from "./password";
-import { buildToken, hashToken, tokenInvalidReason, type TokenPurpose } from "./tokens";
+import { hashToken, tokenInvalidReason } from "./tokens";
 
 export type AccountState = {
   error?: string;
@@ -31,39 +31,6 @@ export type AccountState = {
   devLink?: string;
 };
 
-/** Absolute URL for a link in an email. Taken from the request rather
- *  than a caller-supplied value — a reset link is a credential, and
- *  building it from a Host header an attacker controls is how password
- *  reset poisoning works. In production this must come from a
- *  configured origin, not the header. */
-async function origin(): Promise<string> {
-  const h = await headers();
-  const configured = process.env.APP_ORIGIN;
-  if (configured) return configured.replace(/\/$/, "");
-  const host = h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
-
-async function issue(
-  purpose: TokenPurpose,
-  user: { id: string; email: string; legalName: { first: string } },
-  path: string,
-  now: Date
-): Promise<string | undefined> {
-  if (await tokenQuotaExceeded(user.id, purpose, now)) return undefined; // silently, see below
-  const { token, record } = buildToken({ purpose, userId: user.id, email: user.email }, now);
-  await insertToken(record);
-  const link = `${await origin()}${path}?token=${token}`;
-  await send({
-    to: user.email,
-    kind: purpose === "verifyEmail" ? "verifyEmail" : "resetPassword",
-    name: user.legalName.first,
-    link,
-  });
-  return mayRevealLinks() ? link : undefined;
-}
-
 /* ------------------------------------------------------ verify email --- */
 
 export async function requestEmailVerification(): Promise<AccountState> {
@@ -71,7 +38,7 @@ export async function requestEmailVerification(): Promise<AccountState> {
   if (!session) redirect("/login?next=/settings");
   if (session.user.emailVerifiedAt) return { done: "That address is already confirmed." };
 
-  const devLink = await issue("verifyEmail", session.user, "/verify-email", new Date());
+  const devLink = await issueLink("verifyEmail", session.user, "/verify-email", new Date());
   revalidatePath("/settings");
   return { done: "Check your email — we have sent you a link.", devLink };
 }
@@ -115,7 +82,7 @@ export async function requestPasswordReset(
    * a spouse, which is not ours to disclose (§7.1). */
   let devLink: string | undefined;
   if (user && user.status === "active") {
-    devLink = await issue("resetPassword", user, "/reset-password", now);
+    devLink = await issueLink("resetPassword", user, "/reset-password", now);
   }
 
   return {

@@ -67,8 +67,17 @@ export default async function SettingsPage() {
             <p className="text-[18px] text-accent-deep">Confirmed {when(user.emailVerifiedAt)}</p>
           ) : (
             <>
+              {/* It used to say "your profile cannot be reviewed until it
+                  is", which nothing in the code enforces — a member could
+                  ignore it forever and still be reviewed, matched and
+                  live. Telling somebody a rule that is not real is worse
+                  than having no rule: it teaches them our sentences are
+                  decorative. This says what confirming is actually for
+                  today, and if the block is ever built the older wording
+                  can come back and be true. */}
               <p className="text-[18px] leading-[26px] text-peach-deep">
-                Not confirmed yet. Your profile cannot be reviewed until it is.
+                Not confirmed yet. Confirm it so you can reset your password if you are ever
+                locked out.
               </p>
               {mayRevealLinks() ? (
                 <p className="rounded-md border border-peach/40 bg-soft-peach/60 px-3.5 py-3 text-[18px] leading-[26px] text-text">

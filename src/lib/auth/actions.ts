@@ -6,6 +6,7 @@
  * enhanced and work without JavaScript, which matters for an audience
  * that includes walis on old phones.
  */
+import { issueLink } from "./issue-link";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { isPrivileged, signInBlockedReason, validateSignup } from "@/lib/domain/user";
@@ -176,6 +177,25 @@ export async function register(_prev: FormState, form: FormData): Promise<FormSt
     actor: { userId: created.user.id, role: "member" },
     meta: { gender: validated.value.gender },
   });
+
+  /* The confirmation email, sent here rather than left to a button in
+   * settings that nobody goes looking for. The account was created
+   * unverified and every screen that mentions confirming assumed a
+   * letter had gone out; none had.
+   *
+   * Not awaited for its outcome, and it cannot be: `send()` never
+   * throws, and a provider having a bad afternoon must not turn a
+   * successful registration into an error page in front of somebody who
+   * has just typed in their date of birth. If it fails, the member is
+   * registered, signed in, and can ask for another from settings.
+   *
+   * The link it returns is only ever non-undefined in development —
+   * `mayRevealLinks()` requires no provider AND not production — and it
+   * is dropped here rather than carried to the next page, because a
+   * verification link in a query string is a live credential written
+   * into browser history. Locally it prints to the server log with the
+   * rest of the message. */
+  await issueLink("verifyEmail", created.user, "/verify-email", new Date());
 
   await startSession(created.user);
   redirect("/onboarding");
