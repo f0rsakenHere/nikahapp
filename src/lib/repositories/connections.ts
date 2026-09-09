@@ -1,17 +1,19 @@
-/* The only module that reads or writes `connectionRequests`,
- * `connectionLedger` and `settings`. */
+/* The only module that reads or writes `connectionRequests` and
+ * `settings`.
+ *
+ * It used to own `connectionLedger` as well. That collection was a
+ * currency — a monthly grant, a hold on every ask, a refund on every
+ * decline — and the plan model deleted the currency. Asking is free and
+ * rate-limited (`asksSince`), and what is sold is the conversation. */
 import { ObjectId, type WithId } from "mongodb";
 import { COLLECTIONS } from "@/lib/db/collections";
-import { getDb, withTransaction } from "@/lib/db/client";
+import { getDb } from "@/lib/db/client";
 import { stripUndefined } from "@/lib/db/strip";
 import {
   ConnectionRequestSchema,
   applyRequest,
-  balanceOf,
   pairKey,
   type ConnectionRequest,
-  type LedgerEntry,
-  type LedgerReason,
   type RequestEvent,
 } from "@/lib/domain/connection";
 import { DEFAULT_SETTINGS, SettingsSchema, type Settings } from "@/lib/domain/settings";
@@ -37,83 +39,6 @@ export async function writeSettings(patch: Partial<Settings>): Promise<Settings>
     .collection(COLLECTIONS.settings)
     .updateOne({ key: "product" }, { $set: { key: "product", value: next } }, { upsert: true });
   return next;
-}
-
-/* ----------------------------------------------------------- ledger --- */
-
-type LedgerDoc = LedgerEntry & { _id: ObjectId; period?: string };
-
-async function ledger() {
-  return (await getDb()).collection<LedgerDoc>(COLLECTIONS.connectionLedger);
-}
-
-/** `2026-08` — the grant period a date falls in. */
-export function periodOf(now: Date): string {
-  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-}
-
-/** When the next grant lands: the first of the following month.
- *
- *  Beside `periodOf` because the two are the same rule read in opposite
- *  directions — the period is keyed to the calendar month, so that is
- *  when more connections appear. Defining the date the member is shown
- *  anywhere else is how a screen ends up promising a day the ledger
- *  does not honour. */
-export function nextGrantAt(now: Date): Date {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-}
-
-/** Gives this month's connections if they have not been given.
- *
- *  Lazy rather than scheduled: there is no job runner, and a grant that
- *  depends on cron having run is a grant that silently stops. The unique
- *  index on `{userId, period}` is what makes two simultaneous reads
- *  produce one grant rather than two. */
-export async function ensureMonthlyGrant(
-  userId: string,
-  settings: Settings,
-  now: Date
-): Promise<void> {
-  if (settings.grantPerMonth <= 0) return;
-  const period = periodOf(now);
-
-  try {
-    await (await ledger()).insertOne({
-      _id: new ObjectId(),
-      userId,
-      delta: settings.grantPerMonth,
-      reason: "monthlyGrant",
-      requestId: null,
-      at: now,
-      byUserId: null,
-      note: null,
-      period,
-    });
-  } catch (err) {
-    /* 11000 means this month's grant already exists, which is the
-     * expected outcome on every read but the first. */
-    if (typeof err !== "object" || (err as { code?: number }).code !== 11000) throw err;
-  }
-}
-
-export async function ledgerFor(userId: string): Promise<LedgerEntry[]> {
-  const docs = await (await ledger()).find({ userId }, { sort: { at: -1 } }).toArray();
-  return docs.map(({ _id, ...rest }) => rest as LedgerEntry);
-}
-
-export async function balanceFor(userId: string): Promise<number> {
-  return balanceOf(await ledgerFor(userId));
-}
-
-async function addLedger(
-  entry: Omit<LedgerEntry, "at"> & { at?: Date },
-  now: Date,
-  session?: Parameters<typeof withTransaction>[0] extends never ? never : unknown
-): Promise<void> {
-  await (await ledger()).insertOne(
-    stripUndefined({ _id: new ObjectId(), ...entry, at: entry.at ?? now }) as LedgerDoc,
-    session ? { session: session as never } : undefined
-  );
 }
 
 /* ---------------------------------------------------------- requests -- */
@@ -175,21 +100,21 @@ export async function findRequestById(id: string): Promise<ConnectionRequest | n
   return doc ? toDomain(doc) : null;
 }
 
-/** Sends a request and moves the connection in one transaction.
+/** Records the ask.
  *
- *  A request without its ledger entry is a free connection; a ledger
- *  entry without its request is one taken for nothing. Neither is
- *  recoverable without a person reading the collections side by side. */
+ *  A plain insert now. It used to be a transaction because the request
+ *  and the ledger entry that paid for it had to land together or not at
+ *  all; asking is free, so there is only one write and nothing to keep
+ *  consistent with it. The unique index on `pairKey` is still what stops
+ *  the same pair being asked twice concurrently. */
 export async function sendRequest(
   from: string,
   to: string,
-  cost: number,
   settings: Settings,
   now: Date
 ): Promise<{ ok: true; request: ConnectionRequest } | { ok: false; error: "already-asked" }> {
-  const _id = new ObjectId();
   const record: RequestDoc = {
-    _id,
+    _id: new ObjectId(),
     pairKey: pairKey(from, to),
     fromUserId: from,
     toUserId: to,
@@ -202,25 +127,8 @@ export async function sendRequest(
   };
 
   try {
-    await withTransaction(async (session) => {
-      const db = await getDb();
-      await db.collection<RequestDoc>(COLLECTIONS.connectionRequests).insertOne(record, { session });
-      if (cost > 0) {
-        await db.collection(COLLECTIONS.connectionLedger).insertOne(
-          {
-            _id: new ObjectId(),
-            userId: from,
-            delta: -cost,
-            reason: "reservedForRequest" as LedgerReason,
-            requestId: _id.toHexString(),
-            at: now,
-            byUserId: null,
-            note: null,
-          },
-          { session }
-        );
-      }
-    });
+    const db = await getDb();
+    await db.collection<RequestDoc>(COLLECTIONS.connectionRequests).insertOne(record);
   } catch (err) {
     if (typeof err === "object" && err !== null && (err as { code?: number }).code === 11000) {
       return { ok: false, error: "already-asked" };
@@ -231,63 +139,49 @@ export async function sendRequest(
   return { ok: true, request: toDomain(record) };
 }
 
-/** Answers a request and settles the connection together. */
+/** How many people this member has asked in the last seven days.
+ *
+ *  The whole of the rate limit. A rolling window rather than a calendar
+ *  one, because "your asks reset on Monday" invites somebody to spend
+ *  the week's allowance on Sunday night and the next one an hour later.
+ *
+ *  Counts every request sent in the window whatever became of it — an
+ *  ask that was declined still took the recipient's attention, and
+ *  refunding attention is not something a database can do. */
+export async function asksSince(userId: string, since: Date): Promise<number> {
+  const db = await getDb();
+  return db
+    .collection(COLLECTIONS.connectionRequests)
+    .countDocuments({ fromUserId: userId, sentAt: { $gte: since } });
+}
+
+/** The start of the rolling week, given now. */
+export function weekAgo(now: Date): Date {
+  return new Date(now.getTime() - 7 * 86_400_000);
+}
+
+/** Answers a request.
+ *
+ *  "And settles the connection", it used to say, because every answer
+ *  either spent the sender's held connection or gave it back. Asking is
+ *  free now, so this only moves state — no transaction, no ledger, and
+ *  no `settings`. */
 export async function answerRequest(
   request: ConnectionRequest,
-  event: RequestEvent,
-  settings: Settings,
-  now: Date
+  event: RequestEvent
 ): Promise<{ ok: true; state: ConnectionRequest["state"] } | { ok: false; error: string }> {
-  const result = applyRequest(request, event, settings);
+  const result = applyRequest(request, event);
   if (!result.ok) return { ok: false, error: result.error };
 
   const { id, ...storable } = result.next;
 
-  await withTransaction(async (session) => {
-    const db = await getDb();
-    /* Guarded on `pending` inside the update: two taps, or an expiry
-     * sweep landing at the same moment, must not both settle it. */
-    const updated = await db
-      .collection<RequestDoc>(COLLECTIONS.connectionRequests)
-      .updateOne({ _id: new ObjectId(id), state: "pending" }, { $set: stripUndefined(storable) }, { session });
-    if (updated.matchedCount !== 1) return;
-
-    if (result.ledger === "consumedOnAccept") {
-      /* Under `reserve` the connection was already taken when it was
-       * sent, so acceptance is a bookkeeping entry of zero rather than a
-       * second charge. Under `onAccept` this is the charge. */
-      const delta = settings.connectionCharge === "reserve" ? 0 : -1;
-      if (delta !== 0 || settings.connectionCharge === "reserve") {
-        await db.collection(COLLECTIONS.connectionLedger).insertOne(
-          {
-            _id: new ObjectId(),
-            userId: request.fromUserId,
-            delta,
-            reason: "consumedOnAccept",
-            requestId: id,
-            at: now,
-            byUserId: null,
-            note: null,
-          },
-          { session }
-        );
-      }
-    } else if (result.ledger) {
-      await db.collection(COLLECTIONS.connectionLedger).insertOne(
-        {
-          _id: new ObjectId(),
-          userId: request.fromUserId,
-          delta: 1,
-          reason: result.ledger,
-          requestId: id,
-          at: now,
-          byUserId: null,
-          note: null,
-        },
-        { session }
-      );
-    }
-  });
+  /* Guarded on `pending` inside the update: two taps, or an expiry sweep
+   * landing at the same moment, must not both settle it. */
+  const updated = await (await requests()).updateOne(
+    { _id: new ObjectId(id), state: "pending" },
+    { $set: stripUndefined(storable) as never }
+  );
+  if (updated.matchedCount !== 1) return { ok: false, error: "already-answered" };
 
   return { ok: true, state: result.next.state };
 }

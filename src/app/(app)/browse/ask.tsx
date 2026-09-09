@@ -20,20 +20,20 @@ const EMPTY: ConnectState = {};
  * a browse page of dead buttons is worse than no buttons.
  */
 
-function Pending({ charge }: { charge: "onSend" | "onAccept" | "reserve" }) {
+function Pending() {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={pending}
       /* No icon, and it does not wrap. Four cards to a row leaves this
-         about 230px, and "Ask · 1 connection" plus a glyph needs more
-         than that — so it broke onto two lines and the button became
-         the tallest thing on the card. The cost is the part worth the
-         width; the speech bubble was decoration. */
+         about 230px, and the old label — "Ask · 1 connection" — plus a
+         glyph needed more than that. The price is gone from the label
+         because there is no longer a price: asking is free, and what a
+         plan buys is the conversation that follows. */
       className="pointer-events-auto flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-pill border-2 border-accent-deep px-3.5 py-2 text-[18px] font-semibold text-accent-deep transition-colors hover:bg-accent/15 disabled:opacity-60"
     >
-      {pending ? "Sending…" : charge === "onAccept" ? "Ask to talk" : "Ask · 1 connection"}
+      {pending ? "Sending…" : "Ask to talk"}
     </button>
   );
 }
@@ -41,11 +41,9 @@ function Pending({ charge }: { charge: "onSend" | "onAccept" | "reserve" }) {
 export function AskButton({
   profileId,
   alreadyAsked,
-  charge,
 }: {
   profileId: string;
   alreadyAsked: boolean;
-  charge: "onSend" | "onAccept" | "reserve";
 }) {
   const [state, action] = useActionState(sendConnection.bind(null, profileId), EMPTY);
 
@@ -60,7 +58,7 @@ export function AskButton({
 
   return (
     <form action={action}>
-      <Pending charge={charge} />
+      <Pending />
       {state.error ? (
         <p role="alert" className="pointer-events-auto mt-2 text-[18px] leading-[26px] text-peach-deep">
           {state.error}

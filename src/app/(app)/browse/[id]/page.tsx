@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { currentUser } from "@/lib/auth/current";
 import { browseProfile } from "@/lib/repositories/browse";
-import { findBetween, balanceFor, readSettings } from "@/lib/repositories/connections";
+import { asksSince, findBetween, readSettings, weekAgo } from "@/lib/repositories/connections";
 import {
   CHILDREN_LABELS,
   EDUCATION_LABELS,
@@ -44,7 +44,7 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
   if (!p) notFound();
 
   const existing = await findBetween(session.user.id, String(p.userId));
-  const balance = await balanceFor(session.user.id);
+  const asksLeft = Math.max(0, settings.asksPerWeek - (await asksSince(session.user.id, weekAgo(new Date()))));
 
   const basics = (p.basics ?? {}) as Record<string, string | number>;
   const deen = (p.deen ?? {}) as Record<string, string>;
@@ -125,8 +125,7 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
                   ? "accepted"
                   : "closed"
           }
-          balance={balance}
-          charge={settings.connectionCharge}
+          asksLeft={asksLeft}
         />
       </div>
     </AppFrame>

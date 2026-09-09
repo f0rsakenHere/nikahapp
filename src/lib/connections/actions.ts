@@ -12,9 +12,9 @@ import { findProfileByUserId } from "@/lib/repositories/profiles";
 import { hasConfirmedWali } from "@/lib/repositories/guardianships";
 import {
   answerRequest,
-  balanceFor,
+  asksSince,
   countPendingInbound,
-  ensureMonthlyGrant,
+  weekAgo,
   findBetween,
   findRequestById,
   readSettings,
@@ -40,8 +40,8 @@ async function sisterAmong(userIds: string[]): Promise<string | null> {
  * the moment" and "you have run out" are not the same disappointment,
  * and a single message for both teaches people to ignore it. */
 const REFUSALS: Record<SendRefusal, string> = {
-  "no-connections-left":
-    "You have no connections left this month. They renew at the start of the next one.",
+  "weekly-asks-spent":
+    "You have asked as many people as you can this week. A few more become available each day.",
   "recipient-inbox-full":
     "They are not taking new requests at the moment. Try again in a few days — this happens when someone has several waiting.",
   "already-asked": "You already have a request open with them.",
@@ -72,7 +72,6 @@ export async function sendConnection(
   if (!target) return { error: "That profile is not available." };
 
   const now = new Date();
-  await ensureMonthlyGrant(session.user.id, settings, now);
 
   const toUserId = String(target.userId);
   const existing = await findBetween(session.user.id, toUserId);
@@ -81,14 +80,14 @@ export async function sendConnection(
     session.user.id,
     toUserId,
     {
-      balance: await balanceFor(session.user.id),
+      asksThisWeek: await asksSince(session.user.id, weekAgo(now)),
       recipientPending: await countPendingInbound(toUserId),
       existingBetweenPair: existing?.state ?? null,
       /* `browseProfile` above already refused anybody outside the pool,
        * so the recipient is in it by the time we reach here. The sender
        * is checked properly: nothing else on this path looks at their
-       * own status, and a draft must not be able to spend a connection
-       * on somebody who cannot see them back. */
+       * own status, and a draft must not be able to reach somebody who
+       * cannot see them back. */
       senderInPool: inPool(me.status, settings),
       recipientInPool: true,
       senderGender: me.gender,
@@ -106,14 +105,14 @@ export async function sendConnection(
     };
   }
 
-  const sent = await sendRequest(session.user.id, toUserId, decision.cost, settings, now);
+  const sent = await sendRequest(session.user.id, toUserId, settings, now);
   if (!sent.ok) return { error: REFUSALS["already-asked"] };
 
   await record({
     action: "connection.requested",
     subject: { type: "connectionRequest", id: sent.request.id },
     actor: { userId: session.user.id, role: "member" },
-    meta: { cost: decision.cost },
+    meta: {},
   });
 
   /* Told, rather than left to be noticed. Never who asked — the
@@ -188,7 +187,7 @@ export async function answerConnection(
     }
   }
 
-  const result = await answerRequest(request, event, settings, now);
+  const result = await answerRequest(request, event);
   if (!result.ok) return { error: "That has already been answered." };
 
   /* Acceptance is what creates the thread. It is created in the state

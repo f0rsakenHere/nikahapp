@@ -1,4 +1,4 @@
-/* End-to-end check of browse, connections and the ledger.
+/* End-to-end check of browse and connection requests.
  *
  * Profiles are put into `live` directly rather than driven through the
  * review queue — that path is covered by review-flow.cjs, and repeating
@@ -19,14 +19,12 @@ const STAMP = Date.now();
 const PASSWORD = "a-long-enough-passphrase";
 const emails = [];
 
-/* `grantPerMonth` in src/lib/domain/settings.ts — D1a, three a month.
-   The ledger assertions below were written as bare numbers (9, 9, 9, 10)
-   against a grant of ten, so changing the setting turned four passing
-   checks into four failures that said nothing about the setting. They
-   are relative to this now, and the grant itself is asserted below, so
-   a mismatch between this constant and the product shows up as one
-   named failure rather than four arithmetic ones. */
-const GRANT = 3;
+/* `asksPerWeek` in src/lib/domain/settings.ts. Asking is free under the
+   plan model, so there is no balance to assert any more — what this
+   guards is the rate limit that replaced it. Kept as a constant so a
+   change to the setting produces one named failure rather than several
+   arithmetic ones. */
+const ASKS_PER_WEEK = 5;
 
 const findings = [];
 let checks = 0;
@@ -144,27 +142,22 @@ async function makeMember(browser, db, gender, name, over = {}) {
     check("a brother sees sisters", /Sister/.test(list));
     check("and not other brothers", !/Brother ·/.test(list));
     check("nor himself", !/Yusuf/.test(list));
-    check("the balance is shown", new RegExp(`${GRANT} connections left`).test(list), list.slice(0, 200));
+    check(
+      "the week's remaining asks are shown",
+      new RegExp(`${ASKS_PER_WEEK} asks? left this week`).test(list),
+      list.slice(0, 200)
+    );
     check("initials only, no names", !/Fatima/.test(list) && !/Fixture/.test(list));
 
-    const granted = await db
+    /* Nothing is granted any more, so the assertion is the opposite of
+       what it used to be: browsing must not write a ledger row, because
+       the currency it belonged to is gone. A leftover `ensureMonthlyGrant`
+       would be invisible on screen and would quietly resurrect a balance
+       nothing reads. */
+    const ledgerRows = await db
       .collection("connectionLedger")
-      .find({ userId: String(brother.user._id) })
-      .toArray();
-    /* Three, not ten — D1a, decided. Asserted on the delta rather than
-       only on the row count so that a grant of the wrong size cannot
-       pass as a grant that happened. */
-    check(
-      `the monthly grant was given once, and it is ${GRANT}`,
-      granted.length === 1 && granted[0].delta === GRANT,
-      `${granted.length} row(s), delta ${granted[0] && granted[0].delta}`
-    );
-
-    await b.reload({ waitUntil: "networkidle" });
-    const twice = await db
-      .collection("connectionLedger")
-      .countDocuments({ userId: String(brother.user._id), reason: "monthlyGrant" });
-    check("and is not given again on the next visit", twice === 1);
+      .countDocuments({ userId: String(brother.user._id) });
+    check("browsing grants nothing — there is no currency", ledgerRows === 0, `${ledgerRows} row(s)`);
 
     /* ---------- filters ----------------------------------------------
        Filtered to somewhere nobody can be rather than merely somewhere
@@ -186,7 +179,8 @@ async function makeMember(browser, db, gender, name, over = {}) {
     const detail = await b.textContent("body");
     check("the profile shows her answers", /Montreal/.test(detail) && /Hanafi/.test(detail));
     check("the photograph is locked, with the rule on it", /Photograph locked/.test(detail));
-    check("the button says what it costs", /uses 1 connection/.test(detail));
+    check("the button no longer names a price", !/uses 1 connection/.test(detail));
+    check("and says asking is free", /Asking is free/.test(detail), detail.slice(0, 200));
 
     await b.click('button:has-text("Ask to talk")');
     await b.waitForTimeout(3000);
@@ -198,18 +192,12 @@ async function makeMember(browser, db, gender, name, over = {}) {
     check("a request exists, pending", !!request && request.state === "pending");
     check("with an expiry", !!request.expiresAt);
 
+    /* The ask itself costs nothing and writes nothing but the request. */
     const afterSend = await db
       .collection("connectionLedger")
-      .find({ userId: String(brother.user._id) })
-      .toArray();
-    const balance = afterSend.reduce((t, e) => t + e.delta, 0);
-    check("the connection was reserved, not spent", balance === GRANT - 1, String(balance));
-    check(
-      "and the entry names the request it is held against",
-      afterSend.some((e) => e.reason === "reservedForRequest" && e.requestId === request._id.toHexString())
-    );
+      .countDocuments({ userId: String(brother.user._id) });
+    check("asking still costs nothing", afterSend === 0, `${afterSend} ledger row(s)`);
 
-    await b.goto(`${BASE}/browse/${sisterProfileId}`, { waitUntil: "networkidle" });
     check("asking twice is not offered", !/Ask to talk/.test(await b.textContent("body")));
 
     /* ---------- she answers ------------------------------------------ */
@@ -230,18 +218,10 @@ async function makeMember(browser, db, gender, name, over = {}) {
 
     const afterAccept = await db
       .collection("connectionLedger")
-      .find({ userId: String(brother.user._id) })
-      .toArray();
-    check(
-      "the held connection is now spent, not double-charged",
-      afterAccept.reduce((t, e) => t + e.delta, 0) === GRANT - 1
-    );
-    check(
-      "and the ledger reads as one story",
-      afterAccept.filter((e) => e.requestId === request._id.toHexString()).length === 2
-    );
+      .countDocuments({ userId: String(brother.user._id) });
+    check("acceptance charges nothing either", afterAccept === 0, `${afterAccept} row(s)`);
 
-    /* ---------- declining returns the connection --------------------- */
+    /* ---------- declining ------------------------------------------- */
     const otherProfile = await db.collection("profiles").findOne({ userId: other.user._id });
     await b.goto(`${BASE}/browse/${otherProfile._id.toHexString()}`, { waitUntil: "networkidle" });
     await b.click('button:has-text("Ask to talk")');
@@ -254,19 +234,14 @@ async function makeMember(browser, db, gender, name, over = {}) {
     await o.click('button:has-text("Confirm")');
     await o.waitForTimeout(3000);
 
-    const declinedLedger = await db
+    /* Nothing to return, because nothing was taken. What a decline does
+       cost is the ask itself — it came out of the week's allowance and
+       does not come back, which is deliberate: a declined request still
+       took the recipient's attention. */
+    const afterDecline = await db
       .collection("connectionLedger")
-      .find({ userId: String(brother.user._id) })
-      .toArray();
-    check(
-      "declining returns the connection",
-      declinedLedger.reduce((t, e) => t + e.delta, 0) === GRANT - 1,
-      String(declinedLedger.reduce((t, e) => t + e.delta, 0))
-    );
-    check(
-      "and says so in the ledger",
-      declinedLedger.some((e) => e.reason === "refundedOnDecline")
-    );
+      .countDocuments({ userId: String(brother.user._id) });
+    check("declining settles no money, because none moved", afterDecline === 0);
 
     const declined = await db
       .collection("connectionRequests")
@@ -332,11 +307,64 @@ async function makeMember(browser, db, gender, name, over = {}) {
     );
     const noCharge = await db
       .collection("connectionLedger")
-      .find({ userId: String(third.user._id) })
-      .toArray();
+      .countDocuments({ userId: String(third.user._id) });
+    check("a refused request costs nothing", noCharge === 0);
+
+    /* ---------- the weekly cap, which replaced the allowance --------- */
+    /* Filled from the database rather than by asking five real people:
+       the fixture pool does not contain five sisters, and what is under
+       test is the counter, not the ability to click. Every row is a real
+       request in the window `asksSince` counts. */
+    const atCap = await makeMember(browser, db, "brother", "Bilal");
+    const now = new Date();
+    await db.collection("connectionRequests").insertMany(
+      Array.from({ length: ASKS_PER_WEEK }, (_, i) => ({
+        pairKey: `${atCap.user._id}:filler${i}`,
+        fromUserId: String(atCap.user._id),
+        toUserId: `filler${i}`,
+        state: "pending",
+        sentAt: new Date(now.getTime() - i * 3_600_000),
+        expiresAt: new Date(now.getTime() + 86_400_000),
+        answeredAt: null,
+        declineReason: null,
+        conversationId: null,
+      }))
+    );
+
+    const c = atCap.page;
+    await c.goto(BASE + "/browse", { waitUntil: "networkidle" });
+    const cappedList = await c.textContent("body");
     check(
-      "a refused request costs nothing",
-      noCharge.reduce((sum, e) => sum + e.delta, 0) === GRANT
+      "a member at the weekly cap is told none are left",
+      /0 asks left this week/.test(cappedList),
+      cappedList.slice(0, 200)
+    );
+
+    await c.goto(`${BASE}/browse/${sisterProfileId}`, { waitUntil: "networkidle" });
+    await c.click('button:has-text("Ask to talk")');
+    await c.waitForTimeout(3000);
+    const refused = await c.textContent("body");
+    check(
+      "and asking is refused, in its own words",
+      /as many people as you can this week/i.test(refused),
+      refused.replace(/\s+/g, " ").slice(0, 200)
+    );
+
+    /* The refusal must not have created the request anyway. */
+    const leaked = await db
+      .collection("connectionRequests")
+      .countDocuments({ fromUserId: String(atCap.user._id), toUserId: String(sister.user._id) });
+    check("and the request was not written despite the refusal", leaked === 0, `${leaked} found`);
+
+    /* An ask that has aged out of the window comes back. */
+    await db.collection("connectionRequests").updateOne(
+      { fromUserId: String(atCap.user._id), toUserId: "filler0" },
+      { $set: { sentAt: new Date(now.getTime() - 8 * 86_400_000) } }
+    );
+    await c.goto(BASE + "/browse", { waitUntil: "networkidle" });
+    check(
+      "an ask older than seven days is out of the window again",
+      /1 ask left this week/.test(await c.textContent("body"))
     );
 
     /* ---------- a sister who loses her wali leaves the pool ----------- */

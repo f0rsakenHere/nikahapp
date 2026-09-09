@@ -7,9 +7,9 @@ import { browseFor } from "@/lib/repositories/browse";
 import { poolCounts } from "@/lib/repositories/profiles";
 import { savedProfileIds } from "@/lib/repositories/shortlist";
 import {
-  balanceFor,
+  asksSince,
   countPendingInbound,
-  ensureMonthlyGrant,
+  weekAgo,
   readSettings,
 } from "@/lib/repositories/connections";
 import { MADHHAB, PROVINCES, inPool } from "@/lib/domain/profile";
@@ -44,8 +44,6 @@ export default async function BrowsePage({
 
   const settings = await readSettings();
   const now = new Date();
-  await ensureMonthlyGrant(session.user.id, settings, now);
-
   /* A member who is not in the pool browses nothing. Said plainly rather
    * than shown as an empty list, which reads like "nobody is here" and
    * sends people to support.
@@ -90,13 +88,15 @@ export default async function BrowsePage({
      them. */
   const scope = params.saved ? "saved" : params.new ? "new" : "pool";
 
-  const [cards, balance, inbound, savedIds, pool] = await Promise.all([
+  const [cards, asksThisWeek, inbound, savedIds, pool] = await Promise.all([
     browseFor({ userId: session.user.id, gender: me.gender }, filters, settings, 40, scope),
-    balanceFor(session.user.id),
+    asksSince(session.user.id, weekAgo(now)),
     countPendingInbound(session.user.id),
     savedProfileIds(session.user.id),
     poolCounts(now, settings),
   ]);
+
+  const asksLeft = Math.max(0, settings.asksPerWeek - asksThisWeek);
 
   return (
     <AppFrame
@@ -105,12 +105,17 @@ export default async function BrowsePage({
       title={scope === "saved" ? "Saved" : scope === "new" ? "New this week" : "Browse"}
       /* Beside the title rather than under the tabs. On a phone the
          header was four stacked rows — tabs, wrapped tabs, the count,
-         the balance — and the first profile began 447px down an 844px
-         screen. This is the row that was already there. */
+         the pill — and the first profile began 447px down an 844px
+         screen. This is the row that was already there.
+
+         It counts asks, not connections. Nothing is spent any more; what
+         is bounded is how many people one member may approach in a
+         week, so the number that matters is how many of those are
+         left. */
       aside={
         <span className="flex items-center gap-2 rounded-pill border border-soft-green bg-white px-3 py-1.5 text-[18px] font-semibold text-peach-deep">
           <SparkIcon className="text-[19px]" />
-          {balance} connection{balance === 1 ? "" : "s"} left
+          {asksLeft} ask{asksLeft === 1 ? "" : "s"} left this week
         </span>
       }
     >
@@ -213,7 +218,6 @@ export default async function BrowsePage({
                       <AskButton
                         profileId={c.profileId}
                         alreadyAsked={c.alreadyAsked}
-                        charge={settings.connectionCharge}
                       />
                     </div>
                     <MarkButtons profileId={c.profileId} current={c.marked} />

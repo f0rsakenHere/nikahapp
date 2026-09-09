@@ -1,16 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  LedgerEntrySchema,
   ConnectionRequestSchema,
   REQUEST_STATES,
   TERMINAL_REQUEST_STATES,
   appearsInBrowse,
   applyRequest,
-  balanceOf,
   canSend,
-  costOfSending,
   pairKey,
-  reservedOf,
   type ConnectionRequest,
   type RequestEvent,
   type SendContext,
@@ -41,7 +37,7 @@ function request(over: Partial<ConnectionRequest> = {}): ConnectionRequest {
 
 function ctx(over: Partial<SendContext> = {}): SendContext {
   return {
-    balance: 10,
+    asksThisWeek: 0,
     recipientPending: 0,
     existingBetweenPair: null,
     senderInPool: true,
@@ -52,70 +48,38 @@ function ctx(over: Partial<SendContext> = {}): SendContext {
   };
 }
 
-/* ------------------------------------------------------------ ledger -- */
-
-describe("the ledger", () => {
-  it("sums to a balance", () => {
-    expect(balanceOf([{ delta: 10 }, { delta: -1 }, { delta: -1 }, { delta: 1 }])).toBe(9);
-  });
-
-  it("reports what is held against requests in flight", () => {
-    const entries = [
-      { delta: 10, reason: "monthlyGrant" as const },
-      { delta: -1, reason: "reservedForRequest" as const },
-      { delta: -1, reason: "reservedForRequest" as const },
-      { delta: 1, reason: "refundedOnDecline" as const },
-    ];
-    expect(reservedOf(entries)).toBe(2);
-    expect(balanceOf(entries)).toBe(9);
-  });
-
-  it("refuses a staff adjustment with no explanation", () => {
-    const bad = {
-      userId: "u1",
-      delta: 5,
-      reason: "adjustedByStaff",
-      requestId: null,
-      at: NOW,
-      byUserId: null,
-      note: null,
-    };
-    expect(LedgerEntrySchema.safeParse(bad).success).toBe(false);
-
-    const good = { ...bad, byUserId: "s1", note: "goodwill after a support call" };
-    expect(LedgerEntrySchema.safeParse(good).success).toBe(true);
-  });
-
-  it("does not demand a note for an ordinary grant", () => {
-    const grant = {
-      userId: "u1",
-      delta: 10,
-      reason: "monthlyGrant",
-      requestId: null,
-      at: NOW,
-      byUserId: null,
-      note: null,
-    };
-    expect(LedgerEntrySchema.safeParse(grant).success).toBe(true);
-  });
-});
-
 /* ------------------------------------------------------------ sending -- */
 
 describe("canSend", () => {
-  it("allows an ordinary request and charges one", () => {
-    expect(canSend("a", "b", ctx(), settings())).toEqual({ ok: true, cost: 1 });
+  it("allows an ordinary request, and it costs nothing", () => {
+    expect(canSend("a", "b", ctx(), settings())).toEqual({ ok: true });
   });
 
   it("refuses asking yourself", () => {
     expect(canSend("a", "a", ctx(), settings())).toEqual({ ok: false, reason: "same-person" });
   });
 
-  it("refuses when the sender has run out", () => {
-    expect(canSend("a", "b", ctx({ balance: 0 }), settings())).toEqual({
+  it("refuses once the week's asks are used up", () => {
+    const spent = ctx({ asksThisWeek: DEFAULT_SETTINGS.asksPerWeek });
+    expect(canSend("a", "b", spent, settings())).toEqual({
       ok: false,
-      reason: "no-connections-left",
+      reason: "weekly-asks-spent",
     });
+  });
+
+  it("caps the side that pays nothing too", () => {
+    /* The cap is spam control, not billing. A sister pays for no part of
+       this and is still limited in how many people she may approach. */
+    const her = ctx({ senderGender: "sister", asksThisWeek: DEFAULT_SETTINGS.asksPerWeek });
+    expect(canSend("a", "b", her, settings())).toEqual({
+      ok: false,
+      reason: "weekly-asks-spent",
+    });
+  });
+
+  it("allows the last ask of the week", () => {
+    const nearly = ctx({ asksThisWeek: DEFAULT_SETTINGS.asksPerWeek - 1 });
+    expect(canSend("a", "b", nearly, settings())).toEqual({ ok: true });
   });
 
   /* The mechanism that protects the receiving side. */
@@ -127,8 +91,8 @@ describe("canSend", () => {
     });
   });
 
-  it("checks the inbox before the balance, so a full inbox costs nothing to discover", () => {
-    const both = ctx({ recipientPending: 10, balance: 0 });
+  it("checks the inbox before the weekly cap, so the kinder refusal wins", () => {
+    const both = ctx({ recipientPending: 10, asksThisWeek: 99 });
     expect(canSend("a", "b", both, settings())).toEqual({
       ok: false,
       reason: "recipient-inbox-full",
@@ -194,24 +158,6 @@ describe("canSend", () => {
   });
 });
 
-describe("costOfSending", () => {
-  it("charges one under reserve and onSend", () => {
-    for (const charge of ["reserve", "onSend"] as const) {
-      expect(costOfSending("brother", settings({ connectionCharge: charge }))).toBe(1);
-    }
-  });
-
-  it("charges nothing up front when the charge falls on acceptance", () => {
-    expect(costOfSending("brother", settings({ connectionCharge: "onAccept" }))).toBe(0);
-  });
-
-  it("charges only brothers when the cost is one-sided", () => {
-    const oneSided = settings({ bothGendersSpend: false });
-    expect(costOfSending("brother", oneSided)).toBe(1);
-    expect(costOfSending("sister", oneSided)).toBe(0);
-  });
-});
-
 /* -------------------------------------------------------- transitions -- */
 
 describe("applyRequest", () => {
@@ -224,12 +170,12 @@ describe("applyRequest", () => {
   };
 
   it("moves a pending request to every terminal state", () => {
-    expect(applyRequest(request(), EVENTS.accept, settings())).toMatchObject({
+    expect(applyRequest(request(), EVENTS.accept)).toMatchObject({
       ok: true,
       next: { state: "accepted" },
     });
     for (const type of ["decline", "withdraw", "expire", "block"] as const) {
-      const result = applyRequest(request(), EVENTS[type], settings());
+      const result = applyRequest(request(), EVENTS[type]);
       expect(result.ok).toBe(true);
       if (result.ok) expect(TERMINAL_REQUEST_STATES.has(result.next.state)).toBe(true);
     }
@@ -240,7 +186,7 @@ describe("applyRequest", () => {
       if (state === "pending") continue;
       const answered = request({ state, answeredAt: LATER });
       for (const type of Object.keys(EVENTS) as RequestEvent["type"][]) {
-        const result = applyRequest(answered, EVENTS[type], settings());
+        const result = applyRequest(answered, EVENTS[type]);
         expect(result.ok).toBe(false);
         expect(!result.ok && result.error).toBe("illegal-transition");
       }
@@ -248,45 +194,25 @@ describe("applyRequest", () => {
   });
 
   it("will not expire a request before its time", () => {
-    const early = applyRequest(request(), { type: "expire", at: NOW }, settings());
+    const early = applyRequest(request(), { type: "expire", at: NOW });
     expect(!early.ok && early.error).toBe("not-yet-expired");
   });
 
-  it("returns the connection on a decline, an expiry and a withdrawal", () => {
-    for (const [type, reason] of [
-      ["decline", "refundedOnDecline"],
-      ["withdraw", "refundedOnDecline"],
-      ["expire", "refundedOnExpiry"],
-      ["block", "refundedOnDecline"],
-    ] as const) {
-      const result = applyRequest(request(), EVENTS[type], settings());
-      expect(result.ok && result.ledger).toBe(reason);
+  it("carries no money in it any more", () => {
+    /* Every answer used to return a ledger reason: a decline gave the
+       held connection back, an acceptance took it. Asking is free now,
+       so the four answers differ only in the state they land on, and
+       there is nothing here for a wallet to react to. */
+    for (const type of ["decline", "withdraw", "expire", "block", "accept"] as const) {
+      const result = applyRequest(request(), EVENTS[type]);
+      expect(result.ok).toBe(true);
+      expect(result.ok && "ledger" in result).toBe(false);
     }
-  });
-
-  it("returns nothing when the charge was taken on sending", () => {
-    const onSend = settings({ connectionCharge: "onSend" });
-    for (const type of ["decline", "withdraw", "expire"] as const) {
-      const result = applyRequest(request(), EVENTS[type], onSend);
-      expect(result.ok && result.ledger).toBeNull();
-    }
-  });
-
-  it("takes the connection on acceptance under reserve and onAccept", () => {
-    for (const charge of ["reserve", "onAccept"] as const) {
-      const result = applyRequest(request(), EVENTS.accept, settings({ connectionCharge: charge }));
-      expect(result.ok && result.ledger).toBe("consumedOnAccept");
-    }
-  });
-
-  it("does not charge twice when it was taken on sending", () => {
-    const result = applyRequest(request(), EVENTS.accept, settings({ connectionCharge: "onSend" }));
-    expect(result.ok && result.ledger).toBeNull();
   });
 
   it("does not mutate its input", () => {
     const r = request();
-    applyRequest(r, EVENTS.accept, settings());
+    applyRequest(r, EVENTS.accept);
     expect(r.state).toBe("pending");
   });
 });

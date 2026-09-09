@@ -28,6 +28,10 @@ export const COLLECTIONS = {
   /* The browse model (§3.1 D1). `introductions` is kept for the
    * staff-created referrals that continue alongside it. */
   connectionRequests: "connectionRequests",
+  /* Retired with the connection currency. Asking is free and rate-limited
+     now, so nothing grants, holds, spends or refunds — the collection is
+     left in the database holding the old rows rather than dropped, and
+     nothing in the app reads it. */
   connectionLedger: "connectionLedger",
   /* Saved and passed-on profiles. Private to the member who marked
    * them; nobody is ever told they were passed over. */

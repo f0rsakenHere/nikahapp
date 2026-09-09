@@ -120,10 +120,10 @@ const body = (p) => p.innerText("body");
     for (const label of ["Waiting on you", "Conversations", "You asked"]) {
       check(`the "${label}" count is shown`, new RegExp(label, "i").test(text));
     }
-    /* The monthly quota is not one of them. It buys requests, and a
+    /* The ask counter is not one of them. It bounds asking, and a
        draft cannot send one — so it appears with the pool, once the
        pool is open, and is asserted on the live dashboard below. */
-    check("the quota is not offered to a draft", !/Requests left/i.test(text));
+    check("the ask counter is not offered to a draft", !/asks left this week/i.test(text));
 
     /* ---------- waiting on us --------------------------------------- */
     await profiles.updateOne(
@@ -159,22 +159,32 @@ const body = (p) => p.innerText("body");
     check("a live profile is reported as live", /\bLive\b/.test(liveText));
     check("with the pool offered", /Browse the pool/.test(liveText));
     check("and the closed-pool notice withdrawn", !/Browsing opens once/.test(liveText));
-    check("the monthly quota is shown once she can spend it", /Requests left/i.test(liveText));
-    /* The date the next grant actually lands, not today's. It used to
-       print `now` beside the word "renews", which reads as the renewal
-       day — so this asserts the first of a month, and that it is not
-       today. */
-    const renews = /(\d+) more on ([A-Z][a-z]{2} 1, \d{4})/.exec(liveText);
-    check("it says when the next connections arrive", Boolean(renews), liveText.slice(0, 200));
     check(
-      "and that date is not today",
-      Boolean(renews) && renews[2] !== new Intl.DateTimeFormat("en-CA", {
-        dateStyle: "medium",
-        timeZone: "UTC",
-      }).format(new Date()),
-      renews && renews[2]
+      "the week's asks are shown once she can use them",
+      /asks left this week/i.test(liveText),
+      liveText.slice(0, 200)
     );
-    /* Still three counts, and still no fourth box for the quota. */
+    /* A rolling window has no renewal date, so there must not be one on
+       screen. The old panel printed "3 more on Sep 1" from a calendar
+       grant that no longer exists; a date here would be a promise the
+       counter does not keep. */
+    check(
+      "and no renewal date is promised, because the window rolls",
+      !/more on [A-Z][a-z]{2} \d/.test(liveText) && !/renews/i.test(liveText),
+      liveText.slice(0, 240)
+    );
+    check(
+      "the cap itself is named, so the number has a denominator",
+      /of \d+ a week/i.test(liveText),
+      liveText.slice(0, 240)
+    );
+    check(
+      "and it says asking is free",
+      /Asking is free/i.test(liveText),
+      liveText.slice(0, 240)
+    );
+
+    /* Still three counts, and still no fourth box for the counter. */
     for (const label of ["Waiting on you", "Conversations", "You asked"]) {
       check(`the "${label}" count survives going live`, new RegExp(label, "i").test(liveText));
     }

@@ -8,11 +8,10 @@ import { suggestionsFor } from "@/lib/repositories/browse";
 import { hasConfirmedWali } from "@/lib/repositories/guardianships";
 import { listNotifications } from "@/lib/repositories/notifications";
 import {
-  balanceFor,
+  asksSince,
   countPendingInbound,
-  ensureMonthlyGrant,
+  weekAgo,
   listRequests,
-  nextGrantAt,
   readSettings,
 } from "@/lib/repositories/connections";
 import { listConversationsFor } from "@/lib/repositories/conversations";
@@ -233,7 +232,6 @@ export default async function DashboardPage({
   const { submitted } = await searchParams;
   const settings = await readSettings();
   const now = new Date();
-  await ensureMonthlyGrant(user.id, settings, now);
 
   /* Not asked about a brother. He has no wali step for the answer to
      feed, and a query whose result is discarded is a query that will one
@@ -245,11 +243,11 @@ export default async function DashboardPage({
   const blockers = submitBlockers(me, ctx);
   const nextStep = stepsFor(me.gender).find((s) => blockers.some((b) => b.step === s.id));
 
-  const [waiting, sent, conversations, balance, suggestions, feed, pool] = await Promise.all([
+  const [waiting, sent, conversations, asksThisWeek, suggestions, feed, pool] = await Promise.all([
     countPendingInbound(user.id),
     listRequests(user.id, "out"),
     listConversationsFor(user.id),
-    balanceFor(user.id),
+    asksSince(user.id, weekAgo(now)),
     /* Only for somebody who can actually act on them. Ranking a pool a
        member is not yet allowed to see would be showing them a door and
        the key at the same time. Four rather than three: the grid is
@@ -263,6 +261,7 @@ export default async function DashboardPage({
     listNotifications(user.id, 4),
     poolCounts(now, settings),
   ]);
+  const asksLeft = Math.max(0, settings.asksPerWeek - asksThisWeek);
   const open = conversations.filter((c) => !CLOSED_STATES.has(c.state));
   const pendingSent = sent.filter((r) => r.state === "pending");
 
@@ -527,30 +526,21 @@ export default async function DashboardPage({
               <>
                 <p className="flex items-center gap-2 text-[18px] font-semibold uppercase tracking-[0.6px] text-text/70">
                   <SparkIcon className="text-[18px]" />
-                  Requests left
+                  Asks left this week
                 </p>
                 <p className="mt-2 font-manrope text-[38px] font-bold leading-none text-peach-deep">
-                  {balance}
+                  {asksLeft}
                 </p>
-                {/* The date the next three arrive, not today's date.
-                    `periodOf` keys the grant to the calendar month, so
-                    it is the first of the next one — printing `now`
-                    here put today beside the word "renews", which reads
-                    as the renewal day. Nobody looked twice at that
-                    while the number was ten; at three they will. */}
+                {/* A rolling window, so there is no renewal date to name
+                    — asks come back one at a time as the days they were
+                    spent on fall out of the last seven. Saying "resets
+                    Monday" would invite spending the week on Sunday
+                    night and the next one an hour later. */}
                 <p className="mt-2 text-[18px] leading-[26px] text-text">
-                  {settings.grantPerMonth} more on {day(nextGrantAt(now))}
+                  of {settings.asksPerWeek} a week
                 </p>
-                {/* The three charging rules differ in when the connection
-                    leaves the account, and a member who is deciding
-                    whether to spend one deserves the right sentence
-                    rather than the average of the three. */}
                 <p className="mt-4 border-t border-soft-green pt-4 text-[18px] leading-[26px] text-text/70">
-                  {settings.connectionCharge === "onAccept"
-                    ? "One is spent when somebody accepts. Asking costs nothing until then."
-                    : settings.connectionCharge === "reserve"
-                      ? "One is held when you ask, and returned if they decline."
-                      : "One is spent when you ask somebody to talk."}
+                  Asking is free. A plan is what opens the conversation once somebody says yes.
                 </p>
               </>
             ) : (

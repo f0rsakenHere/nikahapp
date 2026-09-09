@@ -82,24 +82,6 @@ export const INDEXES: Partial<Record<CollectionName, Spec[]>> = {
     { keys: { state: 1, expiresAt: 1 }, options: { name: "expiry_sweep" } },
   ],
 
-  [COLLECTIONS.connectionLedger]: [
-    { keys: { userId: 1, at: -1 }, options: { name: "userId_at" } },
-    /* One monthly grant per person per period.
-     *
-     * `partialFilterExpression`, not `sparse`. A sparse *compound* index
-     * still indexes a document when any one of its keys exists — and
-     * `userId` always does — so every reservation and refund was indexed
-     * with `period: null` and the second one collided. Partial indexes
-     * only the documents this rule is about. */
-    {
-      keys: { userId: 1, period: 1 },
-      options: {
-        unique: true,
-        name: "grant_once_per_period",
-        partialFilterExpression: { reason: "monthlyGrant" },
-      },
-    },
-  ],
 
   [COLLECTIONS.verifications]: [
     { keys: { "subject.userId": 1, kind: 1 }, options: { name: "subject_kind" } },

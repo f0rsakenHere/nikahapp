@@ -93,9 +93,37 @@ const text = (p) => p.innerText("body");
     const hrefs = await him
       .locator('a[href^="/browse/"]')
       .evaluateAll((els) => [...new Set(els.map((e) => e.getAttribute("href")))]);
+    /* Only ever a seeded profile.
+     *
+     * This used to take the first askable card on the page, and the pool
+     * is a live database: under deferred approval a real applicant sits
+     * in it the moment she sends her profile in. The checker asked one,
+     * then tried to sign in as her with the fixture password and reported
+     * a broken product. It was not broken — the request was real, and it
+     * went to somebody who had not asked to receive it.
+     *
+     * So the candidates are filtered against `@seed.test` before anything
+     * is clicked, and a run with no seeded target stops rather than
+     * reaching for whoever is next. */
+    const seeded = new Set(
+      (
+        await db
+          .collection("users")
+          .find({ email: /@seed\.test$/ }, { projection: { _id: 1 } })
+          .toArray()
+      ).map((u) => String(u._id))
+    );
+
     let href = null;
     let ask = null;
     for (const candidate of hrefs) {
+      const profileId = candidate.split("/").pop();
+      if (!ObjectId.isValid(profileId)) continue;
+      const profile = await db
+        .collection("profiles")
+        .findOne({ _id: new ObjectId(profileId) }, { projection: { userId: 1 } });
+      if (!profile || !seeded.has(String(profile.userId))) continue;
+
       await him.goto(BASE + candidate, { waitUntil: "networkidle" });
       const button = him.locator('button:has-text("Ask to talk")').first();
       if ((await button.count()) === 1) {
@@ -106,7 +134,12 @@ const text = (p) => p.innerText("body");
     }
     check("a profile opens", /Sister|Brother/.test(await text(him)), him.url());
     check("there is somebody in the pool he can still ask", ask !== null, `${hrefs.length} tried`);
-    if (!ask) throw new Error("nobody askable in the pool — clear the seeded requests first");
+    if (!ask) {
+      throw new Error(
+        "no seeded sister left to ask — clear the seeded requests, or re-seed. " +
+          "This checker will not ask a real member."
+      );
+    }
     check("there is something to press", (await ask.count()) === 1);
     await ask.click();
     await him.waitForTimeout(4000);

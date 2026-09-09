@@ -22,51 +22,47 @@
 import { z } from "zod";
 
 export const SettingsSchema = z.object({
-  /* ── D1b ────────────────────────────────────────────────────────────
-   * When a connection is spent.
+  /* ── D1a/b/c, all three answered at once ────────────────────────────
+   * The money moved. It used to sit on the ask: everybody got a small
+   * monthly allowance of connections, spending one to approach somebody
+   * and getting it back if they were turned down. That is gone. Asking
+   * is free, and what is sold is the ability to *talk*.
    *
-   *   onSend     simple, and makes silence feel like theft — the single
-   *              biggest churn driver in every paid-connection product
-   *   onAccept   sender risk-free, spam free
-   *   reserve    held on send, taken on acceptance, returned on decline
-   *              or expiry
+   * Three consequences worth having written down, because each of them
+   * deleted code that looked load-bearing:
    *
-   * Default `reserve`: it bounds how many requests one person can have
-   * in flight without charging them for being ignored. It is also the
-   * same authorize/capture shape as the Stripe fee flow, so it reuses
-   * a mental model the codebase already has. */
-  connectionCharge: z.enum(["onSend", "onAccept", "reserve"]).default("reserve"),
+   *   1. There is no balance any more. Nothing is granted, held,
+   *      consumed or refunded, so the ledger stopped being a currency
+   *      and `costOfSending` stopped meaning anything. It also quietly
+   *      fixed a real bug — an ignored request used to cost the sender a
+   *      connection permanently, because nothing ever expired one.
+   *
+   *   2. The allowance was doing spam control nobody had named. Free
+   *      asking with no limit lets one member work the whole pool in an
+   *      afternoon, and the recipient's inbound cap does not help — it
+   *      hides *her*, not him. `asksPerWeek` is that job, given a name.
+   *
+   *   3. It applies to everybody, including the side that pays nothing.
+   *      A cap that followed payment would leave the only unlimited
+   *      asker being the one already charged, which is backwards.
+   *
+   * Five a week against a pool this size is roughly a month to work
+   * through everybody, which keeps asking considered without making it
+   * scarce. It is a placeholder until the client gives a number. */
+  asksPerWeek: z.number().int().min(1).max(200).default(5),
 
-  /* ── D1a ────────────────────────────────────────────────────────────
-   * Where connections come from. `grantPerMonth` is what everyone gets
-   * for nothing; `purchasable` says whether more can be bought.
+  /* Who has to be paying for a conversation to be writable.
    *
-   * Three, on the client's instruction. Ten was a number from a
-   * conversation and never a decision; three is the decision, and it is
-   * a different product. Under `connectionCharge: "reserve"` a member
-   * can have three asks in flight and no more, so three people who never
-   * answer take the whole month — `requestExpiryDays` is what hands them
-   * back, and at 14 days that is half the month gone before the third is
-   * returned. Worth watching in the ledger rather than worth softening
-   * here.
+   * `brother` on the client's instruction: charging sisters shrinks the
+   * side of the pool the whole product depends on, and every matrimonial
+   * service that has tried it learned the same thing. The conversation is
+   * unlocked by the brother in it — if he has no plan, neither of them
+   * can write, because it is his paywall and a half-open thread where
+   * only one person can speak is worse than a closed one.
    *
-   * It is a top-up, not a reset: `balanceOf` sums the ledger, so an
-   * unspent month rolls into the next one and someone who never asks
-   * anybody accrues 36 a year. That was invisible at ten a month and is
-   * the whole balance at three.
-   *
-   * If connections are ever sold, the fee copy on the marketing site is
-   * no longer the whole pricing story and needs a second line — flagged
-   * in home.ts. */
-  grantPerMonth: z.number().int().min(0).max(200).default(3),
-  purchasable: z.boolean().default(false),
-
-  /* ── D1c ────────────────────────────────────────────────────────────
-   * Whether both genders spend to initiate. Default yes: the client
-   * described browsing as symmetric, and an asymmetric cost is a
-   * product statement worth making deliberately rather than by
-   * omission. */
-  bothGendersSpend: z.boolean().default(true),
+   * `nobody` turns the paywall off entirely, which is what the product
+   * runs as until Stripe exists. */
+  planGate: z.enum(["brother", "everybody", "nobody"]).default("nobody"),
 
   /* ── D1d ────────────────────────────────────────────────────────────
    * The inbound cap: how many requests one member may have waiting at
@@ -182,22 +178,19 @@ export const DEFAULT_SETTINGS: Settings = SettingsSchema.parse({});
  *  somewhere people look, rather than in a document nobody opens. */
 export const OPEN_DECISIONS: { key: keyof Settings; question: string; risk: string }[] = [
   {
-    /* Half of D1a is answered: three a month, decided by the client.
-       What is left is whether more can be bought, which is the half
-       that touches the published pricing. */
-    key: "purchasable",
-    question: "D1a — may a member buy more than the three connections a month they are given?",
-    risk: "If they are sold, the published pricing copy is incomplete.",
+    /* D1a, D1b and D1c are all closed: asking is free, the plan sells
+       the conversation, and the brother's plan is what unlocks it. What
+       is open is the number — five a week is a placeholder nobody has
+       argued with, and a placeholder is how a guess becomes a decision
+       by accident. */
+    key: "asksPerWeek",
+    question: "How many people may a member ask in a week? Five is a placeholder.",
+    risk: "Too low and the pool feels shut; too high and one member can work all of it in a day.",
   },
   {
-    key: "connectionCharge",
-    question: "D1b — is a connection spent on sending, on acceptance, or reserved?",
-    risk: "Charging on send makes silence feel like theft, which is the main churn driver.",
-  },
-  {
-    key: "bothGendersSpend",
-    question: "D1c — do both genders spend to initiate?",
-    risk: "An asymmetric cost is a product statement; making it by omission is the bad way.",
+    key: "planGate",
+    question: "The paywall is off (`nobody`) until Stripe exists. Switching it to `brother` is what starts charging.",
+    risk: "Turning it on before checkout works locks every conversation with no way to pay.",
   },
   {
     key: "inboundCap",

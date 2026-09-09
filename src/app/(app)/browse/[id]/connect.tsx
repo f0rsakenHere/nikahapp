@@ -18,13 +18,11 @@ export type ConnectionView = "none" | "open" | "accepted" | "closed";
 export function ConnectButton({
   profileId,
   existing,
-  balance,
-  charge,
+  asksLeft,
 }: {
   profileId: string;
   existing: ConnectionView;
-  balance: number;
-  charge: "onSend" | "onAccept" | "reserve";
+  asksLeft: number;
 }) {
   const [state, action] = useActionState(sendConnection.bind(null, profileId), EMPTY);
 
@@ -62,13 +60,17 @@ export function ConnectButton({
       <FormError>{state.error}</FormError>
 
       <SubmitButton>
-        {charge === "onAccept" ? "Ask to talk" : "Ask to talk · uses 1 connection"}
+        Ask to talk
       </SubmitButton>
 
       <p className="text-center text-[18px] leading-[26px] text-text/70">
-        {charge === "reserve"
-          ? `You have ${balance}. It is held while they decide, and returned if they decline or do not answer.`
-          : `You have ${balance}.`}
+        {/* Asking costs nothing, so this is a rate and not a price. It
+            is still worth saying: five a week is a real limit and
+            somebody who does not know it is there will read the refusal
+            as a fault. */}
+        {asksLeft === 0
+          ? "You have used this week's asks. A few more become available each day."
+          : `${asksLeft} ask${asksLeft === 1 ? "" : "s"} left this week. Asking is free — a plan is what opens the conversation.`}
       </p>
     </form>
   );

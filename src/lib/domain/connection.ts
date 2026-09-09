@@ -129,7 +129,14 @@ export function pairKey(fromUserId: string, toUserId: string): string {
 /* ----------------------------------------------------------- send ---- */
 
 export type SendContext = {
-  balance: number;
+  /** How many asks this person has sent in the last seven days.
+   *
+   *  A rate, not a wallet. Under the plan model asking is free, so
+   *  nothing is spent, held or refunded — what stops one member working
+   *  through the whole pool in an afternoon is how often they may ask,
+   *  and that is answered by counting requests rather than by keeping a
+   *  balance somebody has to be granted. */
+  asksThisWeek: number;
   /** Requests the recipient already has waiting. */
   recipientPending: number;
   /** A live request between these two, in either direction. */
@@ -145,7 +152,7 @@ export type SendContext = {
 };
 
 export type SendRefusal =
-  | "no-connections-left"
+  | "weekly-asks-spent"
   | "recipient-inbox-full"
   | "already-asked"
   | "already-answered-no"
@@ -155,7 +162,7 @@ export type SendRefusal =
   | "blocked"
   | "same-person";
 
-export type SendDecision = { ok: true; cost: number } | { ok: false; reason: SendRefusal };
+export type SendDecision = { ok: true } | { ok: false; reason: SendRefusal };
 
 /** Whether this request may be sent, and what it costs.
  *
@@ -203,20 +210,18 @@ export function canSend(
     return { ok: false, reason: "recipient-inbox-full" };
   }
 
-  const cost = costOfSending(ctx.senderGender, settings);
-  if (cost > 0 && ctx.balance < cost) return { ok: false, reason: "no-connections-left" };
+  /* The weekly cap, and it applies to everybody.
+   *
+   *  It is spam control, not billing: what a plan buys is the ability to
+   *  talk, so a sister — who pays nothing — is still limited in how many
+   *  people she may approach. Making the cap follow payment would mean
+   *  the only unlimited asker is the one who has already been charged,
+   *  which is precisely backwards. */
+  if (ctx.asksThisWeek >= settings.asksPerWeek) {
+    return { ok: false, reason: "weekly-asks-spent" };
+  }
 
-  return { ok: true, cost };
-}
-
-/** What sending costs this person. Zero when their gender does not pay
- *  (D1c) or when the charge falls on acceptance instead. */
-export function costOfSending(
-  gender: "brother" | "sister",
-  settings: Settings
-): number {
-  if (!settings.bothGendersSpend && gender === "sister") return 0;
-  return settings.connectionCharge === "onAccept" ? 0 : 1;
+  return { ok: true };
 }
 
 /* ------------------------------------------------------ transitions -- */
@@ -231,35 +236,23 @@ export type RequestEvent =
 export type RequestError = "illegal-transition" | "not-yet-expired";
 
 export type RequestResult =
-  | { ok: true; next: ConnectionRequest; ledger: LedgerReason | null }
+  | { ok: true; next: ConnectionRequest }
   | { ok: false; error: RequestError };
 
-/** `(request, event, settings) → request | error`, plus what the ledger
- *  should record.
+/** `(request, event) → request | error`.
  *
- *  Returning the ledger reason rather than writing it keeps this pure
- *  and keeps the two decisions — what happened, and what it costs —
- *  visible in one place. */
-export function applyRequest(
-  request: ConnectionRequest,
-  event: RequestEvent,
-  settings: Settings
-): RequestResult {
+ *  It used to also return what the ledger should record, because an ask
+ *  cost a connection and every answer either spent or returned it. Under
+ *  the plan model asking is free, so acceptance, decline, withdrawal and
+ *  expiry are all just state — there is no money in this function any
+ *  more, and `settings` is no longer one of its arguments.
+ */
+export function applyRequest(request: ConnectionRequest, event: RequestEvent): RequestResult {
   if (request.state !== "pending") return { ok: false, error: "illegal-transition" };
-
-  const refundable = settings.connectionCharge === "reserve";
 
   switch (event.type) {
     case "accept":
-      return {
-        ok: true,
-        next: { ...request, state: "accepted", answeredAt: event.at },
-        /* Under `reserve` the held connection is now spent; under
-         * `onSend` it already was; under `onAccept` this is the moment
-         * it is taken. */
-        ledger:
-          settings.connectionCharge === "onSend" ? null : "consumedOnAccept",
-      };
+      return { ok: true, next: { ...request, state: "accepted", answeredAt: event.at } };
 
     case "decline":
       return {
@@ -270,33 +263,17 @@ export function applyRequest(
           answeredAt: event.at,
           declineReason: event.reason ?? null,
         },
-        ledger: refundable ? "refundedOnDecline" : null,
       };
 
     case "block":
-      return {
-        ok: true,
-        next: { ...request, state: "blocked", answeredAt: event.at },
-        /* Refunded like a decline. Being blocked is a consequence for
-         * him; charging for it as well would make reporting somebody
-         * feel like a favour to the platform. */
-        ledger: refundable ? "refundedOnDecline" : null,
-      };
+      return { ok: true, next: { ...request, state: "blocked", answeredAt: event.at } };
 
     case "withdraw":
-      return {
-        ok: true,
-        next: { ...request, state: "withdrawn", answeredAt: event.at },
-        ledger: refundable ? "refundedOnDecline" : null,
-      };
+      return { ok: true, next: { ...request, state: "withdrawn", answeredAt: event.at } };
 
     case "expire":
       if (event.at < request.expiresAt) return { ok: false, error: "not-yet-expired" };
-      return {
-        ok: true,
-        next: { ...request, state: "expired", answeredAt: event.at },
-        ledger: refundable ? "refundedOnExpiry" : null,
-      };
+      return { ok: true, next: { ...request, state: "expired", answeredAt: event.at } };
   }
 }
 
