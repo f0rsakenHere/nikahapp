@@ -230,7 +230,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
             <p className="mb-3 text-[13px] leading-[20px] text-peach-deep">
               Not ready:{" "}
               {blockers
-                .map((b) => (b.reason === "wali-not-confirmed" ? "wali has not confirmed" : `${b.step} unfinished`))
+                .map((b) => `${b.step} unfinished`)
                 .join(" · ")}
             </p>
           ) : null}

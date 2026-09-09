@@ -43,7 +43,21 @@ export default async function OnboardingPage({
   const progress = completeness(profile, ctx);
   const blocked = new Set(blockers.map((b) => b.step));
 
-  const isDone = (id: (typeof visible)[number]["id"]) => !blocked.has(id);
+  const isDone = (id: (typeof visible)[number]["id"]) => {
+    /* The wali step cannot be answered from the blockers, and this broke
+       the moment he stopped being one. `submitBlockers` never mentions
+       him now — she can send her profile in while he is still deciding —
+       so "not blocked" came out as "done" and the checklist ticked a man
+       who had not replied to his email.
+       
+       It is answered by the thing that is actually true of it instead:
+       `required` asks the context whether he has confirmed. */
+    if (id === "guardian") {
+      const step = visible.find((s) => s.id === id)!;
+      return step.required(profile, ctx);
+    }
+    return !blocked.has(id);
+  };
 
   const blurb =
     profile.status !== "draft"

@@ -9,6 +9,7 @@ import {
   poolStatuses,
   stepById,
   stepsFor,
+  canParticipate,
   submitBlockers,
   type ProfileDraft,
 } from "./profile";
@@ -257,15 +258,39 @@ describe("the deen step is gendered", () => {
   });
 });
 
+describe("canParticipate", () => {
+  const settings = { requireVerifiedToBrowse: false };
+
+  it("holds a sister back until her wali confirms, even once she has sent it in", () => {
+    const her = { status: "pendingReview", gender: "sister" as const };
+    expect(canParticipate(her, { hasConfirmedWali: false }, settings)).toBe(false);
+    expect(canParticipate(her, { hasConfirmedWali: true }, settings)).toBe(true);
+  });
+
+  it("asks a brother nothing about a wali", () => {
+    const him = { status: "pendingReview", gender: "brother" as const };
+    expect(canParticipate(him, { hasConfirmedWali: false }, settings)).toBe(true);
+  });
+
+  it("a confirmed wali does not let a draft in", () => {
+    /* The wali is an extra condition on top of the pool, never a way
+       around it. */
+    const draftHer = { status: "draft", gender: "sister" as const };
+    expect(canParticipate(draftHer, { hasConfirmedWali: true }, settings)).toBe(false);
+  });
+});
+
 describe("submitBlockers", () => {
   it("passes a complete sister with a confirmed wali", () => {
     expect(submitBlockers(complete(), { hasConfirmedWali: true })).toEqual([]);
   });
 
-  it("blocks a complete sister whose wali has not confirmed", () => {
-    expect(submitBlockers(complete(), { hasConfirmedWali: false })).toEqual([
-      { step: "guardian", reason: "wali-not-confirmed" },
-    ]);
+  it("lets a complete sister send it in before her wali has answered", () => {
+    /* He used to block this, which left her finished and unable to do
+       anything but wait on somebody else's inbox. He approves the
+       profile now rather than the act of submitting it — `canParticipate`
+       is what keeps her out of the pool until he confirms. */
+    expect(submitBlockers(complete(), { hasConfirmedWali: false })).toEqual([]);
   });
 
   it("never asks a brother for a wali, but does ask for a reference", () => {
@@ -292,7 +317,6 @@ describe("submitBlockers", () => {
       "background",
       "deen",
       "lookingFor",
-      "guardian",
     ]);
   });
 

@@ -116,11 +116,14 @@ const mongo = new MongoClient(uri, {
       await her.waitForTimeout(1800);
     }
 
-    /* Submit is refused while her wali has not confirmed. */
+    /* She may send it in before he answers. He used to block this, which
+       left her finished and with nothing to do but wait on somebody
+       else's inbox — his gate moved to the profile itself, so she
+       submits and it sits with him. */
     await her.goto(BASE + "/onboarding", { waitUntil: "networkidle" });
     check(
-      "she cannot submit while her wali is missing",
-      (await her.locator('button:has-text("Send my profile for review")').count()) === 0
+      "she can send it in even though her wali has not answered",
+      (await her.locator('button:has-text("Send my profile for review")').count()) === 1
     );
 
     await her.goto(BASE + "/onboarding/guardian", { waitUntil: "networkidle" });

@@ -11,6 +11,7 @@ import { decideProfile, findProfileById } from "@/lib/repositories/profiles";
 import { hasConfirmedWali, listGuardianshipsForMember } from "@/lib/repositories/guardianships";
 import { listVerificationsFor } from "@/lib/repositories/verifications";
 import { verificationGaps } from "@/lib/domain/verification";
+import { profileMayGoLive } from "@/lib/domain/guardianship";
 
 export type DecisionState = { error?: string; done?: string };
 
@@ -54,11 +55,37 @@ export async function decide(
       hasConfirmedWali: await hasConfirmedWali(profile.userId),
     });
     if (blockers.length) {
-      const wali = blockers.find((b) => b.reason === "wali-not-confirmed");
+      return { error: `Not ready: ${blockers.map((b) => b.step).join(", ")} unfinished.` };
+    }
+
+    /* Asked separately, and this is why.
+     *
+     * The wali used to be a submit blocker, so `blockers.length` above
+     * caught a sister with no guardian and this branch never had to. He
+     * is not a blocker any more — she can finish and send her profile
+     * while waiting on him — which quietly turned the check below into
+     * the only one, and the check below was `if (active && ...)`: it
+     * refused an *unverified* wali and waved through the absence of one
+     * entirely. A staff member could have approved a sister who had
+     * never named anybody.
+     *
+     * `profileMayGoLive` is the domain's answer to this and distinguishes
+     * the three cases that need three different sentences: nobody
+     * invited, invited and silent, confirmed but not identity-checked. */
+    const goLive = profileMayGoLive(
+      profile.gender,
+      await listGuardianshipsForMember(profile.userId)
+    );
+    if (!goLive.ok) {
       return {
-        error: wali
-          ? "Her wali has not confirmed. This profile cannot go live yet."
-          : `Not ready: ${blockers.map((b) => b.step).join(", ")} unfinished.`,
+        error: {
+          "no-guardianship": "She has not named a wali. This profile cannot go live.",
+          "guardianship-not-confirmed":
+            "Her wali has not confirmed yet. This profile cannot go live.",
+          "multiple-confirmed-guardianships":
+            "Her records show two confirmed walis. Fix that before approving.",
+          "wali-not-verified": "Her wali has not been identity-checked yet.",
+        }[goLive.reason],
       };
     }
 
@@ -72,16 +99,6 @@ export async function decide(
       };
     }
 
-    /* And her wali is checked too (D10) — he holds a veto and reads her
-     * correspondence. */
-    if (profile.gender === "sister") {
-      const active = (await listGuardianshipsForMember(profile.userId)).find(
-        (g) => g.status === "confirmed"
-      );
-      if (active && active.verification.state !== "verified") {
-        return { error: "Her wali has not been identity-checked yet." };
-      }
-    }
   }
 
   /* A decline without a reason is a decision nobody can explain later —

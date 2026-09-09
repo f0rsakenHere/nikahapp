@@ -12,7 +12,8 @@ import {
   weekAgo,
   readSettings,
 } from "@/lib/repositories/connections";
-import { MADHHAB, PROVINCES, inPool } from "@/lib/domain/profile";
+import { MADHHAB, PROVINCES, canParticipate, inPool } from "@/lib/domain/profile";
+import { hasConfirmedWali } from "@/lib/repositories/guardianships";
 import { SparkIcon } from "@/components/app/icons";
 import { ProfileCard } from "@/components/app/profile-card";
 import { AppFrame } from "../frame";
@@ -53,21 +54,30 @@ export default async function BrowsePage({
    * has to work, and with it deferred it is a form the reader has not
    * finished. Telling the second person to wait for us would be a lie
    * about who is holding things up. */
-  if (!inPool(me.status, settings)) {
+  const waliConfirmed = me.gender === "sister" ? await hasConfirmedWali(session.user.id) : false;
+  if (!canParticipate(me, { hasConfirmedWali: waliConfirmed }, settings)) {
+    /* Two reasons land here and they are not the same disappointment.
+       One is a profile the reader has not finished; the other is a
+       finished profile waiting on a man to answer an email. Telling her
+       to go and finish something would be a lie about who is holding
+       things up. */
+    const waitingOnWali = inPool(me.status, settings);
     return (
       <AppFrame active="browse" width="wide" title="Browse">
         <div className="rounded-md border border-peach/40 bg-soft-peach/60 px-4 py-4">
           <p className="text-[18px] font-semibold text-peach-deep">Not yet.</p>
           <p className="mt-2 text-[18px] leading-[26px] text-text">
-            {settings.requireVerifiedToBrowse
-              ? "Browsing opens once your own profile is live. Ours is a closed pool — everyone in it has been checked, which is only true if it is also true of you."
-              : "Browsing opens once you have finished your profile and sent it in. Everyone you would see has done the same, which is only fair if it is also true of you."}
+            {waitingOnWali
+              ? "Your profile is in, and it is with your wali. Browsing opens the moment he confirms — until then nobody can see you either, and asking somebody who cannot look back would be a poor introduction."
+              : settings.requireVerifiedToBrowse
+                ? "Browsing opens once your own profile is live. Ours is a closed pool — everyone in it has been checked, which is only true if it is also true of you."
+                : "Browsing opens once you have finished your profile and sent it in. Everyone you would see has done the same, which is only fair if it is also true of you."}
           </p>
           <Link
-            href="/onboarding"
+            href={waitingOnWali ? "/onboarding/guardian" : "/onboarding"}
             className="mt-3 inline-block text-[18px] font-semibold text-peach-deep underline-offset-2 hover:underline"
           >
-            Your profile
+            {waitingOnWali ? "Your wali" : "Your profile"}
           </Link>
         </div>
       </AppFrame>

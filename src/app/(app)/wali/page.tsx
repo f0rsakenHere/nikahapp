@@ -130,8 +130,13 @@ export default async function WaliPortalPage() {
 
       {!waiting.length && !open.length ? (
         <div className="mt-7 rounded-md border border-soft-green bg-mist px-4 py-4 text-[18px] leading-[26px] text-text">
+          {/* He no longer approves — D1g moved his gate to her profile,
+              which he has already confirmed to be reading this at all.
+              Saying "nothing opens until you approve it" would be
+              describing a power he does not have, on the one screen
+              where he decides how closely to pay attention. */}
           When she receives an introduction you will see it here at the same moment she does, and
-          no conversation opens until you approve it.
+          you can read every conversation she has. You can end one at any point.
         </div>
       ) : null}
 

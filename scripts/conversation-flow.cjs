@@ -129,8 +129,10 @@ async function member(browser, db, gender, name) {
       .collection("conversations")
       .findOne({ requestId: request._id.toHexString() });
     check("accepting creates a conversation", !!conversation);
-    check("it waits on the wali, and is not open", conversation.state === "awaitingWali");
-    check("it has not opened", conversation.openedAt === null);
+    /* D1g, changed: he receives a copy rather than granting permission,
+       so acceptance is the last decision anybody waits on. */
+    check("it opens on acceptance", conversation.state === "open", conversation.state);
+    check("and records when", !!conversation.openedAt);
     check(
       "with three seats: two members and him",
       conversation.participants.length === 3 &&
@@ -143,14 +145,14 @@ async function member(browser, db, gender, name) {
 
     const cid = conversation._id.toHexString();
 
-    /* ---------- nothing can be said before he approves --------------- */
+    /* ---------- it is usable straight away --------------------------- */
     await him.page.goto(`${BASE}/conversations/${cid}`, { waitUntil: "networkidle" });
     const beforeApproval = await visible(him.page);
     check("he can see the thread exists", /Conversation/.test(beforeApproval));
-    check("and is told it is waiting on the wali", /opens when he approves/i.test(beforeApproval));
+    check("and nothing claims it is waiting on the wali", !/opens when he approves/i.test(beforeApproval));
     check(
-      "with no way to write in it",
-      (await him.page.locator('textarea[name="body"]').count()) === 0
+      "there is a box to write in from the start",
+      (await him.page.locator('textarea[name="body"]').count()) === 1
     );
 
     /* The banner is not dismissible, and it is there from the start.
@@ -173,28 +175,32 @@ async function member(browser, db, gender, name) {
       await s.close();
     }
 
-    /* ---------- he approves ------------------------------------------ */
+    /* ---------- he reads, and has nothing to approve ----------------- */
     await waliPage.goto(BASE + "/wali", { waitUntil: "networkidle" });
     const portal = await visible(waliPage);
     /* Case-insensitive: `innerText` applies CSS text-transform, so a
-   heading styled uppercase comes back uppercase. */
-    check("his portal puts it first, as waiting on him", /waiting on you/i.test(portal));
-    check("and says nothing has been said yet", /Nothing has been said|nothing can be until you approve/i.test(portal));
+       heading styled uppercase comes back uppercase. */
+    check("his portal lists it among the open conversations", /open conversations/i.test(portal), portal.replace(/\s+/g, " ").slice(0, 200));
+    check("and offers him no approval to give", !/Approve/i.test(portal));
 
-    await waliPage.click('button:has-text("Approve, and read what they say")');
-    await waliPage.waitForTimeout(3000);
-
-    const opened = await db.collection("conversations").findOne({ _id: conversation._id });
-    check("approving opens it", opened.state === "open" && !!opened.openedAt);
-
+    /* No approval happened, so nothing should have written one into the
+       thread. A system line here would be a record of a decision nobody
+       made. */
     const systemMessages = await db
       .collection("messages")
       .find({ conversationId: cid, kind: "system" })
       .toArray();
-    check("and writes a line into the thread saying so", systemMessages.length === 1);
+    check("and no approval line was written into the thread", systemMessages.length === 0, `${systemMessages.length}`);
+
+    /* He can open and read it in full, which is the whole of his role
+       now — asserted here rather than assumed from the seat. */
+    await waliPage.goto(`${BASE}/conversations/${cid}`, { waitUntil: "networkidle" });
+    const waliThread = await visible(waliPage);
+    check("he can open the thread itself", /Conversation/.test(waliThread), waliPage.url());
     check(
-      "naming him, with no author",
-      systemMessages[0].body.includes("Ahmed Al-Rashid") && systemMessages[0].fromUserId === null
+      "and is told he reads it rather than writes in it",
+      /do not write/i.test(waliThread),
+      waliThread.replace(/\s+/g, " ").slice(0, 200)
     );
 
     /* ---------- talking ---------------------------------------------- */
@@ -204,14 +210,20 @@ async function member(browser, db, gender, name) {
     await him.page.waitForTimeout(3000);
 
     const messages = await db.collection("messages").find({ conversationId: cid }).toArray();
-    check("a message is stored", messages.length === 2);
+    /* One, not two. The second used to be the system line recording the
+       wali's approval, and there is no approval to record. */
+    check("a message is stored", messages.length === 1, `${messages.length}`);
     check(
       "with no field in which an edit could be recorded",
-      !("editedAt" in messages[1]) && !("deletedAt" in messages[1])
+      !("editedAt" in messages[0]) && !("deletedAt" in messages[0])
     );
 
     const counted = await db.collection("conversations").findOne({ _id: conversation._id });
-    check("the conversation counts it", counted.messageCount === 2 && !!counted.lastMessageAt);
+    check(
+      "the conversation counts it",
+      counted.messageCount === 1 && !!counted.lastMessageAt,
+      `${counted.messageCount}`
+    );
 
     check(
       "the composer says messages cannot be edited or deleted",
@@ -316,7 +328,7 @@ async function member(browser, db, gender, name) {
     );
 
     const stillThere = await db.collection("messages").countDocuments({ conversationId: cid });
-    check("every message survives the closing", stillThere === 2);
+    check("every message survives the closing", stillThere === 1, `${stillThere}`);
   } finally {
     await browser.close();
     /* Only this checker's own. Wiping the collection would hide

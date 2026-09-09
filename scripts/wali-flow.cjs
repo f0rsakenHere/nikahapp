@@ -123,7 +123,10 @@ const mongo = new MongoClient(uri, {
     await her.goto(BASE + "/onboarding/guardian", { waitUntil: "networkidle" });
     check("her step now says it is waiting on him", /Waiting on him/.test(await her.textContent("body")));
 
-    /* ---------- her profile is still blocked ------------------------ */
+    /* ---------- the step still reads as waiting on him -------------- */
+    /* It no longer blocks her from submitting — his gate is the profile,
+       not the act of sending it — but the checklist must still say the
+       step is with him rather than ticking it because an email went. */
     await her.goto(BASE + "/onboarding", { waitUntil: "networkidle" });
     check(
       "an unanswered invitation does not count as a wali",

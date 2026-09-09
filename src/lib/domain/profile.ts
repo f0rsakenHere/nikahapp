@@ -132,6 +132,30 @@ export function inPool(
   return (poolStatuses(settings) as readonly string[]).includes(status);
 }
 
+/** Whether this member is actually taking part yet.
+ *
+ *  `inPool` answers a question about status. This answers the whole
+ *  question, and for a sister the whole question includes her wali.
+ *
+ *  She can now finish and send her profile before he has confirmed —
+ *  being unable to submit at all was a dead end with nothing on the
+ *  other side of it — so she sits in the pool's statuses while still
+ *  waiting on him. `browseFor` already hides her from everybody in that
+ *  state. What this adds is the other direction: she must not be able to
+ *  *initiate* either, because a request from somebody whose profile
+ *  cannot be opened is an introduction to a 404. Both sides of the
+ *  curtain, or neither.
+ *
+ *  A brother has no wali step (§5.2), so for him this is `inPool`. */
+export function canParticipate(
+  member: { status: string; gender: "brother" | "sister" },
+  ctx: { hasConfirmedWali: boolean },
+  settings: { requireVerifiedToBrowse: boolean }
+): boolean {
+  if (!inPool(member.status, settings)) return false;
+  return member.gender === "brother" || ctx.hasConfirmedWali;
+}
+
 /* -------------------------------------------------------------- schema -- */
 
 const optionalText = (max: number) => z.string().trim().max(max).optional();
@@ -416,9 +440,13 @@ export function completeness(
   };
 }
 
-export type SubmitBlocked =
-  | { step: StepId; reason: "incomplete" }
-  | { step: "guardian"; reason: "wali-not-confirmed" };
+/* The wali variant is gone. He used to block submission, so a sister who
+ * had finished everything still could not send her profile in and had
+ * nothing on her screen but somebody else's inbox to wait on. He now
+ * approves the profile rather than gating the act of submitting it —
+ * see `canParticipate` above and `profileMayGoLive` in guardianship.ts,
+ * which is what actually keeps her out of the pool until he confirms. */
+export type SubmitBlocked = { step: StepId; reason: "incomplete" };
 
 /** Whether the profile can be sent for review.
  *
@@ -440,10 +468,6 @@ export function submitBlockers(p: ProfileDraft, context: StepContext): SubmitBlo
      * finish, so it is not excluded. */
     if (step.id === "guardian") continue;
     if (!step.required(p, context)) blockers.push({ step: step.id, reason: "incomplete" });
-  }
-
-  if (p.gender === "sister" && !context.hasConfirmedWali) {
-    blockers.push({ step: "guardian", reason: "wali-not-confirmed" });
   }
 
   return blockers;

@@ -17,7 +17,7 @@
    member-facing search — "nobody searches for anybody". That was the
    published promise and it has been reversed: members browse the pool,
    and spend a connection to ask to talk. Everything downstream of the
-   acceptance — wali approval, the supervised conversation, the fee,
+   acceptance — the supervised conversation, the wali's copy of it, the fee,
    contact last — is unchanged.
    ============================================================ */
 
@@ -34,7 +34,7 @@ export const spine = [
   { n: "01", label: "Registration", note: "Free. No photograph required." },
   { n: "02", label: "Searching for matches", note: "You browse. We refer as well." },
   { n: "03", label: "Profile security check", note: "Identity and references verified." },
-  { n: "04", label: "Matchmaking", note: "Connections, acceptance, wali approval." },
+  { n: "04", label: "Matchmaking", note: "Connections, acceptance, the supervised conversation." },
   { n: "05", label: "Matchmaking fee", note: "Charged once, to both sides." },
   { n: "06", label: "Contact information", note: "Names exchanged last." },
 ];
@@ -106,21 +106,21 @@ export const stages: {
     eyebrow: "Step 04",
     title: "Browsing, and asking to talk",
     body:
-      "You can look through the pool, and be looked through in turn. What is deliberately scarce is " +
-      "not looking but asking: every member holds a number of connections, and requesting a " +
-      "conversation spends one. A photograph exists in the interface only as a locked slot until " +
-      "both sides and the guardian have agreed.",
+      "You can look through the pool, and be looked through in turn. Asking costs nothing — what is " +
+      "deliberately limited is how many people you may approach in a week, so the pace stays " +
+      "considered rather than endless. A photograph exists in the interface only as a locked slot " +
+      "until both sides have agreed.",
     screens: [
       {
         id: "browse",
         step: "Step 04",
         label: "Browsing the pool",
         what:
-          "The home screen. Looking through members costs nothing; asking one of them to talk costs " +
-          "a connection, so the pace stays deliberate rather than endless.",
+          "The home screen. Looking and asking are both free; what is bounded is how many people you " +
+          "may approach in a week, so the pace stays deliberate rather than endless.",
         pins: [
           { n: 1, x: 0, y: 10, text: "Every member here has passed the identity and reference check. The pool is closed — nothing is visible from outside the service." },
-          { n: 2, x: 100, y: 21, text: "Connections remaining, always visible. Looking is free; asking to talk is what is limited." },
+          { n: 2, x: 100, y: 21, text: "Asks remaining this week, always visible. Looking and asking are free; the number of people you approach is what is limited." },
           { n: 3, x: 0, y: 34, text: "Members appear as initials only. No names and no photographs on this screen." },
         ],
       },
@@ -134,7 +134,7 @@ export const stages: {
         pins: [
           { n: 1, x: 0, y: 24, text: "The photo slot is visible but locked, with the rule written on it rather than hidden in a policy." },
           { n: 2, x: 0, y: 80, text: "Identity and reference checks are surfaced as a verified badge." },
-          { n: 3, x: 100, y: 93, text: "“Connect” is the only way forward, and it spends one connection. There is no message button at this stage." },
+          { n: 3, x: 100, y: 93, text: "“Ask to talk” is the only way forward, and it carries no message — there is nothing to write until she has said yes." },
         ],
       },
       {
@@ -142,11 +142,11 @@ export const stages: {
         step: "Step 04",
         label: "When a connection is accepted",
         what:
-          "The request was accepted — and the conversation still does not open. It waits on the wali, " +
-          "and the screen says so rather than quietly stalling.",
+          "The request was accepted, and the conversation opens. Her wali is in it from the first " +
+          "message, and the screen says so rather than leaving anybody to guess.",
         pins: [
           { n: 1, x: 0, y: 22, text: "Nothing has been shared yet. Names and contact details remain private." },
-          { n: 2, x: 0, y: 62, text: "The timeline shows exactly which step is blocked and who is blocking it." },
+          { n: 2, x: 0, y: 62, text: "The timeline shows exactly which step has been reached and what happens next." },
           { n: 3, x: 0, y: 92, text: "The wali was notified automatically the moment the connection was accepted." },
         ],
       },
@@ -156,20 +156,21 @@ export const stages: {
     eyebrow: "Step 04",
     title: "Talking, with the wali in the room",
     body:
-      "Approval is the gate. Until the guardian grants it there is no thread to open at all. Once he " +
-      "does, he is a participant rather than a bystander — with his own account, his own view, and " +
-      "the ability to end things at any point.",
+      "Her wali approved her profile before anybody could see it, so his consent is already given " +
+      "and the two of them do not wait again. He receives a copy of everything they say — a " +
+      "participant rather than a bystander, with his own account, his own view, and the ability to " +
+      "end things at any point.",
     screens: [
       {
         id: "chat",
         step: "Step 04",
         label: "The conversation",
         what:
-          "This thread exists only because the wali approved it. Both members see the same banner " +
-          "naming him, pinned under the header.",
+          "The wali reads every word of this. Both members see the same banner naming him, pinned " +
+          "under the header — there is no version of this where he is reading and they do not know.",
         pins: [
           { n: 1, x: 0, y: 13, text: "The banner cannot be dismissed or minimised by either side." },
-          { n: 2, x: 0, y: 23, text: "A system message records when he approved and joined, with the time." },
+          { n: 2, x: 0, y: 23, text: "A system message records when he joined the thread, with the time." },
           { n: 3, x: 0, y: 95, text: "Messages cannot be edited or deleted once sent, by anyone." },
         ],
       },
@@ -181,7 +182,7 @@ export const stages: {
           "He signs in separately. This is his home screen — everything concerning the woman he is " +
           "wali for, in one place.",
         pins: [
-          { n: 1, x: 0, y: 28, text: "Accepted connections wait here for his approval or refusal. Nothing opens without it." },
+          { n: 1, x: 0, y: 28, text: "Every conversation she is having appears here the moment it opens." },
           { n: 2, x: 100, y: 55, text: "He can open and read any conversation in full, at any time." },
           { n: 3, x: 0, y: 76, text: "Every action is logged with a timestamp — for him, and for us." },
         ],

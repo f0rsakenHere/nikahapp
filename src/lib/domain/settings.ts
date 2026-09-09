@@ -121,16 +121,30 @@ export const SettingsSchema = z.object({
    * Whether the wali approves before a conversation opens, or only
    * reads it afterwards.
    *
-   * Default `approves`, which is the published process and the one the
-   * scholars were consulted on. The client described him as reading
-   * every message, which is a different product — so this is the single
-   * setting most likely to be wrong, and the one that should not be
-   * changed without Mufti Faisal al-Mahmudi seeing it (§3.4).
+   * `observes`, on the client's instruction: once both people have said
+   * yes they may proceed, and the wali receives a copy of what they say
+   * rather than standing between them and saying it.
    *
-   * `standingApproval` lets an individual wali opt into auto-approving
-   * while still reading everything, which keeps his consent explicit
-   * without making her wait days for each conversation. */
-  waliGate: z.enum(["approves", "observes"]).default("approves"),
+   * ⚠ This one carries a caveat the others do not. `approves` was the
+   * published process and the position the scholars were consulted on
+   * (§3.4), and the note here used to say it should not be changed
+   * without Mufti Faisal al-Mahmudi seeing it. It has been changed on
+   * the client's instruction, which is their call to make — but the
+   * consultation is a fact about this setting and deleting the sentence
+   * would not delete the fact. If he has not seen it, he should.
+   *
+   * What did not change is that a sister always has a wali, and that his
+   * presence is visible. He is still a participant in the thread and the
+   * banner still names him: oversight the couple can see is a different
+   * thing from oversight they cannot, and only the first one is what the
+   * product has ever promised. "Receives a copy" is implemented as read
+   * access he holds openly, not as a silent forward.
+   *
+   * His gate did not disappear either — it moved. He now approves her
+   * *profile* rather than each conversation, which is one decision at
+   * the start instead of one per match. See `submitBlockers` and
+   * `canParticipate` in domain/profile.ts. */
+  waliGate: z.enum(["approves", "observes"]).default("observes"),
   allowStandingApproval: z.boolean().default(true),
 
   /* D6 — may the wali write in the conversation, or only read?

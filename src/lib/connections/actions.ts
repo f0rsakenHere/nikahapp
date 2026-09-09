@@ -7,7 +7,7 @@ import { record } from "@/lib/audit";
 import { notify, notifyAll } from "@/lib/repositories/notifications";
 import { currentUser } from "@/lib/auth/current";
 import { canSend, type SendRefusal } from "@/lib/domain/connection";
-import { inPool } from "@/lib/domain/profile";
+import { canParticipate } from "@/lib/domain/profile";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
 import { hasConfirmedWali } from "@/lib/repositories/guardianships";
 import {
@@ -88,7 +88,11 @@ export async function sendConnection(
        * is checked properly: nothing else on this path looks at their
        * own status, and a draft must not be able to reach somebody who
        * cannot see them back. */
-      senderInPool: inPool(me.status, settings),
+      senderInPool: canParticipate(
+        me,
+        { hasConfirmedWali: me.gender === "sister" ? await hasConfirmedWali(session.user.id) : false },
+        settings
+      ),
       recipientInPool: true,
       senderGender: me.gender,
       blocked: false,
@@ -175,7 +179,15 @@ export async function answerConnection(
    * because he has no wali step to fail the thread opened with no
    * guardian in it at all. Whose finger is on the button has nothing to
    * do with whether a guardian exists. */
-  if (event.type === "accept" && settings.waliGate === "approves") {
+  /* Unconditional now, and it did not used to be.
+   *
+   * This sat behind `waliGate === "approves"`, which made sense while
+   * his approval was the thing being waited on. He no longer approves —
+   * he receives a copy — and a copy needs somebody to receive it. A
+   * conversation involving a sister with no confirmed wali would be one
+   * nobody is watching, which is the arrangement this product exists to
+   * not have. */
+  if (event.type === "accept") {
     const sister = await sisterAmong([request.fromUserId, request.toUserId]);
     if (sister && !(await hasConfirmedWali(sister))) {
       return {

@@ -17,6 +17,7 @@ import {
 import { listConversationsFor } from "@/lib/repositories/conversations";
 import { CLOSED_STATES } from "@/lib/domain/conversation";
 import {
+  canParticipate,
   completeness,
   inPool,
   stepsFor,
@@ -253,7 +254,7 @@ export default async function DashboardPage({
        the key at the same time. Four rather than three: the grid is
        two-up on a laptop and four-up on a wide monitor, and both fill
        without leaving one card stranded on a row of its own. */
-    inPool(me.status, settings)
+    canParticipate(me, ctx, settings)
       ? suggestionsFor({ userId: user.id, gender: me.gender }, settings, 4)
       : Promise.resolve([]),
     /* Read, not marked read — the bell is the thing that clears, and a
@@ -267,7 +268,12 @@ export default async function DashboardPage({
 
   const isDraft = me.status === "draft";
   const isWaiting = WAITING.includes(me.status);
-  const canBrowse = inPool(me.status, settings);
+  const canBrowse = canParticipate(me, ctx, settings);
+  /* Her profile is in and she is not: it is with her wali, and until he
+     answers she is neither shown to anybody nor able to ask. A different
+     state from "still filling it in" and from "in the pool", and it used
+     to be unreachable because she could not submit at all. */
+  const waitingOnWali = inPool(me.status, settings) && !canBrowse;
   /* Hers alone. This card used to greet a brother with "Name your wali"
      and a form, which is a wali system with the word "optional" on it. */
   const needsWali = me.gender === "sister" && !ctx.hasConfirmedWali;
@@ -320,7 +326,9 @@ export default async function DashboardPage({
               ? "Profile in progress"
               : canBrowse
                 ? "In the pool"
-                : "In review"}
+                : waitingOnWali
+                  ? "With your wali"
+                  : "In review"}
         </span>
       }
     >
@@ -440,14 +448,16 @@ export default async function DashboardPage({
               <>
                 <p className="mt-3 flex items-center gap-2.5 font-manrope text-[26px] font-bold leading-tight text-black">
                   <ClockIcon className="text-[24px] text-accent-deep" />
-                  {canBrowse ? "In the pool" : "With our team"}
+                  {canBrowse ? "In the pool" : waitingOnWali ? "With your wali" : "With our team"}
                 </p>
                 <p className="mt-3 max-w-[62ch] text-[18px] leading-[26px] text-text">
                   {canBrowse
                     ? "Your profile is in, and you can see everybody else who is. Our team reads every profile and telephones — that happens alongside you now rather than before you."
-                    : `Someone will read your profile and telephone you before any matching begins. We check identity and speak to ${
-                        me.gender === "sister" ? "your wali" : "your reference"
-                      } first. You can still change your answers.`}
+                    : waitingOnWali
+                      ? "Everything on your side is done. Your profile is with your wali, and it goes into the pool the moment he confirms — until then nobody can see it, and you cannot see anybody either."
+                      : `Someone will read your profile and telephone you before any matching begins. We check identity and speak to ${
+                          me.gender === "sister" ? "your wali" : "your reference"
+                        } first. You can still change your answers.`}
                 </p>
                 <div className="mt-5 flex flex-wrap items-center gap-2.5">
                   {canBrowse ? (

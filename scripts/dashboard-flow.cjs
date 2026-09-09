@@ -133,17 +133,20 @@ const body = (p) => p.innerText("body");
     await p.goto(`${BASE}/dashboard?submitted=1`, { waitUntil: "networkidle" });
     const waitingText = await body(p);
     check("a submitted profile is acknowledged", /Thank you — we have it/.test(waitingText));
-    /* D1f, deferred: sending the profile in is what puts somebody in the
-       pool, so this state is no longer a waiting room. The strict
-       setting still exists and still says "With our team" — what must
-       never happen is this screen describing a queue the member is not
-       actually standing in. */
-    check("and reported as being in the pool", /In the pool/.test(waitingText));
-    check("the checks are still promised, alongside them", /telephones/.test(waitingText));
-    check("browsing is offered rather than shut", /Browse the pool/.test(waitingText));
+    /* She has no confirmed wali, and under D1g he is now the gate on her
+       profile rather than on each conversation. So a submitted sister
+       waiting on him is a third state: her side is finished, and she is
+       neither in the pool nor being worked on by us. */
+    check("and reported as being with her wali", /With your wali/.test(waitingText), waitingText.slice(0, 200));
     check(
-      "and the pool is not claimed to be fully checked",
-      !/every one checked by our team/i.test(waitingText)
+      "not as being in the pool, which she is not",
+      !/In the pool/.test(waitingText)
+    );
+    check("browsing is not offered while he has not answered", !/Browse the pool/.test(waitingText));
+    check(
+      "and it says plainly that nobody can see her yet",
+      /nobody can see it/i.test(waitingText),
+      waitingText.slice(0, 300)
     );
     check(
       "the unfinished checklist is gone",
@@ -151,6 +154,45 @@ const body = (p) => p.innerText("body");
     );
     /* Now it blocks something, so now it is said. */
     check("the wali is raised once it is out of her hands", /wali has not confirmed/i.test(waitingText));
+
+    /* ---------- her wali confirms ------------------------------------ */
+    /* The gate itself, walked rather than reasoned about. Nothing else
+       changes — same status, same profile — so anything that moves here
+       moved because of him. */
+    await db.collection("guardianships").insertOne({
+      memberUserId: String(user._id),
+      memberProfileId: "dashboard-fixture",
+      waliUserId: `dash-wali-${STAMP}`,
+      invited: {
+        name: "Ahmed",
+        relationship: "father",
+        email: `dash+wali${STAMP}@example.invalid`,
+        invitedAt: new Date(),
+        tokenHash: "c".repeat(64),
+        expiresAt: new Date(Date.now() + 86_400_000),
+        remindersSent: 0,
+      },
+      status: "confirmed",
+      confirmedAt: new Date(),
+      declinedAt: null,
+      declineReason: null,
+      revokedAt: null,
+      revokedBy: null,
+      expiredAt: null,
+      verification: { state: "verified", verifiedAt: new Date(), method: "test" },
+      replacesGuardianshipId: null,
+      replacedByGuardianshipId: null,
+    });
+
+    await p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+    const afterWali = await body(p);
+    check("his confirming is what puts her in the pool", /In the pool/.test(afterWali), afterWali.slice(0, 200));
+    check("and opens browsing", /Browse the pool/.test(afterWali));
+    check("the checks are still promised, alongside it", /telephones/.test(afterWali));
+    check(
+      "and the pool is not claimed to be fully checked",
+      !/every one checked by our team/i.test(afterWali)
+    );
 
     /* ---------- live ------------------------------------------------ */
     await profiles.updateOne({ userId: user._id }, { $set: { status: "live" } });
@@ -274,9 +316,13 @@ const body = (p) => p.innerText("body");
     const user = await db.collection("users").findOne({ email: EMAIL });
     if (user) {
       const id = new ObjectId(user._id);
-      for (const c of ["profiles", "sessions", "connectionLedger", "auditLog"]) {
+      for (const c of ["profiles", "sessions", "verificationTokens", "auditLog"]) {
         await db.collection(c).deleteMany({ userId: { $in: [id, String(id)] } });
       }
+      /* Keyed on `memberUserId`, not `userId`, so the loop above would
+         have walked straight past it and left a confirmed guardianship
+         pointing at a deleted account. */
+      await db.collection("guardianships").deleteMany({ memberUserId: String(id) });
       await db.collection("users").deleteOne({ _id: id });
       console.log("\ncleaned up the fixture account");
     }

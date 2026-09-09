@@ -196,51 +196,59 @@ const text = (p) => p.innerText("body");
     const conversation = await db.collection("conversations").findOne({ requestId: String(ids.requestId) });
     check("a conversation was created", !!conversation);
     ids.conversationId = conversation?._id;
+    /* D1g, changed: he no longer approves. Once both have said yes they
+       proceed, and he receives a copy — so the thread opens on
+       acceptance rather than waiting on a third person to notice an
+       email. */
     check(
-      "it waits on the wali rather than opening",
-      conversation?.state === "awaitingWali",
+      "it opens straight away rather than waiting on him",
+      conversation?.state === "open",
       conversation?.state
     );
     check(
-      "and he is in it",
+      "and he is in it from the first message",
       (conversation?.participants ?? []).some((x) => x.role === "wali"),
       JSON.stringify(conversation?.participants)
     );
 
-    /* Nothing can be written into a thread that has not opened. */
+    /* What did not change, and must not: his presence is visible. A wali
+       reading a conversation the couple believe is private would be a
+       worse arrangement than the one this replaced, not a lighter one. */
     await her.goto(`${BASE}/conversations/${ids.conversationId}`, { waitUntil: "networkidle" });
-    const beforeWali = await text(her);
-    /* Named *and* labelled: initials alone collide with a wali's, and a
-       banner that only names him reads as a third person in the room. */
+    const inThread = await text(her);
     check(
-      "she is told who is waiting on it, by name and role",
-      beforeWali.includes(waliName) &&
-        /the wali/i.test(beforeWali) &&
-        /opens when he approves/i.test(beforeWali),
-      beforeWali.replace(/\s+/g, " ").slice(0, 200)
+      "she is told he is reading it, by name and role",
+      inThread.includes(waliName) && /the wali/i.test(inThread),
+      inThread.replace(/\s+/g, " ").slice(0, 220)
     );
-    check("and there is no box to type in yet", (await her.locator("textarea").count()) === 0);
+    check("and nothing says it is waiting on him", !/opens when he approves/i.test(inThread));
+    check("she can write immediately", (await her.locator("textarea").count()) === 1);
 
-    /* ---------- her wali opens it ----------------------------------- */
+    /* ---------- her wali reads it ----------------------------------- */
     const wali = await signIn(browser, waliUser.email);
     /* He has no profile, so /dashboard bounces him on — the landing is
        two hops and the URL has to be allowed to settle. */
     await wali.waitForURL("**/wali", { timeout: 30_000 }).catch(() => {});
     check("a wali lands in his own portal", new URL(wali.url()).pathname === "/wali", wali.url());
 
-    /* He decides from his portal, not from inside the thread: the
-       conversation does not exist to him until he has let it. */
-    const approve = wali.locator('button:has-text("Approve")').first();
-    check("he is offered the decision there", (await approve.count()) === 1, (await text(wali)).replace(/\s+/g, " ").slice(0, 200));
-    await approve.click();
-    await wali.waitForTimeout(3500);
-
-    const opened = await db.collection("conversations").findOne({ _id: ids.conversationId });
-    check("the conversation opens", opened?.state === "open", opened?.state);
+    const portal = await text(wali);
+    check(
+      "his portal offers no approval, because he has none to give",
+      !/Approve/i.test(portal),
+      portal.replace(/\s+/g, " ").slice(0, 200)
+    );
+    /* The line describing what he can do lives in the empty state, and
+       this wali has conversations — so what is asserted here is the
+       thing that is on screen either way: her conversations are listed
+       for him to open, and he is told who he acts for. */
+    check(
+      "and lists the conversations he can read",
+      /conversations?/i.test(portal) && /who you act for/i.test(portal),
+      portal.replace(/\s+/g, " ").slice(0, 220)
+    );
 
     /* ---------- they talk ------------------------------------------- */
     await her.goto(`${BASE}/conversations/${ids.conversationId}`, { waitUntil: "networkidle" });
-    check("now she has somewhere to write", (await her.locator("textarea").count()) === 1);
     await her.fill("textarea", "Assalamu alaikum. Seeded test message.");
     await her.locator('button[type="submit"]').first().click();
     await her.waitForTimeout(3000);
@@ -256,9 +264,9 @@ const text = (p) => p.innerText("body");
     const waliSees = await text(wali);
     check("the wali reads both sides", /Seeded test message/.test(waliSees) && /Seeded reply/.test(waliSees));
 
-    /* Counted by kind. The third row is the system line the wali's
-       approval writes into the thread — the record of who opened it,
-       which is meant to be there. */
+    /* Counted by kind. There is no system line any more: it recorded the
+       wali approving and joining, and he no longer approves. If one
+       appears, something is still writing an approval nobody gave. */
     const written = await db
       .collection("messages")
       .countDocuments({ conversationId: String(ids.conversationId), kind: "member" });
@@ -266,7 +274,7 @@ const text = (p) => p.innerText("body");
       .collection("messages")
       .countDocuments({ conversationId: String(ids.conversationId), kind: "system" });
     check("both of their messages were stored", written === 2, `${written}`);
-    check("and the approval left its own record in the thread", system === 1, `${system}`);
+    check("and no approval record was written, because none happened", system === 0, `${system}`);
   } finally {
     await browser.close();
     /* Only what this run made. The seeded people stay. */
