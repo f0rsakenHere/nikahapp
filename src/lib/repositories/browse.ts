@@ -57,6 +57,7 @@ export type BrowseCard = {
   children?: string;
   education?: string;
   languages?: string[];
+  ethnicity?: string;
   heightCm?: number;
   willingToRelocate?: string;
   /* Their own words, cut to a card's worth. Trimmed *here* rather than
@@ -243,6 +244,7 @@ export async function browseFor(
       children: doc.background?.children,
       education: doc.education?.level,
       languages: (doc.background?.languages ?? []).slice(0, 3),
+      ethnicity: doc.background?.ethnicity,
       heightCm: doc.basics?.heightCm,
       willingToRelocate: doc.basics?.willingToRelocate,
       about: excerpt(doc.freeText?.aboutMe),

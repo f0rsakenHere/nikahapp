@@ -10,6 +10,7 @@ import {
   SALAH_LABELS,
 } from "@/lib/domain/profile-labels";
 import {
+  GlobeIcon,
   HeightIcon,
   MapPinIcon,
   PrayerIcon,
@@ -87,6 +88,11 @@ export function ProfileCard({
       text: c.education ? EDUCATION_LABELS[c.education as never] : "",
     },
     { Icon: SpeechIcon, label: "Speaks", text: (c.languages ?? []).join(", ") },
+    /* Beside the languages because the two are read together. Free text,
+       as the member wrote it, and skipped when blank — it is optional in
+       the profile, and a row saying "not given" would single out the
+       people who chose not to answer. */
+    { Icon: GlobeIcon, label: "Ethnic background", text: c.ethnicity?.trim() ?? "" },
     {
       Icon: HeightIcon,
       label: "Height",

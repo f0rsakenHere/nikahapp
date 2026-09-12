@@ -102,6 +102,7 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
           label="Languages"
           value={Array.isArray(background.languages) ? background.languages.join(", ") : null}
         />
+        <Row label="Ethnic background" value={(background.ethnicity as string | undefined)?.trim() || null} />
         <Row
           label="Education"
           value={education.level ? EDUCATION_LABELS[education.level as never] : null}
