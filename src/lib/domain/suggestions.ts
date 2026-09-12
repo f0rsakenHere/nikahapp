@@ -99,8 +99,10 @@ export function scoreAgainst(
   }
 
   if (prefs.madhhab.length && facts.madhhab && prefs.madhhab.includes(facts.madhhab)) {
+    /* Still counted, no longer said. The card already prints the madhhab
+       beside the salah, so a "Maliki" chip two inches below it told the
+       reader the same word twice. */
     score += WEIGHT.madhhab;
-    reasons.push(labels.madhhab?.(facts.madhhab) ?? facts.madhhab);
   }
 
   return { score, reasons };
