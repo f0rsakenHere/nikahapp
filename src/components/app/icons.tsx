@@ -191,14 +191,13 @@ export function SpeechIcon(p: P) {
   );
 }
 
-/* A globe, for background and heritage. Deliberately not a flag: the
-   field is free text somebody wrote about themselves, and a flag would
-   be us deciding which country it means. */
-export function GlobeIcon(p: P) {
+/* Two arrows passing each other: moving somewhere, as distinct from the
+   vertical arrow that means height. */
+export function RelocateIcon(p: P) {
   return (
     <Stroke {...p}>
-      <circle cx="12" cy="12" r="8.6" />
-      <path d="M3.4 12h17.2M12 3.4c2.3 2.4 3.5 5.3 3.5 8.6s-1.2 6.2-3.5 8.6c-2.3-2.4-3.5-5.3-3.5-8.6S9.7 5.8 12 3.4Z" />
+      <path d="M4 8.4h14.4m-3.2-3.2 3.2 3.2-3.2 3.2" />
+      <path d="M20 15.6H5.6m3.2-3.2-3.2 3.2 3.2 3.2" />
     </Stroke>
   );
 }

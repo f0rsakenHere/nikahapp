@@ -10,7 +10,8 @@ import {
   SALAH_LABELS,
 } from "@/lib/domain/profile-labels";
 import {
-  GlobeIcon,
+  ProfileIcon,
+  RelocateIcon,
   HeightIcon,
   MapPinIcon,
   PrayerIcon,
@@ -92,21 +93,27 @@ export function ProfileCard({
        as the member wrote it, and skipped when blank — it is optional in
        the profile, and a row saying "not given" would single out the
        people who chose not to answer. */
-    { Icon: GlobeIcon, label: "Ethnic background", text: c.ethnicity?.trim() ?? "" },
     {
-      Icon: HeightIcon,
-      label: "Height",
-      text: [
-        c.heightCm ? feetAndInches(c.heightCm) : null,
-        c.willingToRelocate && c.willingToRelocate !== "no"
-          ? c.willingToRelocate === "yes"
-            ? "would relocate"
-            : "might relocate"
-          : null,
-      ]
-        .filter(Boolean)
-        .join(" · "),
+      Icon: ProfileIcon,
+      label: "Ethnicity",
+      /* Labelled on screen, unlike the rows around it. "Somali" alone
+         beside "French, English" reads as a third language. */
+      text: c.ethnicity?.trim() ? `Ethnicity: ${c.ethnicity.trim()}` : "",
     },
+    /* Relocation has its own row now. Tacked onto the height it read as
+       a fact about somebody's height. Only when they would or might: a
+       row saying "would not relocate" on most cards is a wall of no. */
+    {
+      Icon: RelocateIcon,
+      label: "Relocation",
+      text:
+        c.willingToRelocate === "yes"
+          ? "Would relocate"
+          : c.willingToRelocate === "maybe"
+            ? "Might relocate"
+            : "",
+    },
+    { Icon: HeightIcon, label: "Height", text: c.heightCm ? feetAndInches(c.heightCm) : "" },
   ].filter((f) => f.text);
 
   const who = `${c.gender === "sister" ? "Sister" : "Brother"}${c.age ? `, ${c.age}` : ""}`;
@@ -161,6 +168,16 @@ export function ProfileCard({
               </span>
             </span>
           ) : null}
+          {/* Presence, up here beside who and where rather than at the foot
+              of the card, because "will they see this if I write" is
+              decided before anything below it is read. Still only the
+              band — today, this week, this month — never a time: wide
+              enough to be useless for learning somebody's routine. */}
+          {c.activity ? (
+            <span className="mt-1 text-[18px] leading-[24px] font-medium text-peach-deep">
+              {ACTIVITY_LABELS[c.activity]}
+            </span>
+          ) : null}
         </div>
         {badge ? (
           <span
@@ -204,29 +221,11 @@ export function ProfileCard({
           ))}
         </dl>
 
-        {/* Presence, in the only terms this product will state it: a band
-            wide enough to be useless for working out somebody's routine,
-            and narrow enough to answer "will they see this if I write".
-            Today gets the live dot; the wider bands do not, because a
-            steady green light against "this month" would be claiming
-            more than the sentence says. */}
-        {c.activity ? (
-          <p className="pointer-events-none relative mt-3 flex items-center gap-2 text-[18px] text-text/70">
-            <span
-              className={`h-2 w-2 shrink-0 rounded-full ${
-                c.activity === "today" ? "bg-accent-deep" : "bg-soft-green"
-              }`}
-              aria-hidden
-            />
-            {ACTIVITY_LABELS[c.activity]}
-          </p>
-        ) : null}
-
         {/* Why they are being shown, when somebody is being shown rather
             than searched for. Kept to the foot of the card: the reader
             wants to know who this is first and why we thought so second. */}
         {reasons?.length ? (
-          <ul className="pointer-events-none relative mt-4 flex flex-wrap gap-1.5 border-t border-dashed border-soft-green pt-3.5">
+          <ul className="pointer-events-none relative mt-4 flex flex-wrap gap-1.5 border-t border-soft-green pt-3.5">
             {reasons.map((r) =>
               r === MUTUAL ? (
                 <li
