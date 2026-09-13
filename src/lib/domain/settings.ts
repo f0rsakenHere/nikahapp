@@ -51,18 +51,31 @@ export const SettingsSchema = z.object({
    * scarce. It is a placeholder until the client gives a number. */
   asksPerWeek: z.number().int().min(1).max(200).default(5),
 
-  /* Who has to be paying for a conversation to be writable.
+  /* Who pays to keep talking, and after how much free talking.
    *
-   * `brother` on the client's instruction: charging sisters shrinks the
-   * side of the pool the whole product depends on, and every matrimonial
-   * service that has tried it learned the same thing. The conversation is
-   * unlocked by the brother in it — if he has no plan, neither of them
-   * can write, because it is his paywall and a half-open thread where
-   * only one person can speak is worse than a closed one.
+   * On the client's instruction: sending interest is free for everyone,
+   * sisters never pay, and once both people have said yes a brother may
+   * send `freeMessagesPerConversation` messages in that conversation
+   * before he needs a plan to send the next one.
    *
-   * `nobody` turns the paywall off entirely, which is what the product
-   * runs as until Stripe exists. */
+   * Three decisions sit inside that sentence, and each was chosen so
+   * that nobody who has not been charged is ever silenced:
+   *
+   *   · Counted per conversation, not across all of them. Every new match
+   *     starts with its own free messages, so a second introduction is
+   *     not spoiled by how much he said in the first.
+   *   · Only his own messages count. What she writes costs him nothing.
+   *   · Only his sending stops. She can always keep writing, and nothing
+   *     already said is hidden — a sister is never left in a thread she
+   *     cannot answer because of somebody else's billing.
+   *
+   * `brother` is the decided value. `everybody` applies the same rule to
+   * every member and exists for symmetry, not because anyone asked.
+   * `nobody` switches the paywall off, and it ships that way: there is no
+   * checkout yet, so turning it on would stop brothers at their fourth
+   * message with no way to pay. */
   planGate: z.enum(["brother", "everybody", "nobody"]).default("nobody"),
+  freeMessagesPerConversation: z.number().int().min(0).max(100).default(3),
 
   /* ── D1d ────────────────────────────────────────────────────────────
    * The inbound cap: how many requests one member may have waiting at
@@ -203,8 +216,9 @@ export const OPEN_DECISIONS: { key: keyof Settings; question: string; risk: stri
   },
   {
     key: "planGate",
-    question: "The paywall is off (`nobody`) until Stripe exists. Switching it to `brother` is what starts charging.",
-    risk: "Turning it on before checkout works locks every conversation with no way to pay.",
+    question:
+      "The paywall is off (`nobody`) until Stripe exists. `brother` is decided: 3 free messages per conversation, then a plan.",
+    risk: "Turning it on before checkout exists stops brothers at their fourth message with no way to pay.",
   },
   {
     key: "inboundCap",

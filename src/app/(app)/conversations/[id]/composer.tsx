@@ -6,7 +6,14 @@ import { FormError, SubmitButton } from "@/components/app/form";
 
 const EMPTY: ThreadState = {};
 
-export function Composer({ conversationId }: { conversationId: string }) {
+export function Composer({
+  conversationId,
+  freeLeft = null,
+}: {
+  conversationId: string;
+  /** Set only while the paywall applies to this person. */
+  freeLeft?: { left: number; free: number } | null;
+}) {
   const [state, action] = useActionState(sendMessage.bind(null, conversationId), EMPTY);
   const form = useRef<HTMLFormElement>(null);
 
@@ -33,6 +40,14 @@ export function Composer({ conversationId }: { conversationId: string }) {
       <p className="text-[18px] leading-[26px] text-text/70">
         Messages cannot be edited or deleted once sent, by anyone.
       </p>
+      {/* Counted down before it is reached, so the wall after the last
+          free message is never a surprise. */}
+      {freeLeft ? (
+        <p className="text-[18px] font-semibold leading-[26px] text-peach-deep">
+          {freeLeft.left} of {freeLeft.free} free message{freeLeft.free === 1 ? "" : "s"} left in
+          this conversation
+        </p>
+      ) : null}
       <SubmitButton>Send</SubmitButton>
     </form>
   );

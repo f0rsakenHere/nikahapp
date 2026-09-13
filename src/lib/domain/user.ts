@@ -80,6 +80,13 @@ export const UserSchema = z.object({
 
   closedAt: z.date().nullable(),
   closureReason: z.string().nullable(),
+
+  /* Paid through this moment, or absent/null for no plan. A date rather
+   * than a flag so that a plan ends by itself when it runs out: nothing
+   * has to remember to switch it off, and a lapsed plan is simply a date
+   * in the past. Optional because every account written before plans
+   * existed has no such field, and those accounts have no plan. */
+  planActiveUntil: z.date().nullable().optional(),
 })
   .refine((u) => !mfaRequired(u.roles) || u.mfa.enabled, {
     message: "staff, verifier and admin accounts must have 2FA enabled",

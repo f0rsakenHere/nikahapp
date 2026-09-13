@@ -19,10 +19,12 @@ export function ConnectButton({
   profileId,
   existing,
   asksLeft,
+  planNote = null,
 }: {
   profileId: string;
   existing: ConnectionView;
   asksLeft: number;
+  planNote?: string | null;
 }) {
   const [state, action] = useActionState(sendConnection.bind(null, profileId), EMPTY);
 
@@ -70,7 +72,7 @@ export function ConnectButton({
             as a fault. */}
         {asksLeft === 0
           ? "You have used this week's asks. A few more become available each day."
-          : `${asksLeft} ask${asksLeft === 1 ? "" : "s"} left this week. Asking is free — a plan is what opens the conversation.`}
+          : `${asksLeft} ask${asksLeft === 1 ? "" : "s"} left this week. Asking is free.${planNote ? ` ${planNote}` : ""}`}
       </p>
     </form>
   );

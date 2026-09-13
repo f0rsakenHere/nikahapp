@@ -97,6 +97,16 @@ export async function listMessages(conversationId: string): Promise<Message[]> {
   return docs.map(({ _id, ...rest }) => MessageSchema.parse({ ...rest, id: _id.toHexString() }));
 }
 
+/** How many messages this person has written in this conversation.
+ *
+ *  Counted from the messages themselves rather than kept as a number on
+ *  the conversation, because the paywall asks about one member and
+ *  `messageCount` is everybody's. System lines have no author and are
+ *  never counted. */
+export async function countMessagesFrom(conversationId: string, userId: string): Promise<number> {
+  return (await messages()).countDocuments({ conversationId, fromUserId: userId, kind: "member" });
+}
+
 /** Appends a message and moves the conversation's counters with it.
  *
  *  One transaction, because a message whose conversation still says zero

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { hasActivePlan, messageAllowance } from "@/lib/domain/plan";
+import { readSettings } from "@/lib/repositories/connections";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ObjectId } from "mongodb";
@@ -107,6 +109,25 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
     (p) => p.role === "member" && p.userId !== session.user.id
   );
 
+  /* The paywall, asked with the same function the send action uses, so
+     the counter on screen and the server's refusal cannot disagree. His
+     own messages only, in this conversation only. */
+  const settings = await readSettings();
+  const genderOf = new Map(profiles.map((p) => [String(p.userId), p.gender as "brother" | "sister"]));
+  const allowance = seat
+    ? messageAllowance(
+        {
+          role: seat.role,
+          gender: genderOf.get(session.user.id) ?? null,
+          sentSoFar: messages.filter((m) => m.kind === "member" && m.fromUserId === session.user.id)
+            .length,
+          hasPlan: hasActivePlan(session.user, new Date()),
+        },
+        settings
+      )
+    : ({ gated: false } as const);
+  const otherPronoun = genderOf.get(other?.userId ?? "") === "sister" ? "She" : "He";
+
   return (
     <AppFrame
       active="messages"
@@ -206,9 +227,30 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
           This conversation is closed. Nothing can be added, and nothing already said has been
           removed.
         </p>
+      ) : conversation.state === "open" && seat?.canWrite && allowance.gated && allowance.needsPlan ? (
+        <>
+          {/* Only his sending stops. The thread stays readable, what was
+              said stays said, and she can still write — so this says that,
+              rather than reading like the conversation has been taken
+              away. No button yet: there is no checkout to send him to,
+              and a button that goes nowhere is worse than a sentence. */}
+          <div className="mt-6 rounded-md border border-peach/40 bg-soft-peach/60 px-4 py-4">
+            <p className="text-[18px] font-semibold text-black">
+              You have used your {allowance.free} free messages
+            </p>
+            <p className="mt-1.5 text-[18px] leading-[26px] text-text">
+              Sending more in this conversation needs a plan. {otherPronoun} can still write to
+              you, and everything already said stays here.
+            </p>
+          </div>
+          <CloseThread conversationId={id} role={seat.role} />
+        </>
       ) : conversation.state === "open" && seat?.canWrite ? (
         <>
-          <Composer conversationId={id} />
+          <Composer
+            conversationId={id}
+            freeLeft={allowance.gated ? { left: allowance.left, free: allowance.free } : null}
+          />
           <CloseThread conversationId={id} role={seat.role} />
         </>
       ) : conversation.state === "open" && seat ? (

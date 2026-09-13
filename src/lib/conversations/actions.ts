@@ -7,10 +7,14 @@ import { record } from "@/lib/audit";
 import { notifyAll } from "@/lib/repositories/notifications";
 import { currentUser } from "@/lib/auth/current";
 import { isStaffActor } from "@/lib/domain/authorisation";
-import { canRead, canSendMessage } from "@/lib/domain/conversation";
+import { canRead, canSendMessage, participant } from "@/lib/domain/conversation";
+import { hasActivePlan, messageAllowance } from "@/lib/domain/plan";
+import { readSettings } from "@/lib/repositories/connections";
+import { findProfileByUserId } from "@/lib/repositories/profiles";
 import {
   appendMessage,
   applyToConversation,
+  countMessagesFrom,
   findConversationById,
 } from "@/lib/repositories/conversations";
 import { findGuardianshipForWali } from "@/lib/repositories/guardianships";
@@ -22,6 +26,8 @@ const REFUSALS = {
   "not-open": "This conversation is not open.",
   "read-only": "You can read this conversation, and not write in it.",
   empty: "Write something first.",
+  "plan-required":
+    "You have used the free messages in this conversation. Sending another needs a plan.",
 } as const;
 
 export async function sendMessage(
@@ -40,6 +46,26 @@ export async function sendMessage(
 
   const allowed = canSendMessage(conversation, actor, body);
   if (!allowed.ok) return { error: REFUSALS[allowed.reason] };
+
+  /* The paywall, checked here and not only on the screen. The composer
+     hides itself once the free messages are used, but a form can be
+     posted without the page that drew it. Asked after `canSendMessage`
+     so that a closed thread says "not open" rather than "pay". */
+  const settings = await readSettings();
+  if (settings.planGate !== "nobody") {
+    const seat = participant(conversation, session.user.id);
+    const profile = seat?.role === "member" ? await findProfileByUserId(session.user.id) : null;
+    const allowance = messageAllowance(
+      {
+        role: seat?.role ?? "member",
+        gender: profile?.gender ?? null,
+        sentSoFar: await countMessagesFrom(conversationId, session.user.id),
+        hasPlan: hasActivePlan(session.user, new Date()),
+      },
+      settings
+    );
+    if (allowance.gated && allowance.needsPlan) return { error: REFUSALS["plan-required"] };
+  }
 
   await appendMessage(
     conversationId,

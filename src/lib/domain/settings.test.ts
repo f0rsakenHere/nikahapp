@@ -24,6 +24,12 @@ describe("the decided settings", () => {
     expect(DEFAULT_SETTINGS.asksPerWeek).toBe(5);
   });
 
+  it("gives a brother three free messages per conversation", () => {
+    /* Decided by the client: interest is free, sisters never pay, and a
+       brother needs a plan from his fourth message in a conversation. */
+    expect(DEFAULT_SETTINGS.freeMessagesPerConversation).toBe(3);
+  });
+
   it("ships with the paywall off", () => {
     /* `brother` is the decided model, but turning it on before checkout
        exists would lock every conversation with no way to pay. It flips

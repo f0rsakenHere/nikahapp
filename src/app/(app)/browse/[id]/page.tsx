@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { currentUser } from "@/lib/auth/current";
 import { browseProfile } from "@/lib/repositories/browse";
 import { asksSince, findBetween, readSettings, weekAgo } from "@/lib/repositories/connections";
+import { findProfileByUserId } from "@/lib/repositories/profiles";
+import { planNote } from "@/lib/domain/plan";
 import {
   CHILDREN_LABELS,
   EDUCATION_LABELS,
@@ -127,6 +129,10 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
                   : "closed"
           }
           asksLeft={asksLeft}
+          planNote={planNote(
+            (await findProfileByUserId(session.user.id))?.gender ?? null,
+            settings
+          )}
         />
       </div>
     </AppFrame>

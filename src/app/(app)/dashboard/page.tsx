@@ -16,6 +16,7 @@ import {
 } from "@/lib/repositories/connections";
 import { listConversationsFor } from "@/lib/repositories/conversations";
 import { CLOSED_STATES } from "@/lib/domain/conversation";
+import { planNote } from "@/lib/domain/plan";
 import {
   canParticipate,
   completeness,
@@ -263,6 +264,7 @@ export default async function DashboardPage({
     poolCounts(now, settings),
   ]);
   const asksLeft = Math.max(0, settings.asksPerWeek - asksThisWeek);
+  const paying = planNote(me.gender, settings);
   const open = conversations.filter((c) => !CLOSED_STATES.has(c.state));
   const pendingSent = sent.filter((r) => r.state === "pending");
 
@@ -550,7 +552,7 @@ export default async function DashboardPage({
                   of {settings.asksPerWeek} a week
                 </p>
                 <p className="mt-4 border-t border-soft-green pt-4 text-[18px] leading-[26px] text-text/70">
-                  Asking is free. A plan is what opens the conversation once somebody says yes.
+                  Asking is free.{paying ? ` ${paying}` : ""}
                 </p>
               </>
             ) : (

@@ -14,6 +14,8 @@
  *
  *   node scripts/grant.cjs --email a@b.c --role admin
  *   node scripts/grant.cjs --email a@b.c --live
+ *   node scripts/grant.cjs --email a@b.c --plan 30    # a plan for 30 days
+ *   node scripts/grant.cjs --email a@b.c --no-plan    # end it now
  *   node scripts/grant.cjs --email a@b.c           # report only
  */
 const { MongoClient, ObjectId, ServerApiVersion } = require("mongodb");
@@ -29,6 +31,10 @@ function arg(name) {
 const email = (arg("email") || "").trim().toLowerCase();
 const role = arg("role");
 const LIVE = process.argv.includes("--live");
+/* Stands in for checkout until Stripe exists: it writes the same field a
+   paid plan will, so the paywall can be tested with and without one. */
+const PLAN_DAYS = arg("plan");
+const NO_PLAN = process.argv.includes("--no-plan");
 
 /* The set in domain/user.ts. Anything else is a typo that would sit in
    the database looking like a permission. */
@@ -103,12 +109,20 @@ const client = new MongoClient(requireEnv("MONGODB_URI"), {
     );
   }
 
-  const fresh = await users.findOne({ _id: user._id }, { projection: { roles: 1, mfa: 1 } });
+  if (PLAN_DAYS !== null || NO_PLAN) {
+    const until = NO_PLAN ? null : new Date(Date.now() + Number(PLAN_DAYS) * 86_400_000);
+    await users.updateOne({ _id: user._id }, { $set: { planActiveUntil: until } });
+  }
+
+  const fresh = await users.findOne({ _id: user._id }, { projection: { roles: 1, mfa: 1, planActiveUntil: 1 } });
   const p = await db.collection("profiles").findOne({ userId: user._id }, { projection: { status: 1, gender: 1 } });
   console.log(`\n${email}`);
   console.log(`  roles      ${fresh.roles.join(", ")}`);
   console.log(`  two-factor ${fresh.mfa?.enabled ? "on" : "off"}`);
   console.log(`  profile    ${p ? `${p.gender}, ${p.status}` : "none"}`);
+  console.log(
+    `  plan       ${fresh.planActiveUntil && fresh.planActiveUntil > new Date() ? `until ${fresh.planActiveUntil.toISOString().slice(0, 10)}` : "none"}`
+  );
 })()
   .catch((err) => {
     console.error(`\nFAIL  ${(err && err.message) || err}\n`);
