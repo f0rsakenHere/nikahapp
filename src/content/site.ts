@@ -50,7 +50,6 @@ export const hero = {
 /* The five assurances from the live site's hero strip. */
 export const trust = {
   points: [
-    "Verified profiles only",
     "Profiles kept confidential and safe",
     "Personalised service to meet your needs",
     "Based in Montreal, operating across Canada",
@@ -104,8 +103,8 @@ export const steps = {
     },
     {
       n: "03",
-      title: "Profile security check",
-      body: "Profiles are checked before anything is shared, so that only verified candidates are referred.",
+      title: "Confirming your address",
+      body: "You confirm your email address, and a sister's wali confirms by email before her profile goes live.",
     },
     {
       n: "04",
@@ -186,7 +185,7 @@ export const fee = {
     "The matchmaking fee falls due at step five, once both sides have read each other's profile " +
     "and want to proceed.",
   points: [
-    { title: "Registration", body: "Free. Send us your profile and speak with us by phone." },
+    { title: "Registration", body: "Free. Send us your profile." },
     { title: "Searching and referral", body: "Free. We search for candidates matching your preferences." },
     {
       title: "Matchmaking fee",
@@ -261,7 +260,6 @@ export const footer = {
       links: [
         { label: "Registration", href: "/#start" },
         { label: "For guardians", href: "/how-it-works" },
-        { label: "Verified profiles", href: "/#safety" },
         { label: "Confidentiality", href: "/#safety" },
       ],
     },

@@ -72,12 +72,7 @@ export async function submitProfile(): Promise<void> {
   /* The checks staff will work from, opened at submission rather than
    * when someone first opens the case. A queue that only fills when a
    * reviewer looks at it is a queue that hides its own backlog. */
-  await openRequiredChecks(
-    session.user.id,
-    profile.gender,
-    { reference: profile.gender === "brother" ? profile.reference : undefined },
-    now
-  );
+  await openRequiredChecks(session.user.id, profile.gender, now);
 
   await record({
     action: "profile.submitted",

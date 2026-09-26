@@ -46,7 +46,6 @@ export async function findVerificationById(id: string): Promise<Verification | n
 export async function openRequiredChecks(
   userId: string,
   gender: "brother" | "sister",
-  seed: { reference?: { name?: string; relationship?: string; organisation?: string; phone?: string } },
   now: Date
 ): Promise<number> {
   const existing = await listVerificationsFor(userId);
@@ -64,10 +63,7 @@ export async function openRequiredChecks(
         subject: { type: "member" as const, userId },
         kind,
         documents: [],
-        /* The reference details the member gave, copied here so the
-         * person making the call has the number in front of them rather
-         * than in another collection. */
-        reference: kind === "reference" ? { ...seed.reference, contactedAt: null, outcome: null } : null,
+        reference: null,
         call: kind === "intakeCall" ? { scheduledFor: null, completedAt: null, staffUserId: null } : null,
         decision: "pending" as const,
         decidedBy: null,

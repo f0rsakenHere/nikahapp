@@ -239,22 +239,6 @@ export const ProfileDraftSchema = z.object({
 
   family: z.object({ detail: optionalText(2000) }).default({}), // 🔒
 
-  /* 🔒 A brother's counterpart to a sister's wali (§2.3). She registers a
-   * guardian who vouches for her and stays involved; he names someone
-   * who will vouch for him once, whom staff telephone during
-   * verification. It is not a symmetric power — it is a symmetric check.
-   *
-   * §2.4 lists this as missing from the mock-ups: ContactShared reveals
-   * "his wali or reference" and no screen ever collected one. */
-  reference: z
-    .object({
-      name: optionalText(120),
-      relationship: optionalText(80),
-      organisation: optionalText(120),
-      phone: optionalText(40),
-    })
-    .default({}),
-
   freeText: z
     .object({ aboutMe: optionalText(4000), anythingElse: optionalText(2000) })
     .default({}), // 🔒
@@ -275,8 +259,7 @@ export type StepId =
   | "deen"
   /** Sisters only. */
   | "guardian"
-  /** Brothers only — the same slot in the flow. */
-  | "reference";
+  | "guardian";
 
 /** What a step needs that is not on the profile document.
  *
@@ -349,21 +332,9 @@ export const STEPS: readonly Step[] = [
      * your wali", not claim she is done. */
     required: (_p, ctx) => ctx.hasConfirmedWali,
   },
-  {
-    id: "reference",
-    n: 4,
-    title: "Your reference",
-    blurb: "Someone who can vouch for you. We telephone them before your profile goes live.",
-    required: (p) =>
-      !!p.reference.name && !!p.reference.relationship && !!p.reference.phone,
-  },
 ] as const;
 
-/* One voucher each, and never the other's.
- *
- * A sister names a wali: he confirms by email, holds a veto, and reads
- * her correspondence. A brother names a reference, whom staff telephone
- * once. Asking either of them for both is asking twice.
+/* The wali is hers, and nobody else has a voucher.
  *
  * The wali step used to be shown to a brother too — optional, uncounted,
  * on the reasoning that a man who wants his father watching should be
@@ -371,19 +342,17 @@ export const STEPS: readonly Step[] = [
  * offers him a form and writes a guardianship is a wali system whatever
  * the word "optional" above it says, and the wali in this product is the
  * woman's guardian (§5.2). Nothing downstream ever seated his: a
- * conversation carries one guardian's seat and it is hers, go-live has
- * never asked him for one, and the admin screen shows him a reference
- * where it shows her a wali. So what the step collected was an
- * obligation-shaped nothing — a man invited by email, told he could
- * approve and read, who then held no such power. */
-const HIDDEN_FROM: Record<"brother" | "sister", StepId> = {
-  sister: "reference",
-  brother: "guardian",
-};
+ * conversation carries one guardian's seat and it is hers, and go-live
+ * has never asked him for one.
+ *
+ * He had a step of his own for a while — a reference who could vouch for
+ * him, whom staff would telephone. Nobody is telephoning anybody, so
+ * asking for a name and a number was collecting a promise the product
+ * does not keep. It is gone too, and he has three steps to her four. */
 
 /** The steps this member is actually shown. */
 export function stepsFor(gender: "brother" | "sister"): readonly Step[] {
-  return STEPS.filter((s) => s.id !== HIDDEN_FROM[gender]);
+  return gender === "sister" ? STEPS : STEPS.filter((s) => s.id !== "guardian");
 }
 
 export function stepById(id: string): Step | undefined {
@@ -433,8 +402,7 @@ export function submitBlockers(p: ProfileDraft, context: StepContext): SubmitBlo
      * true of it. Listing it here as well would tell a sister her
      * guardian step is "incomplete" — which reads as something she
      * forgot to fill in, when what it means is that someone else has
-     * not replied to an email yet. The reference step is his to
-     * finish, so it is not excluded. */
+     * not replied to an email yet. */
     if (step.id === "guardian") continue;
     if (!step.required(p, context)) blockers.push({ step: step.id, reason: "incomplete" });
   }

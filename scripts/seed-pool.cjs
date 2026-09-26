@@ -230,12 +230,6 @@ function profileDoc(p, userId, now) {
       quran: "reads",
       ...(p.gender === "sister" ? { dress: p.look } : { beard: p.look }),
     },
-    reference: {
-      name: "Imam at the local masjid",
-      relationship: "Knows the family",
-      organisation: "",
-      phone: "+15145550100",
-    },
     freeText: { aboutMe: ABOUT(p) },
     createdAt: now,
     updatedAt: now,

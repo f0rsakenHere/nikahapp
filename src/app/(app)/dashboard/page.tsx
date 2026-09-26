@@ -289,7 +289,7 @@ export default async function DashboardPage({
         {/* Counted at render, never configured and never rounded up. The
             whole promise of a small pool is that the number is real. */}
         <strong className="font-semibold text-black">{pool.total}</strong> in the pool
-        {settings.requireVerifiedToBrowse ? ", every one checked by our team" : ""}.{" "}
+.{" "}
         {pool.newThisWeek ? (
           <Link
             href="/browse?new=1"
@@ -435,12 +435,10 @@ export default async function DashboardPage({
                 </div>
               </>
             ) : isWaiting ? (
-              /* Sent in, and waiting on the review — which under deferred
-                 approval is no longer waiting on anything before they can
-                 use the product. Both readings of this state are here
-                 because both are true at different settings, and the one
-                 thing neither may do is promise a telephone call as a
-                 precondition when it is not one. */
+              /* Sent in. Under deferred approval this is no longer
+                 waiting on anything before they can use the product, and
+                 none of these lines may promise a telephone call: nobody
+                 is telephoned, at any point. */
               <>
                 <p className="mt-3 flex items-center gap-2.5 font-manrope text-[26px] font-bold leading-tight text-black">
                   <ClockIcon className="text-[24px] text-accent-deep" />
@@ -448,12 +446,10 @@ export default async function DashboardPage({
                 </p>
                 <p className="mt-3 max-w-[62ch] text-[18px] leading-[26px] text-text">
                   {canBrowse
-                    ? "Your profile is in, and you can see everybody else who is. Our team reads every profile and telephones — that happens alongside you now rather than before you."
+                    ? "Your profile is in, and you can see everybody else who is."
                     : waitingOnWali
                       ? "Everything on your side is done. Your profile is with your wali, and it goes into the pool the moment he confirms — until then nobody can see it, and you cannot see anybody either."
-                      : `Someone will read your profile and telephone you before any matching begins. We check identity and speak to ${
-                          me.gender === "sister" ? "your wali" : "your reference"
-                        } first. You can still change your answers.`}
+                      : "Your profile is with us. You can still change your answers."}
                 </p>
                 <div className="mt-5 flex flex-wrap items-center gap-2.5">
                   {canBrowse ? (
@@ -556,9 +552,8 @@ export default async function DashboardPage({
                   The pool
                 </p>
                 <p className="mt-2 text-[18px] leading-[26px] text-text">
-                  {settings.requireVerifiedToBrowse
-                    ? "Browsing opens once your own profile is live. Everyone in it has been checked, which is only true if it is also true of you."
-                    : "Browsing opens once you have finished your profile and sent it in. Everyone you would see has done the same."}
+                  Browsing opens once you have finished your profile and sent it in. Everyone
+                  you would see has done the same.
                 </p>
               </>
             )}
@@ -566,13 +561,16 @@ export default async function DashboardPage({
         </div>
 
         {/* What the wait is for, across the banner rather than down a
-            third of one. Every line is the published process. */}
+            third of one. Every line is something that actually happens —
+            there is no call in it, because there is no call. */}
         {!canBrowse ? (
           <ol className="grid grid-cols-1 gap-4 border-t border-soft-green px-5 py-6 sm:grid-cols-2 lg:grid-cols-4 lg:px-7">
             {[
               "You finish your profile and send it to us.",
-              "We read it, and telephone you.",
-              me.gender === "sister" ? "We speak to your wali." : "We speak to your reference.",
+              "You confirm your email address.",
+              me.gender === "sister"
+                ? "Your wali confirms by email."
+                : "Nothing is needed from anybody else.",
               "Your profile goes live, and the pool opens.",
             ].map((step, i) => {
               const here = (isDraft && i === 0) || (isWaiting && i === 1);

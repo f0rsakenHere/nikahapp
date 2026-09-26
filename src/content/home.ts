@@ -14,7 +14,7 @@
    BROWSE MODEL. This copy previously stated that members cannot look
    through other members — "your profile is not public, and never will
    be", "no public directory". That has been reversed: members browse a
-   closed, verified pool and spend a connection to ask to talk. The
+   closed pool and ask to talk. The
    confidentiality claims that survive are narrower and precise — nothing
    is visible outside the service, nothing is indexed, nothing is sold —
    and they are worded to stay true. Anything asserting that members
@@ -177,13 +177,13 @@ export const eventTogether = {
    links. NikahCanada publishes no team, so this carries the
    confidentiality measures instead, and the per-card social row is gone. */
 export const organizers = {
-  title: "Seen by verified members. Never by the public.",
+  title: "Seen by members. Never by the public.",
   body: "Each of the following is how the service actually operates, not a policy statement.",
   cta: { label: "Confidentiality in full", href: "/how-it-works" },
   people: [
     { name: "Never on the open web", src: `${PHOTO}/organizer-1.jpg`, alt: "White and pink flowers on a wooden box" },
-    { name: "We speak to everyone", src: `${PHOTO}/organizer-2.jpg`, alt: "White and purple flowers in a black vase" },
-    { name: "Verified members only", src: `${PHOTO}/organizer-3.jpg`, alt: "White roses" },
+    { name: "Never indexed by search engines", src: `${PHOTO}/organizer-2.jpg`, alt: "White and purple flowers in a black vase" },
+    { name: "Members only", src: `${PHOTO}/organizer-3.jpg`, alt: "White roses" },
     { name: "Nothing is sold", src: `${PHOTO}/organizer-4.jpg`, alt: "White flowers in a vase" },
   ],
 };
@@ -213,8 +213,7 @@ export const contact = {
   eyebrow: "Contact us",
   title: "Contact us.",
   body:
-    "Registration is free and a picture is not required — send us your profile and we will " +
-    "speak with you by phone before any matching begins. Questions from a parent or wali are " +
+    "Registration is free and a picture is not required. Questions from a parent or wali are " +
     "just as welcome.",
   submit: "Send Message",
   /* TODO: no endpoint yet — the form acknowledges locally and sends
@@ -241,7 +240,6 @@ export const contact = {
 /* Was eight partner brand logos. NikahCanada has no partner brands; this
    is the five-point assurance strip from the live site's hero instead. */
 export const assurances = [
-  "Verified profiles only",
   "Profiles kept confidential and safe",
   "Personalised service to meet your needs",
   "Based in Montreal, operating across Canada",

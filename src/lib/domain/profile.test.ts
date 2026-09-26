@@ -124,17 +124,11 @@ describe("stepsFor", () => {
     ]);
   });
 
-  it("shows a brother the reference step where she has her wali", () => {
-    expect(stepsFor("brother").map((s) => s.id)).toEqual([
-      "basics",
-      "background",
-      "deen",
-      "reference",
-    ]);
-  });
-
-  it("never shows a sister the reference step — her wali vouches for her", () => {
-    expect(stepsFor("sister").map((s) => s.id)).not.toContain("reference");
+  it("gives a brother three steps, and nobody to name", () => {
+    /* He had a fourth: a reference who could vouch for him, whom staff
+       would telephone. Nobody telephones anybody, so asking for a name
+       and a number collected a promise the product does not keep. */
+    expect(stepsFor("brother").map((s) => s.id)).toEqual(["basics", "background", "deen"]);
   });
 
   it("never shows a brother the wali step — the wali is her guardian", () => {
@@ -152,7 +146,6 @@ describe("stepsFor", () => {
       background: { maritalStatus: "neverMarried", children: "none", languages: ["English"] },
       education: { level: "bachelor" },
       deen: { salah: "fiveDaily", beard: "yes" },
-      reference: { name: "Imam", relationship: "Imam", phone: "+15145550100" },
     } as Partial<ProfileDraft>);
 
     expect(completeness(full, { hasConfirmedWali: false }).percent).toBe(100);
@@ -164,10 +157,10 @@ describe("stepsFor", () => {
     expect(stepById("guardian")?.n).toBe(4);
   });
 
-  it("keeps five definitions for four visible steps — slot 4 has two forms", () => {
-    expect(STEPS).toHaveLength(5);
+  it("keeps one definition per step — his are hers without the wali", () => {
+    expect(STEPS).toHaveLength(4);
     expect(stepById("guardian")?.n).toBe(4);
-    expect(stepById("reference")?.n).toBe(4);
+    expect(stepById("reference")).toBeUndefined();
   });
 });
 
@@ -176,8 +169,8 @@ describe("completeness", () => {
     expect(completeness(draft())).toEqual({ step: 1, of: 4, percent: 0 });
   });
 
-  it("counts a brother out of four, like a sister", () => {
-    expect(completeness(draft({ gender: "brother" })).of).toBe(4);
+  it("counts a brother out of three — he has no wali step", () => {
+    expect(completeness(draft({ gender: "brother" })).of).toBe(3);
   });
 
   it("resumes at the first unfinished step, not the furthest reached", () => {
@@ -197,19 +190,14 @@ describe("completeness", () => {
     expect(c.step).toBe(4); // resume lands on the wali step
   });
 
-  it("holds a brother at 75% until he names a reference", () => {
-    const brother = complete({ gender: "brother", deen: { salah: "fiveDaily", beard: "yes" } } as Partial<ProfileDraft>);
-    expect(completeness(brother).percent).toBe(75);
-    expect(completeness(brother).step).toBe(4);
-  });
-
-  it("reaches 100% for a brother once he has", () => {
+  it("finishes a brother at 100% with nobody else involved", () => {
+    /* Three steps, all his own. Nothing of his waits on another person
+       — no wali to confirm and no reference to be telephoned. */
     const brother = complete({
       gender: "brother",
       deen: { salah: "fiveDaily", beard: "yes" },
-      reference: { name: "Imam Suleiman", relationship: "My imam", phone: "5140000000" },
     } as Partial<ProfileDraft>);
-    expect(completeness(brother)).toEqual({ step: 4, of: 4, percent: 100 });
+    expect(completeness(brother)).toEqual({ step: 3, of: 3, percent: 100 });
   });
 });
 
@@ -269,21 +257,12 @@ describe("submitBlockers", () => {
     expect(submitBlockers(complete(), { hasConfirmedWali: false })).toEqual([]);
   });
 
-  it("never asks a brother for a wali, but does ask for a reference", () => {
-    const noReference = complete({
+  it("never asks a brother for a wali, or for anybody else", () => {
+    const brother = complete({
       gender: "brother",
       deen: { salah: "fiveDaily", beard: "trimmed" },
     } as Partial<ProfileDraft>);
-    expect(submitBlockers(noReference, { hasConfirmedWali: false })).toEqual([
-      { step: "reference", reason: "incomplete" },
-    ]);
-
-    const withReference = complete({
-      gender: "brother",
-      deen: { salah: "fiveDaily", beard: "trimmed" },
-      reference: { name: "Imam Suleiman", relationship: "My imam", phone: "5140000000" },
-    } as Partial<ProfileDraft>);
-    expect(submitBlockers(withReference, { hasConfirmedWali: false })).toEqual([]);
+    expect(submitBlockers(brother, { hasConfirmedWali: false })).toEqual([]);
   });
 
   it("reports every unfinished step at once, not one at a time", () => {

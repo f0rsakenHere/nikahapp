@@ -177,32 +177,32 @@ const mongo = new MongoClient(uri, {
       const email = await register(p, "brother");
 
       const steps = await p.locator("ol li a").count();
-      /* Four, the same as hers. The reference sits where her wali does;
-         he is not shown both, and he is not shown a fifth. */
-      check("a brother sees four steps", steps === 4, `saw ${steps}`);
+      /* Three: hers without the wali. He used to have a fourth, naming
+         somebody who could vouch for him, and nobody is telephoned. */
+      check("a brother sees three steps", steps === 3, `saw ${steps}`);
       check("a brother starts at 0% too", (await p.textContent("body")).includes("0%"));
       const brotherSteps = await p.textContent("body");
-      check("he is shown the reference step", /Your reference/.test(brotherSteps));
-      check("and not a wali step alongside it", !/Your wali/.test(brotherSteps));
+      check("he is not asked to name a reference", !/Your reference/.test(brotherSteps));
+      check("and not a wali either", !/Your wali/.test(brotherSteps));
+      check("he is told nobody will telephone him", !/telephone/i.test(brotherSteps), brotherSteps.slice(0, 200));
 
       await p.goto(BASE + "/onboarding/deen", { waitUntil: "networkidle" });
       const deen = await p.textContent("body");
       check("a brother is asked about his beard", /Beard/.test(deen));
       check("a brother is not asked about hijab", !/Hijab/.test(deen));
 
-      /* The reference step is his, and it is a real form. */
-      await p.goto(BASE + "/onboarding/reference", { waitUntil: "networkidle" });
-      const ref = await p.textContent("body");
-      check("the reference step explains why we want one", /telephone them once/.test(ref));
-      await p.fill('input[name="reference.name"]', "Imam Suleiman Diallo");
-      await p.fill('input[name="reference.relationship"]', "The imam of my masjid");
-      await p.fill('input[name="reference.phone"]', "5140000000");
-      await p.click('button[type="submit"]');
-      await p.waitForURL("**/onboarding", { timeout: 20_000 });
+      /* The step is gone, and the URL with it. A bookmark or an open tab
+         still points at it, so this is walked rather than assumed. */
+      const gone = await p.goto(BASE + "/onboarding/reference", { waitUntil: "networkidle" });
+      check(
+        "the reference step's URL leads nowhere now",
+        gone.status() === 404,
+        String(gone.status())
+      );
 
       const brother = await db.collection("users").findOne({ email });
       const bProfile = await db.collection("profiles").findOne({ userId: brother._id });
-      check("his reference was stored", bProfile?.reference?.name === "Imam Suleiman Diallo");
+      check("and nothing of a reference is stored", !bProfile?.reference);
 
       /* The wali is her guardian, and he has no step for one. The URL
          was live until recently — a bookmark or an open tab still points
@@ -240,18 +240,6 @@ const mongo = new MongoClient(uri, {
       await p.close();
     }
 
-    /* --------------------------------------- a sister and the reference -- */
-    {
-      const p = await browser.newPage({ viewport: { width: 500, height: 900 } });
-      await register(p, "sister2");
-      await p.goto(BASE + "/onboarding/reference", { waitUntil: "networkidle" });
-      check(
-        "a sister typing the reference step's URL is sent back",
-        new URL(p.url()).pathname === "/onboarding",
-        p.url()
-      );
-      await p.close();
-    }
   } finally {
     await browser.close();
     for (const email of emails) {

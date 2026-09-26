@@ -68,9 +68,7 @@ export default async function BrowsePage({
           <p className="mt-2 text-[18px] leading-[26px] text-text">
             {waitingOnWali
               ? "Your profile is in, and it is with your wali. Browsing opens the moment he confirms — until then nobody can see you either, and asking somebody who cannot look back would be a poor introduction."
-              : settings.requireVerifiedToBrowse
-                ? "Browsing opens once your own profile is live. Ours is a closed pool — everyone in it has been checked, which is only true if it is also true of you."
-                : "Browsing opens once you have finished your profile and sent it in. Everyone you would see has done the same, which is only fair if it is also true of you."}
+              : "Browsing opens once you have finished your profile and sent it in. Everyone you would see has done the same, which is only fair if it is also true of you."}
           </p>
           <Link
             href={waitingOnWali ? "/onboarding/guardian" : "/onboarding"}
@@ -201,9 +199,7 @@ export default async function BrowsePage({
           {scope === "saved"
             ? "Nothing saved yet. The heart on a card sets somebody aside to think about — it costs no connection and they are never told."
             : scope === "new"
-              ? settings.requireVerifiedToBrowse
-                ? "Nobody new this week. Everyone here is checked and telephoned before they are let in, so the pool grows slowly on purpose."
-                : "Nobody new this week. The pool is small and grows a person at a time."
+              ? "Nobody new this week. The pool is small and grows a person at a time."
               : "Nobody matches that just now. Widening the age range or the province is usually enough — the pool is small and deliberately so."}
         </p>
       ) : (

@@ -274,9 +274,8 @@ async function signIn(context, email) {
       "/onboarding",
       "/onboarding/basics",
       "/onboarding/deen",
-      /* His slot-4 screen. He used to be sent to /onboarding/guardian
-         here, which is a sister's screen and is no longer his. */
-      "/onboarding/reference",
+      /* He has no fourth screen: the wali is hers, and the reference he
+         used to name went with the telephone calls. */
       "/settings",
     ].filter(Boolean),
     /* The wali step, measured as the only person who has one. */

@@ -382,15 +382,20 @@ const mongo = new MongoClient(uri, {
     const submitted = await db.collection("profiles").findOne({ userId: sister._id });
     check("the profile moved to pendingReview", submitted.status === "pendingReview");
     check("and recorded when", !!submitted.submittedAt);
-    /* Still "what happens next" rather than a bare thank-you — but with
-       approval deferred (D1f) what happens next is that she is in the
-       pool, with our checks running behind her rather than in front. */
+    /* Still "what happens next" rather than a bare thank-you: she is in
+       the pool, and the screen names the state she is in. It used to
+       promise a telephone call as well, which nobody was ever going to
+       make — so the promise is gone and its absence is asserted. */
     const afterSubmit = await her.textContent("body");
     check(
-      "the screen says what happens next, not just thank you",
-      /telephones|telephone you before any matching/.test(afterSubmit) &&
-        /In the pool|With our team/.test(afterSubmit),
+      "the screen names the state she is in, not just thank you",
+      /In the pool|With our team|With your wali/.test(afterSubmit),
       afterSubmit.replace(/\s+/g, " ").slice(0, 140)
+    );
+    check(
+      "and promises nobody a telephone call",
+      !/telephone/i.test(afterSubmit),
+      afterSubmit.replace(/\s+/g, " ").slice(0, 200)
     );
     check(
       "and stops offering to submit again",

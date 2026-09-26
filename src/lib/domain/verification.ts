@@ -131,10 +131,17 @@ export type Verification = z.infer<typeof VerificationSchema>;
  *  A brother supplies a reference; a sister supplies a wali, and his
  *  check lives on the guardianship rather than here (§5.3). Everyone
  *  gets the intake call, because the live site promises it to everyone. */
-export function requiredFor(gender: "brother" | "sister"): VerificationKind[] {
-  return gender === "brother"
-    ? ["identity", "reference", "intakeCall"]
-    : ["identity", "intakeCall"];
+export function requiredFor(_gender: "brother" | "sister"): VerificationKind[] {
+  /* Identity, and nothing else. The reference call and the intake call
+   * were both telephone calls, and nobody is making them: the product
+   * no longer asks a brother for somebody to ring, and no screen
+   * promises a member that we will ring them either. Leaving them
+   * required would have held every profile behind a call that is never
+   * going to happen.
+   *
+   * The kinds themselves stay in the schema. Records written while they
+   * were required still exist, and an old case must still open. */
+  return ["identity"];
 }
 
 export type VerificationGap =

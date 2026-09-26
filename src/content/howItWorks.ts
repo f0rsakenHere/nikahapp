@@ -33,7 +33,7 @@ export const intro = {
 export const spine = [
   { n: "01", label: "Registration", note: "Free. No photograph required." },
   { n: "02", label: "Searching for matches", note: "You browse. We refer as well." },
-  { n: "03", label: "Profile security check", note: "Identity and references verified." },
+  { n: "03", label: "Confirming your address", note: "By email — yours, and her wali's." },
   { n: "04", label: "Matchmaking", note: "Connections, acceptance, the supervised conversation." },
   { n: "05", label: "Matchmaking fee", note: "Charged once, to both sides." },
   { n: "06", label: "Contact information", note: "Names exchanged last." },
@@ -133,7 +133,7 @@ export const stages: {
           "education, work, and what he says about himself.",
         pins: [
           { n: 1, x: 0, y: 24, text: "The photo slot is visible but locked, with the rule written on it rather than hidden in a policy." },
-          { n: 2, x: 0, y: 80, text: "Identity and reference checks are surfaced as a verified badge." },
+          { n: 2, x: 0, y: 80, text: "Nothing on the card is anything but what the member answered themselves." },
           { n: 3, x: 100, y: 93, text: "“Ask to talk” is the only way forward, and it carries no message — there is nothing to write until she has said yes." },
         ],
       },
@@ -247,7 +247,7 @@ export const never = {
 
 export const close = {
   title: "That is the whole process.",
-  body: "Registration is free and takes about ten minutes. We will speak with you by phone before any matching begins.",
+  body: "Registration is free and takes about ten minutes.",
   cta: { label: "Register Now", href: "/register" },
   note: "Questions from a parent or guardian? Contact us and we will walk through it with you.",
 };

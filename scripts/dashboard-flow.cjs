@@ -188,7 +188,9 @@ const body = (p) => p.innerText("body");
     const afterWali = await body(p);
     check("his confirming is what puts her in the pool", /In the pool/.test(afterWali), afterWali.slice(0, 200));
     check("and opens browsing", /Browse the pool/.test(afterWali));
-    check("the checks are still promised, alongside it", /telephones/.test(afterWali));
+    /* And nothing is promised that does not happen: there are no checks
+       behind her and nobody telephones her. */
+    check("no telephone call is promised", !/telephone/i.test(afterWali), afterWali.slice(0, 200));
     check(
       "and the pool is not claimed to be fully checked",
       !/every one checked by our team/i.test(afterWali)

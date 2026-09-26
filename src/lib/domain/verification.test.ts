@@ -79,15 +79,14 @@ describe("VerificationSchema", () => {
 });
 
 describe("requiredFor", () => {
-  it("asks a brother for a reference and a sister not", () => {
-    expect(requiredFor("brother")).toContain("reference");
-    expect(requiredFor("sister")).not.toContain("reference");
-  });
-
-  it("asks everyone for identity and the intake call", () => {
+  it("asks for identity, and for nothing that needs a telephone", () => {
+    /* The reference call and the intake call were both calls, and the
+       product makes none: it no longer asks a brother for somebody to
+       ring, and no screen promises a member that we will ring them.
+       Leaving either required would hold every profile behind a call
+       that is never going to happen. */
     for (const gender of ["brother", "sister"] as const) {
-      expect(requiredFor(gender)).toContain("identity");
-      expect(requiredFor(gender)).toContain("intakeCall");
+      expect(requiredFor(gender)).toEqual(["identity"]);
     }
   });
 });
@@ -98,28 +97,24 @@ describe("verificationGaps", () => {
   it("reports everything missing for a fresh member", () => {
     expect(verificationGaps("brother", [])).toEqual([
       { kind: "identity", reason: "missing" },
-      { kind: "reference", reason: "missing" },
-      { kind: "intakeCall", reason: "missing" },
     ]);
   });
 
   it("is empty once every required check has passed", () => {
-    expect(
-      verificationGaps("sister", [approved("identity"), approved("intakeCall")])
-    ).toEqual([]);
+    expect(verificationGaps("sister", [approved("identity")])).toEqual([]);
   });
 
   it("ignores a check that is not required for this member", () => {
-    /* A sister with a stray reference check still needs nothing more. */
+    /* A member with stray checks from when calls were required still
+       needs nothing more. */
     expect(
       verificationGaps("sister", [approved("identity"), approved("intakeCall"), approved("reference")])
     ).toEqual([]);
   });
 
-  it("reports every gap at once, not the first", () => {
+  it("reports a pending check as pending rather than missing", () => {
     const gaps = verificationGaps("brother", [{ kind: "identity", decision: "pending" }]);
-    expect(gaps).toHaveLength(3);
-    expect(gaps[0]).toEqual({ kind: "identity", reason: "pending" });
+    expect(gaps).toEqual([{ kind: "identity", reason: "pending" }]);
   });
 
   it("lets a later approval clear an earlier rejection", () => {
@@ -127,7 +122,6 @@ describe("verificationGaps", () => {
     const gaps = verificationGaps("sister", [
       { kind: "identity", decision: "rejected" },
       { kind: "identity", decision: "approved" },
-      approved("intakeCall"),
     ]);
     expect(gaps).toEqual([]);
   });
@@ -136,7 +130,6 @@ describe("verificationGaps", () => {
     const gaps = verificationGaps("sister", [
       { kind: "identity", decision: "rejected" },
       { kind: "identity", decision: "pending" },
-      approved("intakeCall"),
     ]);
     expect(gaps).toEqual([{ kind: "identity", reason: "rejected" }]);
   });
@@ -251,9 +244,16 @@ describe("apply — the intake call", () => {
   });
 });
 
-describe("every kind is accounted for", () => {
-  it("has a place in requiredFor for one gender or the other", () => {
-    const all = new Set([...requiredFor("brother"), ...requiredFor("sister")]);
-    for (const kind of VERIFICATION_KINDS) expect(all.has(kind)).toBe(true);
+describe("the kinds that are no longer required", () => {
+  it("keeps them in the schema, so old records still open", () => {
+    /* `reference` and `intakeCall` records were written while calls were
+       part of the process. They are not asked for any more, and a staff
+       screen must still be able to read the ones that exist. */
+    expect(VERIFICATION_KINDS).toContain("reference");
+    expect(VERIFICATION_KINDS).toContain("intakeCall");
+    for (const gender of ["brother", "sister"] as const) {
+      expect(requiredFor(gender)).not.toContain("reference");
+      expect(requiredFor(gender)).not.toContain("intakeCall");
+    }
   });
 });

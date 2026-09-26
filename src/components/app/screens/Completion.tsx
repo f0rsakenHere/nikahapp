@@ -97,7 +97,7 @@ export function ContactShared() {
             {[
               ["Mobile", "+1 416 555 0177"],
               ["Email", "y.karim@email.com"],
-              ["Wali / reference", "Imam Bilal · +1 416 555 0102"],
+              ["Her wali", "Imam Bilal · +1 416 555 0102"],
             ].map(([k, v]) => (
               <div key={k} className="flex items-baseline justify-between gap-3">
                 <span className="text-[11px] uppercase tracking-[0.5px] text-text/60">{k}</span>

@@ -87,24 +87,18 @@ export default async function OnboardingPage({
           is when the email is arriving. */}
       {user.emailVerifiedAt ? null : <ConfirmEmail email={user.email} />}
       {profile.status !== "draft" ? (
-        /* Once it is submitted the checklist is no longer the point.
-           What she wants to know is what happens next, and the intake
-           call is a published step — "we will speak with you by phone
-           before any matching begins" — so it is said here rather than
-           left as a silence. */
+        /* Once it is submitted the checklist is no longer the point;
+           what they want to know is what happens next. It used to say we
+           would telephone them first. We do not telephone anybody, so it
+           says what is actually true of the wait instead. */
         <div className="mb-7 rounded-md border border-soft-green bg-mist px-4 py-4">
           <p className="text-[18px] font-semibold text-black">
             {submitted ? "Thank you — we have it." : "With our team"}
           </p>
           <p className="mt-2 text-[18px] leading-[26px] text-text">
-            Someone will read your profile and telephone you before any matching begins. We check
-            identity and speak to{" "}
-            {/* Named, not offered as a pair. He has a reference and she has
-                a wali, and this screen knows which of the two is reading
-                it — "your reference or your wali" asks somebody to work
-                out which half was meant for them. */}
-            {profile.gender === "sister" ? "your wali" : "your reference"} first. You can still
-            change your answers below.
+            {profile.gender === "sister"
+              ? "Your profile goes into the pool once your wali has confirmed. You can still change your answers below."
+              : "Your profile is in. You can still change your answers below."}
           </p>
         </div>
       ) : null}

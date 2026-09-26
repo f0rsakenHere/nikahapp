@@ -40,7 +40,7 @@ export function Browse() {
     <div className="flex h-full flex-col">
       <AppBar
         title="Browse members"
-        sub="Every member here is verified. Nobody outside the service can see them."
+        sub="Nobody outside the service can see the people here."
       />
 
       <div className="flex items-center justify-between px-6 pb-3">
@@ -132,7 +132,7 @@ export function ProfileDetail() {
             <Check className="h-3.5 w-3.5" />
           </span>
           <span className="text-[11px] leading-[15px] text-black/75">
-            Identity verified · Reference confirmed with his local imam
+            Email address confirmed
           </span>
         </div>
       </div>

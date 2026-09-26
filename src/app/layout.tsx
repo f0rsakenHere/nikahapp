@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   title: `${brand.name} — ${brand.tagline}`,
   description:
     "Send us your profile for free and we will help you find a match according to your " +
-    "preferences. Verified profiles, kept confidential. Based in Montreal, operating across " +
+    "preferences. Profiles kept confidential. Based in Montreal, operating across " +
     "Canada, developed in collaboration with Islamic scholars.",
 };
 

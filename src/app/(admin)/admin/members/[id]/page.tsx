@@ -123,7 +123,9 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
           <Row label={profile.gender === "sister" ? "Dress" : "Beard"} value={profile.deen.dress ?? profile.deen.beard} />
         </Section>
 
-        <Section title={profile.gender === "sister" ? "Her wali" : "His reference"}>
+        {/* Only hers. A brother names nobody: the reference step is gone
+            with the telephone calls it existed for. */}
+        <Section title="Her wali">
           {profile.gender === "sister" ? (
             confirmed ? (
               <>
@@ -142,12 +144,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
               <p className="text-[13px] text-peach-deep">No wali named.</p>
             )
           ) : (
-            <>
-              <Row label="Name" value={profile.reference.name} />
-              <Row label="How they know him" value={profile.reference.relationship} />
-              <Row label="Where" value={profile.reference.organisation} />
-              <Row label="Phone" value={profile.reference.phone} />
-            </>
+            <p className="text-[13px] text-text">Brothers do not name one.</p>
           )}
         </Section>
 

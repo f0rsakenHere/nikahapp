@@ -171,37 +171,6 @@ export const STEP_FIELDS: Record<Exclude<StepId, "guardian">, FieldSpec[]> = {
     },
   ],
 
-  reference: [
-    {
-      path: "reference.name",
-      kind: "text",
-      label: "Their full name",
-      required: true,
-      placeholder: "Imam Suleiman Diallo",
-    },
-    {
-      path: "reference.relationship",
-      kind: "text",
-      label: "How they know you",
-      required: true,
-      placeholder: "The imam of my masjid",
-      hint: "Someone who knows you well enough to speak for your character — an imam, an employer, a long-standing friend of the family.",
-    },
-    {
-      path: "reference.organisation",
-      kind: "text",
-      label: "Where, if it is a place",
-      placeholder: "Optional",
-    },
-    {
-      path: "reference.phone",
-      kind: "text",
-      label: "Their phone number",
-      required: true,
-      hint: "We telephone them once, before your profile goes live. We do not say what you told us about yourself.",
-    },
-  ],
-
 };
 
 export function fieldsForStep(step: StepId, gender: "brother" | "sister"): FieldSpec[] {
