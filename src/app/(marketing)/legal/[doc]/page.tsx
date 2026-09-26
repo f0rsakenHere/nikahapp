@@ -76,12 +76,6 @@ export default async function LegalPage({ params }: { params: Promise<{ doc: str
 
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
-            href="/#contact"
-            className="inline-flex h-12 items-center rounded-pill bg-peach px-6 text-[14px] font-semibold text-black"
-          >
-            Ask us
-          </Link>
-          <Link
             href="/"
             className="inline-flex h-12 items-center rounded-pill border-2 border-accent-deep px-6 text-[14px] font-semibold text-accent-deep"
           >

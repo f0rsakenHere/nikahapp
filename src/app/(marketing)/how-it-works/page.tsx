@@ -5,8 +5,7 @@ import { currentUser } from "@/lib/auth/current";
 import { ART, PHOTO, brand } from "@/content/home";
 import { intro, spine, stages, never, close, type ScreenSpec } from "@/content/howItWorks";
 
-import { TopBar } from "@/components/bridely/TopBar";
-import { Header } from "@/components/bridely/Header";
+import { LandingHeader } from "@/components/marketing/LandingHeader";
 import { SiteFooter } from "@/components/bridely/SiteFooter";
 import { Eyebrow, Lead, SectionHeading } from "@/components/bridely/primitives/Type";
 import { PillButton } from "@/components/bridely/primitives/PillButton";
@@ -129,8 +128,7 @@ export default async function HowItWorksPage() {
           style={{ backgroundImage: `url(${ART}/banner-background.png)` }}
         >
           <BannerWash />
-          <TopBar />
-          <Header signedIn={signedIn} />
+          <LandingHeader signedIn={signedIn} />
 
           <div className="relative pb-16 pt-14 sm:pt-20 xl:pb-[90px] xl:pt-[120px]">
             <Twinkle

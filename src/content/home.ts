@@ -63,20 +63,13 @@ export const topBar = {
 
 export const nav = {
   links: [
-    { label: "Home", href: "/" },
-    { label: "How It Works", href: "/how-it-works" },
-    { label: "Pricing", href: "/#fee" },
-    { label: "Contact Us", href: "/#contact" },
+    { label: "How it works", href: "/how-it-works" },
+    { label: "Why NikahCanada", href: "/#why" },
+    { label: "Questions", href: "/#faq" },
   ],
-  dropdown: {
-    label: "More",
-    items: [
-      { label: "The process", href: "/#process" },
-      { label: "Confidentiality", href: "/#safety" },
-      { label: "Developed with scholars", href: "/#scholars" },
-      { label: "For guardians", href: "/#wali" },
-    ],
-  },
+  /* The dropdown is gone with the sections it listed. Four links and a
+     button is the whole nav. */
+  dropdown: { label: "More", items: [] as { label: string; href: string }[] },
   cta: { label: "Register Now", href: "/register" },
   signIn: { label: "Sign in", href: "/login" },
   /* What the same two slots say to somebody who is already a member.
@@ -269,18 +262,20 @@ export const footer = {
     "developed in collaboration with Islamic scholars.",
   columnTitle: "Service",
   secondColumnTitle: "Register",
+  /* Every one of these lands somewhere that exists. The homepage was
+     rebuilt and its old anchors — #process, #fee, #scholars, #wali,
+     #safety, #contact — went with the sections they pointed at; a footer
+     link to a section nobody can see is a dead end in the one place a
+     reader goes when they are already lost. */
   columns: [
     [
-      { label: "How It Works", href: "/how-it-works" },
-      { label: "The process", href: "/#process" },
-      { label: "Pricing", href: "/#fee" },
-      { label: "Developed with scholars", href: "/#scholars" },
+      { label: "How it works", href: "/how-it-works" },
+      { label: "Why NikahCanada", href: "/#why" },
+      { label: "Questions", href: "/#faq" },
     ],
     [
-      { label: "Registration", href: "/register" },
-      { label: "For guardians", href: "/#wali" },
-      { label: "Confidentiality", href: "/#safety" },
-      { label: "Contact Us", href: "/#contact" },
+      { label: "Register", href: "/register" },
+      { label: "Sign in", href: "/login" },
     ],
   ],
   /* TODO: the template shipped a fake phone number and email. Nothing has
