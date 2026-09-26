@@ -84,6 +84,20 @@ function linkFromLog(sinceByte) {
     const user = await db.collection("users").findOne({ email: EMAIL });
     check("the account exists and starts unconfirmed", user && user.emailVerifiedAt === null);
 
+    /* The screen they are left on says so. A link nobody is told about
+       is a link nobody opens, and this is the page registration ends on. */
+    const landed = await p.evaluate(() => document.body.innerText);
+    check("the page after registering asks them to confirm", /Confirm your email address/i.test(landed), landed.slice(0, 200));
+    check("and names the address it went to", landed.includes(EMAIL), landed.slice(0, 300));
+    check("and offers to send it again", /Send the link again/i.test(landed));
+
+    await p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+    check(
+      "the dashboard says it too",
+      /Confirm your email address/i.test(await p.evaluate(() => document.body.innerText))
+    );
+    await p.goto(`${BASE}/onboarding`, { waitUntil: "networkidle" });
+
     /* The email is written after the redirect returns, so give it a
        moment to appear rather than assuming it is already there. */
     let link = null;
@@ -124,6 +138,14 @@ function linkFromLog(sinceByte) {
       .collection("verificationTokens")
       .countDocuments({ userId: String(user._id), purpose: "verifyEmail" });
     check("and the token is gone from the database", tokensLeft === 0, `${tokensLeft} left`);
+
+    /* And once it is confirmed, it stops asking. A banner that never
+       goes away is one people learn to read past. */
+    await p.goto(`${BASE}/onboarding`, { waitUntil: "networkidle" });
+    check(
+      "the prompt is gone once the address is confirmed",
+      !/Confirm your email address/i.test(await p.evaluate(() => document.body.innerText))
+    );
 
     await stranger.close();
     await p.close();

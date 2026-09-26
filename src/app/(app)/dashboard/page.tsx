@@ -40,7 +40,7 @@ import {
   SparkIcon,
   WaliIcon,
 } from "@/components/app/icons";
-import { ProfileCard } from "@/components/app/profile-card";
+import { ConfirmEmail } from "@/components/app/confirm-email";
 import { AppFrame } from "../frame";
 
 export const metadata: Metadata = { title: "Your dashboard — NikahCanada" };
@@ -335,6 +335,10 @@ export default async function DashboardPage({
           </div>
         </div>
       ) : null}
+
+      {/* Until the address is confirmed, on every visit rather than only
+          the first — an unopened link is not a one-off. */}
+      {user.emailVerifiedAt ? null : <ConfirmEmail email={user.email} />}
 
       {/* ---- the wali ---------------------------------------------------
           Across the top rather than down a third of the page. It is the

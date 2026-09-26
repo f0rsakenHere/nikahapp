@@ -6,8 +6,9 @@ import { logout } from "@/lib/auth/actions";
 import { submitProfile } from "@/lib/profile/actions";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
 import { hasConfirmedWali } from "@/lib/repositories/guardianships";
-import { STEPS, completeness, stepsFor, submitBlockers } from "@/lib/domain/profile";
+import { completeness, stepsFor, submitBlockers } from "@/lib/domain/profile";
 import { Check } from "@/components/app/kit";
+import { ConfirmEmail } from "@/components/app/confirm-email";
 import { AppFrame } from "../frame";
 
 export const metadata: Metadata = { title: "Your profile — NikahCanada" };
@@ -82,6 +83,9 @@ export default async function OnboardingPage({
       }
     >
       <p className="-mt-3 mb-6 text-[18px] leading-[26px] text-text">{blurb}</p>
+      {/* First thing on the first screen after registering, because that
+          is when the email is arriving. */}
+      {user.emailVerifiedAt ? null : <ConfirmEmail email={user.email} />}
       {profile.status !== "draft" ? (
         /* Once it is submitted the checklist is no longer the point.
            What she wants to know is what happens next, and the intake
@@ -150,7 +154,11 @@ export default async function OnboardingPage({
                       : "border border-dashed border-soft-green text-text/50"
                   }`}
                 >
-                  {done ? <Check className="h-3.5 w-3.5" /> : STEPS.indexOf(step) + 1}
+                  {/* Numbered by what this member is shown, not by the
+                      position in `STEPS` — that list holds both slot-4
+                      definitions, so a brother's reference came out as 5
+                      under a 3, with no 4 anywhere on the screen. */}
+                  {done ? <Check className="h-3.5 w-3.5" /> : visible.indexOf(step) + 1}
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="text-[18px] font-semibold text-black">{step.title}</span>

@@ -72,6 +72,18 @@ const mongo = new MongoClient(uri, {
 
       const steps = await p.locator("ol li a").count();
       check("a sister sees four steps", steps === 4, `saw ${steps}`);
+      /* Numbered 1-4 with nothing skipped. They used to be numbered by
+         position in the full step list, which holds both slot-4 forms,
+         so the last one read 5 under a 3. */
+      check(
+        "and they are numbered without a gap",
+        (await p.evaluate(() =>
+          [...document.querySelectorAll("ol li a > span:first-child")].map((s) => s.textContent.trim()).join(",")
+        )) === "1,2,3,4",
+        await p.evaluate(() =>
+          [...document.querySelectorAll("ol li a > span:first-child")].map((s) => s.textContent.trim()).join(",")
+        )
+      );
       check("a sister starts at 0% — the wali step is not hers to finish", (await p.textContent("body")).includes("0%"));
       check(
         "the wali step reads as waiting on someone else",
