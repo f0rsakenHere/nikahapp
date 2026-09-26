@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
 import Image from "next/image";
 import { currentUser } from "@/lib/auth/current";
+import { socialMetadata } from "@/lib/social-metadata";
 import { ART, PHOTO, brand } from "@/content/home";
 import { intro, spine, stages, never, close, type ScreenSpec } from "@/content/howItWorks";
 
@@ -25,6 +26,7 @@ export const metadata: Metadata = {
   title: `How it works | ${brand.name}`,
   description:
     "The full NikahCanada process in six steps, with the screens a member and her wali see at each stage.",
+  ...socialMetadata(`How it works | ${brand.name}`, "The full NikahCanada process in six steps, with the screens a member and her wali see at each stage.", "/how-it-works"),
 };
 
 /* Screen id → component. Keeps all copy in the content file while the

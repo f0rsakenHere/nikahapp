@@ -58,7 +58,25 @@ export function middleware(request: NextRequest) {
   if (isPublic(pathname)) return NextResponse.next();
   if (request.cookies.get(SESSION_COOKIE)) return NextResponse.next();
 
-  const login = new URL("/login", request.url);
+  /* Built from the headers the proxy sends, not from `request.url`.
+   *
+   * `next start -H 127.0.0.1` binds to loopback and Next answers with the
+   * origin it was bound to, so every redirect from here went out as
+   * `https://localhost:3000/login` — the visitor's own device. A browser
+   * following that lands nowhere, and Chrome on Android asks the visitor
+   * to grant the site access to their local network first, which is a
+   * frightening thing for a matrimonial site to ask.
+   *
+   * Same derivation as `issue-link.ts`, which had to solve this already
+   * for the links that go out by email. */
+  const host =
+    request.headers.get("x-forwarded-host") ??
+    request.headers.get("host") ??
+    request.nextUrl.host;
+  const proto =
+    request.headers.get("x-forwarded-proto") ??
+    (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+  const login = new URL("/login", `${proto}://${host}`);
   /* Carry where they were going, so signing in resumes it rather than
    * dropping them on a dashboard and making them navigate again. The
    * value is a path from this request, never a caller-supplied URL — an

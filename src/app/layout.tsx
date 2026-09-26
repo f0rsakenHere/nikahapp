@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Lora, Manrope } from "next/font/google";
 import { brand } from "@/content/home";
+import { socialMetadata } from "@/lib/social-metadata";
 import "./globals.css";
 
 // Lora gives public headings a restrained serif style. Manrope keeps
@@ -20,12 +21,14 @@ const manrope = Manrope({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+const title = `${brand.name} | ${brand.tagline}`;
+const description = "A Muslim marriage platform for people sincerely seeking marriage across Canada. Create your profile for free and connect when the interest is mutual.";
+
 export const metadata: Metadata = {
-  title: `${brand.name} | ${brand.tagline}`,
-  description:
-    "Send us your profile for free and we will help you find a match according to your " +
-    "preferences. Profiles kept confidential. Based in Montreal, operating across " +
-    "Canada, developed in collaboration with Islamic scholars.",
+  metadataBase: new URL(process.env.APP_ORIGIN ?? "https://nikahcanada.ca"),
+  title,
+  description,
+  ...socialMetadata(title, description, "/"),
 };
 
 export default function RootLayout({
