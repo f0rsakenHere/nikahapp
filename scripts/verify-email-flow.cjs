@@ -39,6 +39,7 @@ const client = new MongoClient(requireEnv("MONGODB_URI"), {
 
 const STAMP = Date.now();
 const EMAIL = `verifyloop+${STAMP}@example.invalid`;
+const SECOND = `verifyloop2+${STAMP}@example.invalid`;
 const PASSWORD = "a-long-enough-passphrase";
 
 let bad = 0;
@@ -120,6 +121,11 @@ function linkFromLog(sinceByte) {
     const shown = await stranger.evaluate(() => document.body.innerText);
     check("and says it worked", /confirmed|thank you|verified/i.test(shown), shown.slice(0, 160));
 
+    /* Opened where nobody is signed in, the way a mail app hands it over:
+       the button has to say so rather than promising to continue and
+       landing on a sign-in wall. */
+    check("a stranger's browser is offered a sign-in", /Sign in/i.test(shown), shown.slice(0, 200));
+
     /* The claim on screen is not the evidence. The database is. */
     const after = await db.collection("users").findOne({ email: EMAIL });
     check("the account is now confirmed in the database", Boolean(after && after.emailVerifiedAt));
@@ -139,6 +145,41 @@ function linkFromLog(sinceByte) {
       .countDocuments({ userId: String(user._id), purpose: "verifyEmail" });
     check("and the token is gone from the database", tokensLeft === 0, `${tokensLeft} left`);
 
+    /* The button a signed-in member sees, on a second account — the
+       first link is spent, and what the button offers has to follow from
+       who is reading it. An unfinished profile is continued, never
+       re-started. */
+    {
+      const before = fs.statSync(LOG).size;
+      const q = await browser.newPage({ viewport: { width: 500, height: 1000 } });
+      await q.goto(`${BASE}/register`, { waitUntil: "networkidle", timeout: 90_000 });
+      await q.click('label:has(input[name="gender"][value="brother"])');
+      await q.fill('input[name="firstName"]', "Loop");
+      await q.fill('input[name="lastName"]', "Second");
+      await fillDob(q, "1993-02-02");
+      await q.fill('input[name="email"]', SECOND);
+      await q.fill('input[name="password"]', PASSWORD);
+      await q.check('input[name="marriageIntention"]');
+      await q.check('input[name="terms"]');
+      await q.click('button[type="submit"]');
+      await q.waitForURL("**/onboarding", { timeout: 30_000 });
+
+      let second = null;
+      for (let i = 0; i < 30 && !second; i++) {
+        second = linkFromLog(before);
+        if (!second) await new Promise((r) => setTimeout(r, 500));
+      }
+      check("a second link was sent", Boolean(second));
+
+      await q.goto(second, { waitUntil: "networkidle" });
+      const his = await q.evaluate(() => document.body.innerText);
+      check("in his own browser it offers to finish the profile", /Finish your profile/i.test(his), his.slice(0, 200));
+      await q.locator('a:has-text("Finish your profile")').click();
+      await q.waitForTimeout(1500);
+      check("and that is where it lands", new URL(q.url()).pathname === "/onboarding", q.url());
+      await q.close();
+    }
+
     /* And once it is confirmed, it stops asking. A banner that never
        goes away is one people learn to read past. */
     await p.goto(`${BASE}/onboarding`, { waitUntil: "networkidle" });
@@ -151,14 +192,15 @@ function linkFromLog(sinceByte) {
     await p.close();
   } finally {
     await browser.close();
-    const user = await db.collection("users").findOne({ email: EMAIL });
-    if (user) {
+    for (const email of [EMAIL, SECOND]) {
+      const user = await db.collection("users").findOne({ email });
+      if (!user) continue;
       const id = new ObjectId(user._id);
       for (const c of ["profiles", "sessions", "verificationTokens", "auditLog"]) {
         await db.collection(c).deleteMany({ userId: { $in: [id, String(id)] } });
       }
       await db.collection("users").deleteOne({ _id: id });
-      console.log("\ncleaned up the fixture account");
+      console.log(`cleaned up ${email}`);
     }
     await client.close();
   }
