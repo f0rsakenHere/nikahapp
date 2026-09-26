@@ -156,12 +156,21 @@ const mongo = new MongoClient(uri, {
       /* --- a finished step returns to the overview ------------------- */
       await p.click('label:has(input[name="deen.salah"][value="fiveDaily"])');
       await p.click('label:has(input[name="deen.dress"][value="hijab"])');
+      /* Submitted from the foot of a long form, which is where the
+         button is. The next screen must start at its own top rather than
+         at the height the last one was left at. */
+      await p.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      const leftAt = await p.evaluate(() => Math.round(window.scrollY));
+      check("the step is long enough for this to matter", leftAt > 100, `scrolled to ${leftAt}`);
       await p.click('button[type="submit"]');
       /* Compared exactly rather than by glob, which would also match the
          step we are standing on and return before the save had run. */
       await p.waitForURL((u) => new URL(u).pathname !== "/onboarding/deen", { timeout: 20_000 });
       profile = await db.collection("profiles").findOne({ userId: user._id });
       check("her deen answers were stored", profile?.deen?.salah === "fiveDaily");
+      await p.waitForTimeout(600);
+      const landedAt = await p.evaluate(() => Math.round(window.scrollY));
+      check("and the next screen starts at the top", landedAt === 0, `scrollY ${landedAt}`);
       check(
         "a finished step hands her on to the next one",
         new URL(p.url()).pathname === "/onboarding/guardian",

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/Logo";
+import { ScrollToTop } from "./scroll-top";
 
 /* The frame around sign-up and sign-in.
  *
@@ -37,6 +38,7 @@ export function AuthShell({
 
   return (
     <main className="app-type flex min-h-dvh flex-col items-center bg-mist px-5 py-10 sm:py-16">
+      <ScrollToTop />
       <Link href="/" className="-my-1 rounded-sm py-1" aria-label="NikahCanada — home">
         <Logo variant="full" className="h-8 sm:h-10" priority />
       </Link>

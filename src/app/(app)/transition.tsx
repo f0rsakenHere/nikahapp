@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { motion } from "motion/react";
+import { ScrollToTop } from "./scroll-top";
 
 /* The content pane, arriving rather than appearing.
  *
@@ -29,6 +30,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24, ease: [0.22, 0.61, 0.36, 1] }}
     >
+      <ScrollToTop />
       {children}
     </motion.div>
   );
