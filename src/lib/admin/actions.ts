@@ -84,7 +84,7 @@ export async function decide(
             "Her wali has not confirmed yet. This profile cannot go live.",
           "multiple-confirmed-guardianships":
             "Her records show two confirmed walis. Fix that before approving.",
-          "wali-not-verified": "Her wali has not been identity-checked yet.",
+          "wali-not-verified": "Her wali has not been identity checked yet.",
         }[goLive.reason],
       };
     }

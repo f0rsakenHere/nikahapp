@@ -154,7 +154,7 @@ export const eventTogether = {
   title: "In line with the Islamic injunctions.",
   body:
     "Our matchmaking procedure was developed through full consultation with Mufti Faisal " +
-    "al-Mahmudi of Darul Iftaa Canada.",
+    "al Mahmudi of Darul Iftaa Canada.",
   cta: { label: "How it works", href: "/how-it-works" },
   /* The template's own tile art was a guitar, a dining table, a curtain
      and a gift box. Replaced with drawn line icons — see SafeguardIcons. */

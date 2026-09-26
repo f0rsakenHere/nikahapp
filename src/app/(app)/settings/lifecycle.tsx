@@ -49,7 +49,7 @@ export function ExportData() {
     <div className="flex flex-col gap-2">
       <p className="text-[18px] leading-[26px] text-text">
         A copy of everything we hold about you, as a JSON file. It does not include your password
-        or your two-factor secret — those are credentials, not information about you.
+        or your two factor secret, those are credentials, not information about you.
       </p>
       <button
         type="button"
@@ -110,7 +110,7 @@ export function WithdrawOrDelete({ status }: { status: string }) {
         <FormError>{eraseState.error}</FormError>
         <p className="text-[18px] leading-[26px] text-text">
           Everything goes: your account, your profile, your wali&apos;s link to you, and our
-          record of the checks we made. Download your data first if you want a copy — afterwards
+          record of the checks we made. Download your data first if you want a copy, afterwards
           we cannot produce one.
         </p>
         <p className="text-[18px] leading-[26px] text-text/70">

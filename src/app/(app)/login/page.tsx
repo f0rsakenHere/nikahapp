@@ -6,7 +6,7 @@ import { safeNext } from "@/lib/auth/redirect";
 import { AuthShell } from "../auth-shell";
 import { LoginForm } from "./form";
 
-export const metadata: Metadata = { title: "Sign in — NikahCanada" };
+export const metadata: Metadata = { title: "Sign in | NikahCanada" };
 
 export default async function LoginPage({
   searchParams,
@@ -26,7 +26,7 @@ export default async function LoginPage({
      end in a redirect to this screen and a message that survives the
      redirect is the only one they will see. */
   const notice = wali
-    ? "Thank you — you are confirmed as her wali. Sign in to see your account."
+    ? "Thank you, you are confirmed as her wali. Sign in to see your account."
     : reset
     ? "Your password has been reset. Sign in with the new one."
     : changed

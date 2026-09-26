@@ -14,7 +14,7 @@ import {
 } from "@/components/app/icons";
 import { AppFrame } from "../frame";
 
-export const metadata: Metadata = { title: "Notifications — NikahCanada" };
+export const metadata: Metadata = { title: "Notifications | NikahCanada" };
 
 const when = (d: Date) =>
   new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" })

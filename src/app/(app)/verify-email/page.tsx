@@ -6,7 +6,7 @@ import { findProfileByUserId } from "@/lib/repositories/profiles";
 import { AuthShell } from "../auth-shell";
 
 export const metadata: Metadata = {
-  title: "Confirm your email — NikahCanada",
+  title: "Confirm your email | NikahCanada",
   robots: { index: false, follow: false },
 };
 
@@ -34,7 +34,7 @@ export default async function VerifyEmailPage({
     invalid: {
       title: "That link did not work",
       blurb:
-        "It may have expired, or been used already — each link works once. Sign in and ask for a new one.",
+        "It may have expired, or been used already, each link works once. Sign in and ask for a new one.",
     },
   }[result];
 

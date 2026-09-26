@@ -12,7 +12,7 @@ import { MfaSection } from "./mfa";
 import { ExportData, PauseOrResume, WithdrawOrDelete } from "./lifecycle";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
 
-export const metadata: Metadata = { title: "Your account — NikahCanada" };
+export const metadata: Metadata = { title: "Your account | NikahCanada" };
 
 /* `break-inside-avoid` and a margin rather than a grid gap: the layout
    below is CSS columns, and a card that splits across the fold is worse
@@ -101,7 +101,7 @@ export default async function SettingsPage() {
 
         {/* ------------------------------------------------ two-factor -- */}
         <section className={PANEL}>
-          <h2 className={PANEL_TITLE}>Two-factor authentication</h2>
+          <h2 className={PANEL_TITLE}>Two factor authentication</h2>
           <MfaSection enabled={user.mfa.enabled} required={mfaRequired(user.roles)} />
         </section>
 
@@ -129,7 +129,7 @@ export default async function SettingsPage() {
               than the rows above it. */}
           {signedInOn > sessions.length ? (
             <p className="text-[18px] leading-[26px] text-text/70">
-              {signedInOn - sessions.length} older sign-in
+              {signedInOn - sessions.length} older sign in
               {signedInOn - sessions.length === 1 ? " is" : "s are"} not shown. Signing out
               everywhere ends all {signedInOn}.
             </p>

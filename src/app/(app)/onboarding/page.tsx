@@ -11,7 +11,7 @@ import { Check } from "@/components/app/kit";
 import { ConfirmEmail } from "@/components/app/confirm-email";
 import { AppFrame } from "../frame";
 
-export const metadata: Metadata = { title: "Your profile — NikahCanada" };
+export const metadata: Metadata = { title: "Your profile | NikahCanada" };
 
 /* Progress, and the way back into whichever step is unfinished.
  *
@@ -93,7 +93,7 @@ export default async function OnboardingPage({
            says what is actually true of the wait instead. */
         <div className="mb-7 rounded-md border border-soft-green bg-mist px-4 py-4">
           <p className="text-[18px] font-semibold text-black">
-            {submitted ? "Thank you — we have it." : "With our team"}
+            {submitted ? "Thank you, we have it." : "With our team"}
           </p>
           <p className="mt-2 text-[18px] leading-[26px] text-text">
             {profile.gender === "sister"

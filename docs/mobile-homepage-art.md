@@ -1,0 +1,7 @@
+# Mobile homepage hero artwork
+
+Generated using the built-in image generation tool. The source is saved as `public/images/mobile-mosque-blossoms.png`; both the mobile and desktop homepage use the optimized `public/images/mobile-mosque-blossoms.webp` version. Desktop fits the full scene to the hero height, with an ivory gradient behind the copy.
+
+## Generation prompt
+
+Use case: ads-marketing. Create a photorealistic background asset for the mobile hero of a Muslim marriage website, matching an elegant ivory-and-coral marriage landing page. Landscape 3:2 composition, high resolution. A tranquil sunlit white mosque with a soft blue-gray dome and a slender minaret in the middle distance on the RIGHT third, viewed through the edge of an ornate warm sandstone Islamic arch at the upper-right corner. Delicate white and very pale blush pink spring blossoms on branches fill the lower-right foreground, with natural green foliage behind them. Soft pale-blue sky, golden morning light, peaceful romantic atmosphere, tasteful airy architectural photography, slightly softened depth of field. IMPORTANT COMPOSITION: the LEFT 60 percent must be calm, almost blank warm ivory (#faf8f1), smoothly blending into the scenic photography at the right; the bottom left must stay pale ivory too for a coral call-to-action overlay. Keep the dome, minaret, arch and blossoms visible in the right 35-40 percent. This is BACKGROUND ART ONLY, with NO words, NO logo, NO text, NO buttons, NO graphic icons, NO phone, NO screen, NO borders, NO people and NO watermarks.

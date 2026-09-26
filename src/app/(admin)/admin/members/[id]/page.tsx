@@ -21,16 +21,16 @@ import { ChecksPanel } from "./checks";
 import { listVerificationsFor } from "@/lib/repositories/verifications";
 import { verificationGaps } from "@/lib/domain/verification";
 
-export const metadata: Metadata = { title: "Member — NikahCanada staff" };
+export const metadata: Metadata = { title: "Member | NikahCanada staff" };
 
 const date = (d: Date | null | undefined) =>
-  d ? new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(d) : "—";
+  d ? new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(d) : "Not provided";
 
 function Row({ label, value }: { label: string; value: string | number | undefined | null }) {
   return (
     <div className="flex justify-between gap-6 border-b border-soft-green/70 py-2">
       <span className="text-[12px] uppercase tracking-[0.6px] text-text/60">{label}</span>
-      <span className="text-right text-[13px] text-black">{value ?? "—"}</span>
+      <span className="text-right text-[13px] text-black">{value ?? "Not provided"}</span>
     </div>
   );
 }
@@ -80,7 +80,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
 
   return (
     <AdminShell
-      title={`${profile.initials ?? "—"} · ${profile.gender === "sister" ? "Sister" : "Brother"}`}
+      title={`${profile.initials ?? "?"} · ${profile.gender === "sister" ? "Sister" : "Brother"}`}
       subtitle={`${profile.status} · ${progress.percent}% complete · ${stepsFor(profile.gender).length} steps`}
       user={staffUser}
       back={{ href: "/admin", label: "Back to the queue" }}
@@ -138,7 +138,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
             ) : outstanding ? (
               <p className="text-[13px] leading-[20px] text-peach-deep">
                 Invited {date(outstanding.invited.invitedAt)} to {outstanding.invited.email}. Not
-                confirmed — her profile cannot go live.
+                confirmed, her profile cannot go live.
               </p>
             ) : (
               <p className="text-[13px] text-peach-deep">No wali named.</p>
@@ -150,7 +150,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
 
         <Section title="In their own words">
           <p className="whitespace-pre-wrap text-[13px] leading-[21px] text-black">
-            {profile.freeText.aboutMe || "—"}
+            {profile.freeText.aboutMe || "Not provided"}
           </p>
         </Section>
 

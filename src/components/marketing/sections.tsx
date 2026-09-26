@@ -1,139 +1,66 @@
 import Link from "next/link";
 import { closing, faq, hero, howItWorks, marks, why } from "@/content/landing";
-import { ArrowIcon, ICONS, type IconName } from "./icons";
-
-/* The homepage, in five movements.
- *
- * One rail (`shell`) holds every section to the same left edge, and the
- * page alternates ivory and mist grounds rather than drawing boxes
- * around things — the old homepage put a card around each of nine
- * sections, which flattened everything to the same importance.
- *
- * The arch is the one ornament. It is the shape of a mihrab reduced to
- * two lines, drawn in the hero and echoed nowhere else, so it reads as
- * this service's mark rather than as decoration sprinkled through.
- */
-
-const shell = "mx-auto w-full max-w-[1180px] px-5 sm:px-8";
-
-/* ------------------------------------------------------------- hero -- */
-
-function Arch() {
-  return (
-    <svg
-      viewBox="0 0 420 520"
-      aria-hidden
-      className="pointer-events-none absolute -right-20 top-0 hidden h-full w-auto text-soft-peach lg:block"
-      preserveAspectRatio="xMaxYMid slice"
-    >
-      <defs>
-        <linearGradient id="arch-fade" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="currentColor" stopOpacity="0.9" />
-          <stop offset="0.7" stopColor="currentColor" stopOpacity="0.35" />
-          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {/* Three nested pointed arches — a mihrab reduced to its outline.
-          Stroked, never filled, and drawn once on this page only, so it
-          reads as a mark rather than as wallpaper. */}
-      <path d="M36 520V250C36 132 118 44 210 22c92 22 174 110 174 228v270" fill="none" stroke="url(#arch-fade)" strokeWidth="1.4" />
-      <path d="M92 520V268c0-92 54-164 118-182 64 18 118 90 118 182v252" fill="none" stroke="url(#arch-fade)" strokeWidth="1.4" />
-      <path d="M148 520V288c0-62 28-110 62-122 34 12 62 60 62 122v232" fill="none" stroke="url(#arch-fade)" strokeWidth="1.4" />
-    </svg>
-  );
-}
+import { ArrowIcon, ChevronIcon, ICONS, type IconName } from "./icons";
+import { FaqAccordion } from "./FaqAccordion";
+import { MarketingLogo } from "./MarketingLogo";
 
 export function Hero({ signedIn }: { signedIn: boolean }) {
   const cta = signedIn ? hero.signedIn : hero.cta;
-
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-mist/70 to-white">
-      <Arch />
-      <div className={`${shell} relative pb-12 pt-14 sm:pb-14 sm:pt-18 lg:pb-16 lg:pt-24`}>
-        <div className="max-w-[640px]">
-          <h1 className="font-playfair text-[clamp(2.75rem,8vw,4.5rem)] font-bold leading-[0.98] tracking-[-0.02em] text-black">
-            <span className="block">{hero.question.plain}</span>
-            <span className="block text-peach-deep">{hero.question.accent}</span>
-          </h1>
-
-          <p className="mt-6 font-playfair text-[clamp(1.5rem,4vw,2rem)] font-semibold leading-tight text-black">
-            {hero.welcome}
-          </p>
-          <p className="mt-3 font-playfair text-[clamp(1.125rem,3vw,1.5rem)] italic leading-snug text-accent-deep">
-            {hero.line}
-          </p>
-
-          <p className="mt-6 max-w-[46ch] font-jost text-[18px] leading-[28px] text-text">
-            {hero.body}
-          </p>
-
-          <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
-            <Link
-              href={cta.href}
-              className="group inline-flex h-14 items-center gap-3 rounded-pill bg-peach pl-7 pr-6 font-jost text-[18px] font-semibold leading-none text-black transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-16px_rgba(156,66,45,0.85)]"
-            >
-              {cta.label}
-              <ArrowIcon className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
-            </Link>
-            {signedIn ? null : (
-              <Link
-                href="/login"
-                className="font-jost text-[18px] text-accent-deep underline-offset-4 hover:underline"
-              >
-                Already a member? Sign in
-              </Link>
-            )}
-          </div>
+    <section id="top" className="landing-hero">
+      <div className="landing-shell landing-hero-inner">
+        <div className="landing-hero-copy">
+          <h1><span>{hero.question.plain}</span><span>{hero.question.accent}</span></h1>
+          <p className="landing-welcome">{hero.welcome}</p>
+          <p className="landing-intro">Begin your journey toward<br className="landing-desktop-break" /> completing half of your faith.</p>
+          <p className="landing-description">{hero.body}</p>
+          <Link href={cta.href} className="landing-button landing-profile-button">
+            <span>{cta.label}</span><span className="landing-button-arrow" aria-hidden="true"><ArrowIcon /></span>
+          </Link>
         </div>
-
-        <ul className="mt-12 flex flex-wrap items-center gap-x-8 gap-y-4 border-t border-soft-green pt-6">
-          {marks.map((m) => {
-            const Icon = ICONS[m.icon as IconName];
-            return (
-              <li key={m.label} className="flex items-center gap-2.5">
-                <Icon className="h-5 w-5 text-peach-deep" />
-                <span className="font-jost text-[18px] text-text">{m.label}</span>
-              </li>
-            );
-          })}
-        </ul>
       </div>
     </section>
   );
 }
 
-/* ----------------------------------------------------- how it works -- */
+export function TrustMarks() {
+  return (
+    <div className="landing-shell landing-trust">
+      <ul className="landing-marks" aria-label="Our approach">
+        {marks.map((mark) => {
+          const Icon = ICONS[mark.icon as IconName];
+          return <li key={mark.label}><Icon /><span>{mark.label}</span></li>;
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function Ornament() {
+  return <div className="landing-ornament" aria-hidden="true"><span /><i /><span /></div>;
+}
 
 export function HowItWorks() {
   return (
-    <section id="how" className="scroll-mt-20 bg-white py-14 sm:py-20">
-      <div className={shell}>
-        <h2 className="font-playfair text-[clamp(2rem,5vw,2.75rem)] font-bold leading-tight tracking-[-0.02em] text-black">
-          {howItWorks.title}
-        </h2>
-
-        <ol className="mt-10 grid grid-cols-1 gap-x-10 gap-y-12 sm:grid-cols-2 lg:mt-14 lg:grid-cols-3">
-          {howItWorks.steps.map((s) => {
-            const Icon = ICONS[s.icon as IconName];
+    <section id="how" className="landing-steps landing-shell" aria-labelledby="landing-how-title">
+      <div className="landing-steps-panel">
+        <h2 id="landing-how-title"><span className="landing-desktop-only">{howItWorks.title}</span><span className="landing-mobile-only">{howItWorks.mobileTitle}</span></h2>
+        <Ornament />
+        <p className="landing-steps-intro landing-mobile-only">{howItWorks.mobileIntro}</p>
+        <ol className="landing-step-grid">
+          {howItWorks.steps.map((step) => {
+            const Icon = ICONS[step.icon as IconName];
             return (
-              <li key={s.n} className="relative">
-                {/* The numeral rides the circle rather than sitting
-                    beside it: two marks at the same size read as two
-                    things, and the step is one. */}
-                <div className="relative w-16">
-                  <span className="grid h-16 w-16 place-items-center rounded-full bg-soft-peach/55 text-peach-deep">
-                    <Icon className="h-8 w-8" />
-                  </span>
-                  <span className="absolute -left-2 -top-2 grid h-8 w-8 place-items-center rounded-full bg-peach font-jost text-[18px] font-semibold leading-none text-black">
-                    {s.n}
-                  </span>
+              <li key={step.n}>
+                <div className={`landing-step-illustration landing-step-${step.n}`}>
+                  <span className="landing-step-number">{step.n}</span><Icon />
                 </div>
-                <h3 className="mt-5 font-playfair text-[22px] font-bold leading-snug text-black">
-                  {s.title}
-                </h3>
-                <p className="mt-2.5 max-w-[42ch] font-jost text-[18px] leading-[28px] text-text">
-                  {s.body}
-                </p>
+                <div className="landing-step-copy">
+                  <h3>{step.n === 1 ? <>Create Your Profile<br className="landing-desktop-only" />{" "}for Free</> : step.n === 2 ? <>Search for a<br className="landing-desktop-only" />{" "}Compatible Spouse</> : <>Express Interest<br className="landing-desktop-only" />{" "}&amp; Connect</>}</h3>
+                  <p><span className="landing-desktop-only">{step.body}</span><span className="landing-mobile-only">{step.mobileBody}</span></p>
+                </div>
+                {step.n < 3 && <ArrowIcon className="landing-step-arrow" />}
+                <Link href={step.n === 1 ? "/register" : "/how-it-works"} className="landing-mobile-only landing-step-details" aria-label={step.n === 1 ? "Create your free profile" : `Learn how to ${step.title.toLowerCase()}`}><ChevronIcon /></Link>
               </li>
             );
           })}
@@ -143,87 +70,90 @@ export function HowItWorks() {
   );
 }
 
-/* -------------------------------------------------------------- why -- */
-
 export function Why() {
   return (
-    <section id="why" className="scroll-mt-20 bg-mist/70 py-16 sm:py-24">
-      <div className={shell}>
-        <div className="max-w-[640px]">
-          <h2 className="font-playfair text-[clamp(2rem,5vw,2.75rem)] font-bold leading-tight tracking-[-0.02em] text-black">
-            {why.title}
-          </h2>
-          <p className="mt-4 font-jost text-[18px] leading-[28px] text-text">{why.blurb}</p>
-        </div>
-
-        <ul className="mt-10 grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2 lg:mt-14 lg:grid-cols-4">
-          {why.points.map((p) => {
-            const Icon = ICONS[p.icon as IconName];
-            return (
-              <li key={p.title}>
-                <Icon className="h-7 w-7 text-accent-deep" />
-                <h3 className="mt-4 font-jost text-[18px] font-semibold leading-snug text-black">
-                  {p.title}
-                </h3>
-                <p className="mt-2 font-jost text-[18px] leading-[28px] text-text">{p.body}</p>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+    <section id="why" className="landing-values landing-shell" aria-label="Why NikahCanada">
+      <ul>
+        {why.points.map((point, index) => {
+          const Icon = ICONS[point.icon as IconName];
+          return (
+            <li key={point.title}>
+              <span className={`landing-value-icon ${index % 2 ? "is-coral" : "is-sage"}`}><Icon /></span>
+              <h3>{point.title}</h3><span className="landing-value-rule" aria-hidden="true" />
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }
-
-/* -------------------------------------------------------------- faq -- */
 
 export function Faq() {
   return (
-    <section id="faq" className="scroll-mt-20 bg-white py-16 sm:py-24">
-      <div className={shell}>
-        <h2 className="font-playfair text-[clamp(2rem,5vw,2.75rem)] font-bold leading-tight tracking-[-0.02em] text-black">
-          {faq.title}
-        </h2>
-
-        <dl className="mt-10 grid grid-cols-1 gap-x-14 gap-y-8 lg:grid-cols-2">
-          {faq.items.map((item) => (
-            <div key={item.q} className="border-t border-soft-green pt-5">
-              <dt className="font-jost text-[18px] font-semibold leading-none text-black">{item.q}</dt>
-              <dd className="mt-2 max-w-[62ch] font-jost text-[18px] leading-[28px] text-text">
-                {item.a}
-              </dd>
-            </div>
-          ))}
-        </dl>
+    <section id="faq" className="landing-faq landing-shell" aria-labelledby="landing-faq-title">
+      <div className="landing-faq-panel">
+        <div className="landing-faq-intro">
+          <span className="landing-faq-eyebrow">Here to help</span>
+          <h2 id="landing-faq-title">{faq.title}</h2>
+          <p>Learn about profiles, privacy, and connecting with someone for marriage.</p>
+          <Link href="/how-it-works" className="landing-faq-link">Explore how it works<ArrowIcon /></Link>
+        </div>
+        <FaqAccordion items={faq.items} />
       </div>
     </section>
   );
 }
 
-/* ---------------------------------------------------------- closing -- */
-
 export function Closing({ signedIn }: { signedIn: boolean }) {
   if (signedIn) return null;
-
   return (
-    <section className="bg-mist/70 py-16 sm:py-20">
-      <div className={`${shell} flex flex-col items-start gap-6 lg:flex-row lg:items-center lg:justify-between`}>
-        <div>
-          <h2 className="font-playfair text-[clamp(1.75rem,4vw,2.25rem)] font-bold leading-tight tracking-[-0.02em] text-black">
-            {closing.title}
-          </h2>
-          <p className="mt-3 max-w-[52ch] font-jost text-[18px] leading-[28px] text-text">
-            {closing.body}
-          </p>
-        </div>
-        <Link
-          href={closing.cta.href}
-          className="group inline-flex h-14 shrink-0 items-center gap-3 rounded-pill bg-peach pl-7 pr-6 font-jost text-[18px] font-semibold leading-none text-black transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_-16px_rgba(156,66,45,0.85)]"
-        >
-          {closing.cta.label}
-          <ArrowIcon className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-1" />
-        </Link>
-      </div>
+    <section className="landing-closing landing-shell">
+      <h2>{closing.title}</h2><p>{closing.body}</p>
+      <Link href={closing.cta.href} className="landing-button">{closing.cta.label}<span className="landing-button-arrow" aria-hidden="true"><ArrowIcon /></span></Link>
+      <p className="landing-login">Already a member? <Link href="/login">Sign in</Link></p>
     </section>
+  );
+}
+
+export function LandingFooter() {
+  const MapleLeaf = ICONS.leaf;
+  return (
+    <footer className="landing-footer">
+      <div className="landing-shell landing-footer-inner">
+        <div className="landing-footer-grid">
+          <div className="landing-footer-brand">
+            <Link href="/" className="landing-footer-logo-link" aria-label="NikahCanada home">
+              <MarketingLogo tone="white" className="landing-footer-logo" />
+            </Link>
+            <p>A thoughtful path to marriage, with faith and family at the heart of your journey.</p>
+            <span className="landing-footer-location"><MapleLeaf />Serving Muslims across Canada</span>
+          </div>
+          <nav aria-label="Explore NikahCanada">
+            <h3 className="landing-footer-heading">Explore</h3>
+            <ul>
+              <li><Link href="/how-it-works">How it works</Link></li>
+              <li><Link href="/pricing">Pricing</Link></li>
+              <li><Link href="/#why">Why NikahCanada</Link></li>
+              <li><Link href="/#faq">Common questions</Link></li>
+            </ul>
+          </nav>
+          <nav aria-label="Account links">
+            <h3 className="landing-footer-heading">Your journey</h3>
+            <ul>
+              <li><Link href="/register">Create your profile</Link></li>
+              <li><Link href="/login">Sign in</Link></li>
+              <li><Link href="/dashboard">Your account</Link></li>
+            </ul>
+          </nav>
+        </div>
+        <div className="landing-footer-bottom">
+          <p>© {new Date().getFullYear()} NikahCanada. All rights reserved.</p>
+          <div className="landing-footer-bottom-links">
+            <nav aria-label="Legal"><Link href="/legal/privacy">Privacy</Link><Link href="/legal/terms">Terms</Link></nav>
+            <Link href="#top" className="landing-footer-top">Back to top<ArrowIcon /></Link>
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 }

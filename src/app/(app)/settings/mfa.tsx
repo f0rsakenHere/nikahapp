@@ -46,7 +46,7 @@ export function MfaSection({ enabled, required }: { enabled: boolean; required: 
             setPending(false);
           }}
         >
-          {pending ? "One moment…" : "Set up two-factor"}
+          {pending ? "One moment…" : "Set up two factor"}
         </button>
       </div>
     );
@@ -89,7 +89,7 @@ export function MfaSection({ enabled, required }: { enabled: boolean; required: 
         />
       </label>
 
-      <SubmitButton>Turn on two-factor</SubmitButton>
+      <SubmitButton>Turn on two factor</SubmitButton>
     </form>
   );
 }

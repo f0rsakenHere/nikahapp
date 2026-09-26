@@ -156,7 +156,7 @@ export function MutualInterest() {
   const timeline = [
     { label: "You sent a connection", meta: "Tuesday, 14:02", done: true },
     { label: "He accepted", meta: "Tuesday, 19:41", done: true },
-    { label: "Awaiting your wali's approval", meta: "Ahmed Al-Rashid · notified", done: false },
+    { label: "Awaiting your wali's approval", meta: "Ahmed Al Rashid · notified", done: false },
     { label: "Conversation opens", meta: "Once approved", done: false },
   ];
 

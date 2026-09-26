@@ -10,7 +10,7 @@ import { GuardianStep } from "./guardian";
 import { hasConfirmedWali, listGuardianshipsForMember } from "@/lib/repositories/guardianships";
 import { readSettings } from "@/lib/repositories/connections";
 
-export const metadata: Metadata = { title: "Your profile — NikahCanada" };
+export const metadata: Metadata = { title: "Your profile | NikahCanada" };
 
 /** Flattens the draft to the `section.key` paths the specs use. */
 function valuesOf(profile: ProfileDraft): Record<string, unknown> {

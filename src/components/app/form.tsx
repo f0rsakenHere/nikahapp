@@ -464,7 +464,7 @@ export function DevLink({ href }: { href?: string }) {
   return (
     <div className="rounded-md border-2 border-dashed border-peach-deep/50 bg-soft-peach/40 px-3.5 py-3">
       <p className="text-[18px] font-semibold uppercase tracking-[0.6px] text-peach-deep">
-        No email service — link shown here instead
+        No email service, link shown here instead
       </p>
       <a href={href} className="mt-1 block break-all text-[18px] leading-[26px] text-black underline">
         {href}

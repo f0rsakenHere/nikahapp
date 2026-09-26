@@ -167,7 +167,7 @@ export const STEP_FIELDS: Record<Exclude<StepId, "guardian">, FieldSpec[]> = {
       kind: "textarea",
       label: "About you",
       max: 4000,
-      hint: "In your own words. This is what a match reads first — take your time with it.",
+      hint: "In your own words. This is what a match reads first, take your time with it.",
     },
   ],
 

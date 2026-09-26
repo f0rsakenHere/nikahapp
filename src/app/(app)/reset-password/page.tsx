@@ -4,7 +4,7 @@ import { AuthShell } from "../auth-shell";
 import { ResetPasswordForm } from "./form";
 
 export const metadata: Metadata = {
-  title: "Choose a new password — NikahCanada",
+  title: "Choose a new password | NikahCanada",
   robots: { index: false, follow: false },
 };
 

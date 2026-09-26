@@ -208,7 +208,7 @@ ${preheader(preview)}
           <td class="band" align="center" bgcolor="${INK.deep}" style="padding:30px 24px;border-radius:14px 14px 0 0;">
             <a href="${esc(origin)}" style="text-decoration:none;">
               <img src="${esc(origin)}/brand/nikahcanada-lockup-white.png"
-                   width="196" alt="NikahCanada — a halal matrimony service"
+                   width="196" alt="NikahCanada, a halal matrimony service"
                    style="display:block;width:196px;max-width:196px;height:auto;border:0;">
             </a>
           </td>
@@ -227,7 +227,7 @@ ${content}
         <tr>
           <td align="center" style="padding:24px 20px 0;">
             <p style="margin:0 0 6px;font-family:${SANS};font-size:13px;line-height:21px;color:#6f6f6f;">
-              NikahCanada — a halal matrimony service.<br>
+              NikahCanada, a halal matrimony service.<br>
               Based in Montreal, operating across Canada.
             </p>
             <p style="margin:0;font-family:${SANS};font-size:12px;line-height:20px;color:#8a8a8a;">
@@ -291,7 +291,7 @@ ${paragraph("Someone asked to reset the password on this address. If that was yo
 ${button("Choose a new password", o.link)}
 ${fallbackLink(o.link)}
 ${note(
-  "The link works once and expires in an hour. If it was not you, you can ignore this — nothing has changed, and your password still works."
+  "The link works once and expires in an hour. If it was not you, you can ignore this, nothing has changed, and your password still works."
 )}`,
     }),
   };
@@ -312,7 +312,7 @@ ${paragraph(
   "Your password was changed just now, and you have been signed out everywhere else."
 )}
 ${paragraph(
-  `If this was not you, reset your password immediately and contact us — <a href="${esc(
+  `If this was not you, reset your password immediately and contact us, <a href="${esc(
     o.origin
   )}/forgot-password" style="color:${INK.deep};font-weight:600;text-decoration:underline;">start here</a>.`
 )}`,

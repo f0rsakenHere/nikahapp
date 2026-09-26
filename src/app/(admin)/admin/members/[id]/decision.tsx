@@ -9,7 +9,7 @@ const EMPTY: DecisionState = {};
 const OUTCOMES = [
   {
     value: "live",
-    label: "Approve — the profile goes live",
+    label: "Approve: the profile goes live",
     tone: "text-accent-deep",
   },
   {
@@ -47,7 +47,7 @@ export function DecisionForm({
   if (status !== "pendingReview" && status !== "verifying") {
     return (
       <p className="text-[13px] text-text">
-        Already decided — this profile is <strong>{status}</strong>.
+        Already decided. This profile is <strong>{status}</strong>.
       </p>
     );
   }

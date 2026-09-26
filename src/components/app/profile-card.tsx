@@ -139,7 +139,7 @@ export function ProfileCard({
         }`}
       >
         <span className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-2xl bg-soft-peach font-manrope text-[18px] font-bold text-peach-deep">
-          {c.initials ?? "—"}
+          {c.initials ?? "?"}
         </span>
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <span className="font-manrope text-[22px] font-bold leading-tight text-black">{who}</span>

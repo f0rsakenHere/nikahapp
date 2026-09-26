@@ -4,10 +4,10 @@ import { requireStaff } from "@/lib/admin/actions";
 import { listQueue } from "@/lib/repositories/profiles";
 import { AdminShell } from "../shell";
 
-export const metadata: Metadata = { title: "Review queue — NikahCanada staff" };
+export const metadata: Metadata = { title: "Review queue | NikahCanada staff" };
 
 function waitingFor(since: Date | null): string {
-  if (!since) return "—";
+  if (!since) return "Not provided";
   const hours = Math.floor((Date.now() - since.getTime()) / 3_600_000);
   if (hours < 1) return "just now";
   if (hours < 24) return `${hours}h`;
@@ -54,16 +54,16 @@ export default async function QueuePage() {
                     {/* Initials, not a name. Nothing on this screen needs
                         a legal name, and reading one is an audited event
                         — so the queue does not casually spend one. */}
-                    {row.initials ?? "—"}
+                    {row.initials ?? "?"}
                   </span>
                   <span className="ml-2 text-[12px] text-text/70">
                     {row.gender === "sister" ? "Sister" : "Brother"}
                   </span>
                 </td>
                 <td className="py-3 pr-3 text-[13px] text-text">
-                  {[row.city, row.province].filter(Boolean).join(", ") || "—"}
+                  {[row.city, row.province].filter(Boolean).join(", ") || "Not provided"}
                 </td>
-                <td className="py-3 pr-3 text-[13px] text-text">{row.birthYear ?? "—"}</td>
+                <td className="py-3 pr-3 text-[13px] text-text">{row.birthYear ?? "Not provided"}</td>
                 <td className="py-3 pr-3 text-[13px] text-text">{waitingFor(row.submittedAt)}</td>
                 <td className="py-3 text-right">
                   <Link

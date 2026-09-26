@@ -74,7 +74,7 @@ function body(message: Message): string {
         message.link,
         "",
         "The link works once and expires in an hour. If it was not you, you can",
-        "ignore this — nothing has changed.",
+        "ignore this, nothing has changed.",
       ].join("\n");
 
     case "waliInvitation":

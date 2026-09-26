@@ -9,8 +9,9 @@
    ============================================================ */
 
 @theme {
-  --font-playfair: var(--font-playfair-display), Georgia, serif;
-  --font-jost: var(--font-jost-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Keep the existing utility aliases for shared public components. */
+  --font-playfair: var(--font-lora-serif), Georgia, serif;
+  --font-jost: var(--font-manrope-sans), ui-sans-serif, system-ui, sans-serif;
   /* The product's only family. See the note in app/layout.tsx on why the
      app does not borrow the marketing site's display face. */
   --font-manrope: var(--font-manrope-sans), ui-sans-serif, system-ui, sans-serif;
@@ -92,8 +93,8 @@
    ============================================================ */
 
 @theme {
-  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
-  --font-sans: var(--font-jost-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-lora-serif), ui-serif, Georgia, serif;
+  --font-sans: var(--font-manrope-sans), ui-sans-serif, system-ui, sans-serif;
 
   /* ---- Palette ---- */
   --color-ink: #10201a; /* deepest — hero and story grounds */
@@ -208,7 +209,7 @@
   h3 {
     font-family: var(--font-playfair);
     color: #000;
-    font-weight: 700;
+    font-weight: 600;
     text-wrap: balance;
   }
 

@@ -26,6 +26,7 @@ import { SESSION_COOKIE } from "@/lib/auth/cookie";
 const PUBLIC_EXACT = new Set([
   "/",
   "/how-it-works",
+  "/pricing",
   "/register",
   "/login",
   /* All three are reached by someone who cannot sign in — that is the

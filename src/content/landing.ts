@@ -14,9 +14,9 @@ export const hero = {
   welcome: "Welcome to NikahCanada.",
   line: "Begin your journey toward completing half of your faith.",
   body:
-    "A Muslim marriage platform created for people who are sincerely seeking marriage — " +
+    "A Muslim marriage platform created for people who are sincerely seeking marriage, " +
     "not casual dating.",
-  cta: { label: "Create your free profile", href: "/register" },
+  cta: { label: "Create Your Free Profile", href: "/register" },
   signedIn: { label: "Go to your account", href: "/dashboard" },
 };
 
@@ -24,36 +24,39 @@ export const hero = {
    product: the pool is national, the service is for marriage, a sister's
    wali is part of it, and families are welcome to ask. */
 export const marks = [
-  { icon: "leaf", label: "Canada-wide" },
-  { icon: "rings", label: "Marriage-focused" },
-  { icon: "people", label: "Wali-involved" },
-  { icon: "heart", label: "Family-oriented" },
+  { icon: "leaf", label: "Canada wide" },
+  { icon: "mosque", label: "Marriage focused" },
+  { icon: "people", label: "Wali involved" },
+  { icon: "heart", label: "Family oriented" },
 ] as const;
 
 export const howItWorks = {
-  title: "How it works",
+  title: "How It Works",
+  mobileTitle: "Steps to Connect",
+  mobileIntro: "Register for free, search, and connect with Muslims across Canada who are sincerely seeking marriage.",
   steps: [
     {
       n: 1,
       icon: "profile",
-      title: "Create your profile for free",
+      title: "Create Your Profile for Free",
       body:
-        "Tell us where you live, something of your background, and how you practise. " +
-        "It takes about ten minutes and saves as you go.",
+        "Tell us about yourself and what you are looking for in a spouse.",
+      mobileBody: "Tell us about yourself and what you are looking for in a spouse.",
     },
     {
       n: 2,
       icon: "search",
-      title: "Search for a compatible spouse",
-      body: "Browse profiles across Canada, and narrow them by age and province.",
+      title: "Search for a Compatible Spouse",
+      body: "Browse profiles and find compatible Muslim marriage candidates across Canada.",
+      mobileBody: "Browse Muslim marriage profiles based on your preferences.",
     },
     {
       n: 3,
       icon: "connect",
-      title: "Express interest and connect",
+      title: "Express Interest & Connect",
       body:
-        "Send your interest. When it is mutual, a conversation opens between you — " +
-        "and for a sister, her wali sees it too.",
+        "Send your interest. When the interest is mutual, you can begin your conversation.",
+      mobileBody: "When the interest is mutual, continue the conversation with serious marriage intentions.",
     },
   ],
 } as const;
@@ -74,7 +77,7 @@ export const why = {
     },
     {
       icon: "heart",
-      title: "Serious intentions only",
+      title: "Serious marriage intentions only",
       body: "Every member states an intention to marry before they can join. Nobody is here to browse for fun.",
     },
     {
@@ -95,7 +98,7 @@ export const faq = {
     {
       q: "Who can see my profile?",
       a:
-        "Only signed-in members of the service. Nothing is published on the open web, nothing is " +
+        "Only signed in members of the service. Nothing is published on the open web, nothing is " +
         "indexed by search engines, and nothing is sold.",
     },
     {

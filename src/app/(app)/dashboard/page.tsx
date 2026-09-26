@@ -43,7 +43,7 @@ import {
 import { ConfirmEmail } from "@/components/app/confirm-email";
 import { AppFrame } from "../frame";
 
-export const metadata: Metadata = { title: "Your dashboard — NikahCanada" };
+export const metadata: Metadata = { title: "Your dashboard | NikahCanada" };
 
 /* Where a member lands, and where every tab returns to.
  *
@@ -328,7 +328,7 @@ export default async function DashboardPage({
         <div className="mb-5 flex items-start gap-3 rounded-lg border border-accent-deep/30 bg-accent/12 px-4 py-4">
           <ShieldIcon className="mt-0.5 shrink-0 text-[20px] text-accent-deep" />
           <div>
-            <p className="text-[18px] font-semibold text-black">Thank you — we have it.</p>
+            <p className="text-[18px] font-semibold text-black">Thank you, we have it.</p>
             <p className="mt-1 text-[18px] leading-[26px] text-text">
               Nothing else is needed from you today.
             </p>
@@ -429,7 +429,7 @@ export default async function DashboardPage({
                 </p>
                 <div className="mt-5 flex flex-wrap items-center gap-2.5">
                   <Next href={nextStep ? `/onboarding/${nextStep.id}` : "/onboarding"}>
-                    {nextStep ? `Continue — ${nextStep.title}` : "Send it to us"}
+                    {nextStep ? `Continue: ${nextStep.title}` : "Send it to us"}
                   </Next>
                   <Secondary href="/onboarding">All your answers</Secondary>
                 </div>
@@ -448,7 +448,7 @@ export default async function DashboardPage({
                   {canBrowse
                     ? "Your profile is in, and you can see everybody else who is."
                     : waitingOnWali
-                      ? "Everything on your side is done. Your profile is with your wali, and it goes into the pool the moment he confirms — until then nobody can see it, and you cannot see anybody either."
+                      ? "Everything on your side is done. Your profile is with your wali, and it goes into the pool the moment he confirms, until then nobody can see it, and you cannot see anybody either."
                       : "Your profile is with us. You can still change your answers."}
                 </p>
                 <div className="mt-5 flex flex-wrap items-center gap-2.5">

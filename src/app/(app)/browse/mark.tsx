@@ -42,7 +42,7 @@ export function MarkButtons({
         <button
           type="submit"
           aria-pressed={saved}
-          title={saved ? "Saved — press to remove" : "Save to think about"}
+          title={saved ? "Saved. Press to remove" : "Save to think about"}
           className={`flex h-11 w-11 items-center justify-center rounded-full border-2 text-[19px] transition-colors ${
             saved
               ? "border-peach bg-peach text-black"
@@ -58,7 +58,7 @@ export function MarkButtons({
         <button
           type="submit"
           aria-pressed={passed}
-          title={passed ? "Passed — press to undo" : "Not for me"}
+          title={passed ? "Passed. Press to undo" : "Not for me"}
           className={`flex h-11 w-11 items-center justify-center rounded-full border-2 text-[19px] transition-colors ${
             passed
               ? "border-text/40 bg-mist text-text"

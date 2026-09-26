@@ -171,7 +171,7 @@ export async function verifyWali(
   if (!allowed) return { error: "Your account cannot verify a wali." };
 
   const method = String(form.get("method") ?? "").trim();
-  if (!method) return { error: "Say how he was checked — it is the whole point of the record." };
+  if (!method) return { error: "Say how he was checked, it is the whole point of the record." };
 
   const now = new Date();
   const result = await (await getDb())

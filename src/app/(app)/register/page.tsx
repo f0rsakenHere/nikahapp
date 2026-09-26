@@ -7,7 +7,7 @@ import { isStaffActor } from "@/lib/domain/authorisation";
 import { AuthShell } from "../auth-shell";
 import { RegisterForm } from "./form";
 
-export const metadata: Metadata = { title: "Create your account — NikahCanada" };
+export const metadata: Metadata = { title: "Create your account | NikahCanada" };
 
 export default async function RegisterPage() {
   /* Signing up again is not what somebody with an account wants, and

@@ -17,7 +17,7 @@ import {
 import { AppFrame } from "../../frame";
 import { ConnectButton } from "./connect";
 
-export const metadata: Metadata = { title: "A profile — NikahCanada" };
+export const metadata: Metadata = { title: "A profile | NikahCanada" };
 
 const YEAR = new Date().getUTCFullYear();
 
@@ -68,7 +68,7 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
         style={{ borderRadius: "30px 0 30px 0" }}
       >
         <span className="font-manrope text-[20px] font-bold text-peach-deep">
-          {(p.initials as string) ?? "—"}
+          {(p.initials as string) ?? "?"}
         </span>
         <span className="text-[18px] font-semibold text-black">Photograph locked</span>
         <span className="max-w-[240px] text-[18px] leading-[26px] text-text">

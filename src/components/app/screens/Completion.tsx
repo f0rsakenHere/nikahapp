@@ -113,7 +113,7 @@ export function ContactShared() {
             <circle cx="12" cy="12" r="2.6" />
           </svg>
           <span className="text-[11px] leading-[16px] text-black/75">
-            Ahmed Al-Rashid received these same details at the same moment.
+            Ahmed Al Rashid received these same details at the same moment.
           </span>
         </div>
       </div>

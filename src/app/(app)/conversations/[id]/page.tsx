@@ -17,7 +17,7 @@ import { AppFrame } from "../../frame";
 import { ThreadList, threadsFor } from "../thread-list";
 import { Composer, CloseThread } from "./composer";
 
-export const metadata: Metadata = { title: "Conversation — NikahCanada" };
+export const metadata: Metadata = { title: "Conversation | NikahCanada" };
 
 const time = (d: Date) =>
   new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(d);
@@ -59,7 +59,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
       { projection: { userId: 1, initials: 1, gender: 1, "basics.birthYear": 1 } }
     )
     .toArray();
-  const initials = new Map(profiles.map((p) => [String(p.userId), (p.initials as string) ?? "—"]));
+  const initials = new Map(profiles.map((p) => [String(p.userId), (p.initials as string) ?? "?"]));
 
   /* "Sister, 30" beside the initials, everywhere a member appears.
    *
@@ -206,7 +206,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
                    "Brother" is the half that cannot collide. */
                 <span className="mb-1 block text-[18px] font-semibold text-text/70">
                   {described.get(m.fromUserId ?? "") ?? "A member"} ·{" "}
-                  {initials.get(m.fromUserId ?? "") ?? "—"}
+                  {initials.get(m.fromUserId ?? "") ?? "?"}
                 </span>
               ) : null}
               {m.body}

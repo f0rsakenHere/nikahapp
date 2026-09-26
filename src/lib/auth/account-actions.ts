@@ -40,7 +40,7 @@ export async function requestEmailVerification(): Promise<AccountState> {
 
   const devLink = await issueLink("verifyEmail", session.user, "/verify-email", new Date());
   revalidatePath("/settings");
-  return { done: "Check your email — we have sent you a link.", devLink };
+  return { done: "Check your email, we have sent you a link.", devLink };
 }
 
 export type VerifyResult = "verified" | "already" | "invalid";

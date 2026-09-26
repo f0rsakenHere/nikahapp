@@ -98,7 +98,7 @@ export function ProfileDeen() {
 
         <Field
           label="Anything else"
-          placeholder="Optional — in your own words"
+          placeholder="Optional: in your own words"
           hint="Shared with matches, never made public."
         />
       </div>
@@ -134,7 +134,7 @@ export function WaliSetup() {
           </ul>
         </div>
 
-        <Field label="Wali's full name" value="Ahmed Al-Rashid" />
+              <Field label="Wali's full name" value="Ahmed Al Rashid" />
 
         <div className="flex flex-col gap-1.5">
           <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">

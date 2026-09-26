@@ -55,7 +55,7 @@ function ReferenceCall({ v }: { v: Verification }) {
     <form action={action} className="mt-3 flex flex-col gap-2 border-t border-soft-green pt-3">
       <FormError>{state.error}</FormError>
       <p className="text-[12px] text-text">
-        {v.reference?.name ?? "—"}
+        {v.reference?.name ?? "Not provided"}
         {v.reference?.relationship ? ` · ${v.reference.relationship}` : ""}
         {v.reference?.phone ? ` · ${v.reference.phone}` : ""}
       </p>

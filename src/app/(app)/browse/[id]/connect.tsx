@@ -31,7 +31,7 @@ export function ConnectButton({
   if (state.done || existing === "open") {
     return (
       <p className="rounded-md border border-soft-green bg-mist px-4 py-4 text-[18px] leading-[26px] text-black">
-        Your request is with them. You will hear when they answer — and nothing is shared until
+        Your request is with them. You will hear when they answer, and nothing is shared until
         they do.
       </p>
     );

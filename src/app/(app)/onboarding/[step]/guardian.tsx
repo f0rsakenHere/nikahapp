@@ -52,7 +52,7 @@ function WaliFields({ v }: { v: NonNullable<WaliState["values"]> }) {
         label="His full name"
         name="name"
         defaultValue={v.name}
-        placeholder="Ahmed Al-Rashid"
+        placeholder="Ahmed Al Rashid"
         autoComplete="off"
       />
 
@@ -86,7 +86,7 @@ function WaliFields({ v }: { v: NonNullable<WaliState["values"]> }) {
         type="email"
         defaultValue={v.email}
         autoComplete="off"
-        hint="The invitation goes here. Check it carefully — we cannot send it twice to two different addresses."
+        hint="The invitation goes here. Check it carefully, we cannot send it twice to two different addresses."
       />
 
       <TextField
@@ -264,8 +264,8 @@ export function GuardianStep({
         <div className="rounded-md border border-soft-green bg-mist px-4 py-4">
           <p className="text-[18px] font-semibold text-black">If there is nobody you can ask</p>
           <p className="mt-1 text-[18px] leading-[26px] text-text">
-            A NikahCanada moderator can act as your wali. He has exactly the powers listed above —
-            he reads everything and approves before any conversation opens — and you can replace him
+            A NikahCanada moderator can act as your wali. He has exactly the powers listed above,
+            he reads everything and approves before any conversation opens, and you can replace him
             with a relative at any time.
           </p>
           <form action={moderatorAction} className="mt-3">

@@ -43,7 +43,7 @@ export const hero = {
      hero-alhambra.jpg (Alhambra stucco). Swap this one line to try them. */
   image: {
     src: "/images/hero-mosque.jpg",
-    alt: "A white-domed mosque with arcaded arches at dusk",
+    alt: "A white domed mosque with arcaded arches at dusk",
   },
 };
 
@@ -68,7 +68,7 @@ export const why = {
       title: "Find the right match",
       body:
         "We offer a personalised service. Tell us how we can help, explain your preferences, " +
-        "and connect with us. Our service is designed to introduce you to a successful match — " +
+        "and connect with us. Our service is designed to introduce you to a successful match, " +
         "someone who likes your information and picture, and whose information and picture you like as well.",
     },
     {
@@ -119,7 +119,7 @@ export const steps = {
     {
       n: "06",
       title: "Sharing of contact information",
-      body: "Names and contact details are exchanged last, once both parties have paid — which confirms the interest is genuine on both sides.",
+      body: "Names and contact details are exchanged last, once both parties have paid, which confirms the interest is genuine on both sides.",
     },
   ],
   cta: { label: "See the full process", href: "/how-it-works" },
@@ -130,7 +130,7 @@ export const scholars = {
   title: "In line with the Islamic injunctions.",
   body:
     "Our matchmaking procedure was developed through full consultation with " +
-    "Mufti Faisal al-Mahmudi of Darul Iftaa Canada. Our goal is to provide a matchmaking " +
+    "Mufti Faisal al Mahmudi of Darul Iftaa Canada. Our goal is to provide a matchmaking " +
     "experience that stays within the bounds of the Sharia at every stage.",
   measures: [
     "The inclusion of a wali is mandatory for women",
@@ -160,7 +160,7 @@ export const safety = {
     },
     {
       title: "Pictures on consent",
-      body: "Pictures are not necessary when registering and are only requested during matchmaking — then shared only once both parties are satisfied with each other's profile information.",
+      body: "Pictures are not necessary when registering and are only requested during matchmaking, then shared only once both parties are satisfied with each other's profile information.",
     },
     {
       title: "Names shared last",
@@ -211,7 +211,7 @@ export const faq = {
     },
     {
       q: "When is my name shared?",
-      a: "At the very last step. Your name and contact information are not shared until both parties have paid the matchmaking fee — which confirms that your match is genuinely interested in you.",
+      a: "At the very last step. Your name and contact information are not shared until both parties have paid the matchmaking fee, which confirms that your match is genuinely interested in you.",
     },
     {
       q: "Is a wali required?",
@@ -223,7 +223,7 @@ export const faq = {
     },
     {
       q: "Who did you develop the process with?",
-      a: "Our matchmaking procedure was developed through full consultation with Mufti Faisal al-Mahmudi of Darul Iftaa Canada, alongside other traditional scholars.",
+      a: "Our matchmaking procedure was developed through full consultation with Mufti Faisal al Mahmudi of Darul Iftaa Canada, alongside other traditional scholars.",
     },
     {
       q: "Do you operate outside Montreal?",

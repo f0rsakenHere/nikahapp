@@ -25,15 +25,15 @@ export const intro = {
   eyebrow: "How it works",
   title: "Six steps, and a guardian at every one.",
   body:
-    "Nothing here happens quietly. Below is the whole path — from sending us your profile to " +
-    "exchanging contact details — with the screens a member and her wali actually see at each stage.",
+    "Nothing here happens quietly. Below is the whole path, from sending us your profile to " +
+    "exchanging contact details, with the screens a member and her wali actually see at each stage.",
 };
 
 /* The six steps as published on nikahcanada.com. */
 export const spine = [
   { n: "01", label: "Registration", note: "Free. No photograph required." },
   { n: "02", label: "Searching for matches", note: "You browse. We refer as well." },
-  { n: "03", label: "Confirming your address", note: "By email — yours, and her wali's." },
+  { n: "03", label: "Confirming your address", note: "By email, for members and the sister's wali." },
   { n: "04", label: "Matchmaking", note: "Connections, acceptance, the supervised conversation." },
   { n: "05", label: "Matchmaking fee", note: "Charged once, to both sides." },
   { n: "06", label: "Contact information", note: "Names exchanged last." },
@@ -54,11 +54,11 @@ export const stages: {
   screens: ScreenSpec[];
 }[] = [
   {
-    eyebrow: "Steps 01–03",
+    eyebrow: "Steps 01 to 03",
     title: "Applying, and naming a wali",
     body:
-      "Registration is free and asks for no photograph. What it does ask for — before anything " +
-      "else — is whether you are a brother or a sister, because that determines whether a guardian " +
+      "Registration is free and asks for no photograph. What it does ask for, before anything " +
+      "else, is whether you are a brother or a sister, because that determines whether a guardian " +
       "must be registered before the profile can go live.",
     screens: [
       {
@@ -69,9 +69,9 @@ export const stages: {
           "The account is created with an email and an intention. Gender is asked first because it " +
           "decides the shape of everything that follows.",
         pins: [
-          { n: 1, x: 0, y: 18, text: "No photograph is requested anywhere in sign-up, matching the live service." },
+          { n: 1, x: 0, y: 18, text: "No photograph is requested anywhere in sign up, matching the live service." },
           { n: 2, x: 0, y: 38, text: "Choosing “A sister” adds the wali step to onboarding. For a brother it is skipped." },
-          { n: 3, x: 0, y: 74, text: "The marriage-only intention is agreed here, in plain words, not buried in terms." },
+          { n: 3, x: 0, y: 74, text: "The marriage only intention is agreed here, in plain words, not buried in terms." },
         ],
       },
       {
@@ -79,17 +79,17 @@ export const stages: {
         step: "Step 01",
         label: "Building the profile",
         what:
-          "Five steps. This is the third — how you practise — which is the section a match reads " +
+          "Five steps. This is the third, how you practise, which is the section a match reads " +
           "before anything else.",
         pins: [
           { n: 1, x: 0, y: 9, text: "Progress is always visible; the profile can be finished across several sittings." },
           { n: 2, x: 0, y: 28, text: "Salah and dress are structured fields, so matching can genuinely use them." },
-          { n: 3, x: 0, y: 80, text: "Free text is optional and shared only with a match — never published." },
+          { n: 3, x: 0, y: 80, text: "Free text is optional and shared only with a match, never published." },
         ],
       },
       {
         id: "wali",
-        step: "Steps 02–03",
+        step: "Steps 02 to 03",
         label: "Registering the wali",
         what:
           "Shown to sisters only. His details are taken and he is emailed an invitation. Her profile " +
@@ -97,7 +97,7 @@ export const stages: {
         pins: [
           { n: 1, x: 0, y: 22, text: "His four powers are spelled out before a single detail is asked for." },
           { n: 2, x: 0, y: 62, text: "The relationship is recorded, so a match can see who the wali actually is." },
-          { n: 3, x: 0, y: 88, text: "He confirms by email. Until then she appears to nobody — not in browsing, and not in a referral." },
+          { n: 3, x: 0, y: 88, text: "He confirms by email. Until then she appears to nobody, not in browsing, and not in a referral." },
         ],
       },
     ],
@@ -106,7 +106,7 @@ export const stages: {
     eyebrow: "Step 04",
     title: "Browsing, and asking to talk",
     body:
-      "You can look through the pool, and be looked through in turn. Asking costs nothing — what is " +
+      "You can look through the pool, and be looked through in turn. Asking costs nothing, what is " +
       "deliberately limited is how many people you may approach in a week, so the pace stays " +
       "considered rather than endless. A photograph exists in the interface only as a locked slot " +
       "until both sides have agreed.",
@@ -119,7 +119,7 @@ export const stages: {
           "The home screen. Looking and asking are both free; what is bounded is how many people you " +
           "may approach in a week, so the pace stays deliberate rather than endless.",
         pins: [
-          { n: 1, x: 0, y: 10, text: "Every member here has passed the identity and reference check. The pool is closed — nothing is visible from outside the service." },
+          { n: 1, x: 0, y: 10, text: "Every member here has passed the identity and reference check. The pool is closed, nothing is visible from outside the service." },
           { n: 2, x: 100, y: 21, text: "Asks remaining this week, always visible. Looking and asking are free; the number of people you approach is what is limited." },
           { n: 3, x: 0, y: 34, text: "Members appear as initials only. No names and no photographs on this screen." },
         ],
@@ -129,12 +129,12 @@ export const stages: {
         step: "Step 04",
         label: "Reading a profile",
         what:
-          "Everything needed to make a decision is present except the photograph — deen, family, " +
+          "Everything needed to make a decision is present except the photograph, deen, family, " +
           "education, work, and what he says about himself.",
         pins: [
           { n: 1, x: 0, y: 24, text: "The photo slot is visible but locked, with the rule written on it rather than hidden in a policy." },
           { n: 2, x: 0, y: 80, text: "Nothing on the card is anything but what the member answered themselves." },
-          { n: 3, x: 100, y: 93, text: "“Ask to talk” is the only way forward, and it carries no message — there is nothing to write until she has said yes." },
+          { n: 3, x: 100, y: 93, text: "“Ask to talk” is the only way forward, and it carries no message, there is nothing to write until she has said yes." },
         ],
       },
       {
@@ -157,7 +157,7 @@ export const stages: {
     title: "Talking, with the wali in the room",
     body:
       "Her wali approved her profile before anybody could see it, so his consent is already given " +
-      "and the two of them do not wait again. He receives a copy of everything they say — a " +
+      "and the two of them do not wait again. He receives a copy of everything they say, a " +
       "participant rather than a bystander, with his own account, his own view, and the ability to " +
       "end things at any point.",
     screens: [
@@ -167,7 +167,7 @@ export const stages: {
         label: "The conversation",
         what:
           "The wali reads every word of this. Both members see the same banner naming him, pinned " +
-          "under the header — there is no version of this where he is reading and they do not know.",
+          "under the header, there is no version of this where he is reading and they do not know.",
         pins: [
           { n: 1, x: 0, y: 13, text: "The banner cannot be dismissed or minimised by either side." },
           { n: 2, x: 0, y: 23, text: "A system message records when he joined the thread, with the time." },
@@ -179,25 +179,25 @@ export const stages: {
         step: "For guardians",
         label: "The wali's own account",
         what:
-          "He signs in separately. This is his home screen — everything concerning the woman he is " +
+          "He signs in separately. This is his home screen, everything concerning the woman he is " +
           "wali for, in one place.",
         pins: [
           { n: 1, x: 0, y: 28, text: "Every conversation she is having appears here the moment it opens." },
           { n: 2, x: 100, y: 55, text: "He can open and read any conversation in full, at any time." },
-          { n: 3, x: 0, y: 76, text: "Every action is logged with a timestamp — for him, and for us." },
+          { n: 3, x: 0, y: 76, text: "Every action is logged with a timestamp, for him, and for us." },
         ],
       },
     ],
   },
   {
-    eyebrow: "Steps 05–06",
+    eyebrow: "Steps 05 to 06",
     title: "The fee, and then the names",
     body:
       /* Deliberately does not say "the only charge". Whether connections are
          granted or sold is undecided (APP-PLAN §3.1), and if they are sold
          this section is no longer the whole of the pricing story. */
       "Nothing is charged to register, to be browsed, or to be referred. The matchmaking fee falls " +
-      "due only when both sides want to proceed — and because both must pay before details move, " +
+      "due only when both sides want to proceed, and because both must pay before details move, " +
       "the payment itself is proof the interest is mutual.",
     screens: [
       {
@@ -218,8 +218,8 @@ export const stages: {
         step: "Step 06",
         label: "Contact details exchanged",
         what:
-          "The last thing the platform does. Names and contact details go to both members — and to " +
-          "the wali — at the same moment.",
+          "The last thing the platform does. Names and contact details go to both members, and to " +
+          "the wali, at the same moment.",
         pins: [
           { n: 1, x: 0, y: 46, text: "Only now does a real name appear. Everything before this was initials." },
           { n: 2, x: 0, y: 63, text: "His reference is included, so both families can speak directly." },
@@ -240,7 +240,7 @@ export const never = {
     { title: "No swiping", body: "There is no stack and no endless feed. Asking to talk spends a connection, so the pace stays deliberate." },
     { title: "No private messaging", body: "Every thread includes the guardian. There is no channel that bypasses him." },
     { title: "No public photographs", body: "Pictures are never on a profile. They are exchanged privately, on consent, or not at all." },
-    { title: "No open-ended chatting", body: "Conversations move toward a family meeting, or they are closed." },
+    { title: "No open ended chatting", body: "Conversations move toward a family meeting, or they are closed." },
     { title: "No selling your data", body: "Profiles live in our own database and are never sold, shared or advertised against." },
   ],
 };

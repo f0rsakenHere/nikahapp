@@ -222,22 +222,22 @@ export const OPEN_DECISIONS: { key: keyof Settings; question: string; risk: stri
   },
   {
     key: "inboundCap",
-    question: "D1d — how many pending requests may one member hold?",
+    question: "D1d: how many pending requests may one member hold?",
     risk: "Uncapped, popular members are flooded and leave, and walis inherit every thread.",
   },
   {
     key: "requestExpiryDays",
-    question: "D1e — how long does an unanswered request live?",
+    question: "D1e: how long does an unanswered request live?",
     risk: "Too long and a reserved connection is held indefinitely.",
   },
   {
     key: "requireVerifiedToBrowse",
-    question: "D1f — may an unverified member browse, or be browsed?",
+    question: "D1f: may an unverified member browse, or be browsed?",
     risk: "Allowing it makes the whole verification pipeline decorative.",
   },
   {
     key: "waliGate",
-    question: "D1g — does the wali approve before a conversation opens, or only read it?",
+    question: "D1g: does the wali approve before a conversation opens, or only read it?",
     risk: "This is the published process and the scholars' position. Needs their review to change.",
   },
 ];

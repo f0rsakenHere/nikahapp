@@ -5,7 +5,7 @@ import { ChatIcon } from "@/components/app/icons";
 import { AppFrame } from "../frame";
 import { ThreadList, threadsFor } from "./thread-list";
 
-export const metadata: Metadata = { title: "Conversations — NikahCanada" };
+export const metadata: Metadata = { title: "Conversations | NikahCanada" };
 
 /* The tab with nothing selected.
  *

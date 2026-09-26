@@ -46,7 +46,7 @@ export async function generateMetadata({
   const { doc } = await params;
   const entry = DOCS[doc as Doc];
   return entry
-    ? { title: `${entry.title} — NikahCanada`, robots: { index: false, follow: false } }
+    ? { title: `${entry.title} | NikahCanada`, robots: { index: false, follow: false } }
     : {};
 }
 

@@ -10,7 +10,7 @@ import { findUserById } from "@/lib/repositories/users";
 import { AuthShell } from "../auth-shell";
 import { ApproveForm } from "./approve";
 
-export const metadata: Metadata = { title: "Your wards — NikahCanada" };
+export const metadata: Metadata = { title: "Your wards | NikahCanada" };
 
 const day = (d: Date | null) =>
   d ? new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeZone: "UTC" }).format(d) : "";

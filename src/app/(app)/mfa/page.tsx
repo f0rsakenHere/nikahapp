@@ -6,7 +6,7 @@ import { MfaChallengeForm } from "./form";
 import { MfaEnrolAtSignIn } from "./enrol";
 
 export const metadata: Metadata = {
-  title: "Two-factor — NikahCanada",
+  title: "Two factor | NikahCanada",
   robots: { index: false, follow: false },
 };
 
@@ -28,7 +28,7 @@ export default async function MfaPage({
   if (!session.user.mfa.secret) {
     return (
       <AuthShell
-        title="Set up two-factor"
+        title="Set up two factor"
         blurb="This account reads private correspondence, so a password on its own is not enough. Add NikahCanada to an authenticator app to finish signing in."
       >
         <MfaEnrolAtSignIn next={next} />

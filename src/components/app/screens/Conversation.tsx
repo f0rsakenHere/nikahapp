@@ -8,7 +8,7 @@ export function Chat() {
   const messages = [
     { from: "them", text: "Assalamu alaikum. Thank you for accepting my connection." },
     { from: "me", text: "Wa alaikum assalam. My father is on this conversation, as you know." },
-    { from: "them", text: "Of course — that is why I applied here. May I ask what you are looking for in the next year?" },
+    { from: "them", text: "Of course, that is why I applied here. May I ask what you are looking for in the next year?" },
   ];
 
   return (
@@ -26,11 +26,11 @@ export function Chat() {
         </div>
       </div>
 
-      <WaliBanner name="Ahmed Al-Rashid (your wali)" />
+      <WaliBanner name="Ahmed Al Rashid (your wali)" />
 
       <div className="flex flex-1 flex-col gap-3 px-5 py-4">
         <p className="mx-auto max-w-[280px] rounded-md bg-soft-green/40 px-3 py-2 text-center text-[11px] leading-[15px] text-text">
-          Ahmed Al-Rashid approved this conversation on Tuesday at 20:15 and joined it.
+          Ahmed Al Rashid approved this conversation on Tuesday at 20:15 and joined it.
         </p>
 
         {messages.map((m, i) => (
@@ -75,7 +75,7 @@ export function Chat() {
 export function WaliPortal() {
   return (
     <div className="flex h-full flex-col">
-      <AppBar title="Wali portal" sub="You are the registered guardian for Fatima Al-Rashid." />
+      <AppBar title="Wali portal" sub="You are the registered guardian for Fatima Al Rashid." />
 
       <div className="flex flex-1 flex-col gap-4 overflow-hidden px-6">
         <div className="flex flex-col gap-3 rounded-md border border-peach/40 bg-soft-peach/50 p-4">

@@ -23,7 +23,7 @@ export function LeafIcon({ className = "" }: P) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className={`${box} ${className}`}>
       <path
-        d="M12 3l1.6 3.3 2.2-.7-.6 2.3 3.1-.5-1.5 2.4 1.2.9-4 2.2.6 2-3.3-.6.3 4.7h-1.2l.3-4.7-3.3.6.6-2-4-2.2 1.2-.9L3.7 7.4l3.1.5-.6-2.3 2.2.7L12 3z"
+        d="m12 1 2 4 2-1-1 6 4-4 1 3 3-1-1 6 2 1-9 5 .5 2H13v3h-2v-3H8.5l.5-2-9-5 2-1-1-6 3 1 1-3 4 4-1-6 2 1Z"
         fill="currentColor"
       />
     </svg>
@@ -43,10 +43,10 @@ export function RingsIcon({ className = "" }: P) {
 export function PeopleIcon({ className = "" }: P) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className={`${box} ${className}`}>
-      <circle cx="9" cy="8.2" r="3" {...stroke} />
-      <path d="M3.4 19.2c.5-3 2.8-4.7 5.6-4.7s5.1 1.7 5.6 4.7" {...stroke} />
-      <circle cx="17.4" cy="9.4" r="2.3" {...stroke} />
-      <path d="M16 14.8c2.4-.3 4.2 1.2 4.6 4.4" {...stroke} />
+      <g fill="currentColor">
+        <circle cx="12" cy="6.5" r="3" /><circle cx="4.5" cy="9" r="2.5" /><circle cx="19.5" cy="9" r="2.5" />
+        <path d="M7.5 21v-6a4.5 4.5 0 0 1 9 0v6ZM1 20v-5a3.5 3.5 0 0 1 5.6-2.8 7 7 0 0 0-.6 2.8v5ZM18 20v-5a7 7 0 0 0-.6-2.8A3.5 3.5 0 0 1 23 15v5Z" />
+      </g>
     </svg>
   );
 }
@@ -65,8 +65,8 @@ export function HeartIcon({ className = "" }: P) {
 export function ShieldIcon({ className = "" }: P) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className={`${box} ${className}`}>
-      <path d="M12 3l7 2.6v5.6c0 4.2-2.8 7.7-7 9.2-4.2-1.5-7-5-7-9.2V5.6L12 3z" {...stroke} />
-      <path d="M9.2 12.1l2 2 3.6-3.9" {...stroke} />
+      <path d="M12 2l9 3v6c0 5-3.6 9-9 12-5.4-3-9-7-9-12V5Z" fill="currentColor" />
+      <path d="m12 7 1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5Z" fill="#f4f8f2" />
     </svg>
   );
 }
@@ -74,9 +74,12 @@ export function ShieldIcon({ className = "" }: P) {
 export function ProfileCardIcon({ className = "" }: P) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className={`${box} ${className}`}>
-      <rect x="3.2" y="4.4" width="17.6" height="15.2" rx="2.4" {...stroke} />
-      <circle cx="9.4" cy="10.2" r="2.1" {...stroke} />
-      <path d="M6 16.4c.4-1.7 1.8-2.6 3.4-2.6s3 .9 3.4 2.6M15.2 9.4h3.1M15.2 12.6h3.1" {...stroke} />
+      <rect x="2" y="1.5" width="17" height="21" rx="2.4" fill="none" stroke="currentColor" strokeWidth=".65" />
+      <circle cx="8" cy="6.5" r="1.7" fill="currentColor" />
+      <path d="M5.4 12.5V11a2.6 2.6 0 0 1 5.2 0v1.5Z" fill="currentColor" />
+      <path d="M12.5 7h4M12.5 10h4M5.5 15.5h8M5.5 18.5h6" fill="none" stroke="currentColor" strokeWidth=".5" />
+      <path d="m16 16 5-5q.8-.8 1.6 0l.4.4q.8.8 0 1.6l-5 5-3 1Z" fill="currentColor" stroke="#fff7f2" strokeWidth=".5" />
+      <path d="m20 12 2 2M16 16l2 2" stroke="#fff7f2" strokeWidth=".5" />
     </svg>
   );
 }
@@ -93,8 +96,11 @@ export function SearchIcon({ className = "" }: P) {
 export function ConnectIcon({ className = "" }: P) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className={`${box} ${className}`}>
-      <path d="M12 8.6l-.8-.8a2.6 2.6 0 10-3.7 3.7l4.5 4.4 4.5-4.4a2.6 2.6 0 10-3.7-3.7l-.8.8z" {...stroke} />
-      <path d="M4.6 20.4c.4-1.8 1.7-2.8 3.3-2.8M16.1 17.6c1.6 0 2.9 1 3.3 2.8" {...stroke} />
+      <g fill="currentColor">
+        <path d="m12 9-4-4a2.6 2.6 0 0 1 4-3 2.6 2.6 0 0 1 4 3Z" />
+        <circle cx="4.5" cy="11.5" r="2.8" /><circle cx="19.5" cy="11.5" r="2.8" />
+        <path d="M.3 22v-3a4.2 4.2 0 0 1 8.4 0v3ZM15.3 22v-3a4.2 4.2 0 0 1 8.4 0v3Z" />
+      </g>
     </svg>
   );
 }
@@ -107,9 +113,22 @@ export function ArrowIcon({ className = "" }: P) {
   );
 }
 
+export function ProfileIcon({ className = "" }: P) {
+  return <svg viewBox="0 0 24 24" className={`${box} ${className}`} aria-hidden="true"><circle cx="12" cy="6" r="4" fill="currentColor" /><path d="M4 22v-3a8 8 0 0 1 16 0v3Z" fill="currentColor" /></svg>;
+}
+
+export function ChevronIcon({ className = "" }: P) {
+  return <svg viewBox="0 0 24 24" className={`${box} ${className}`} aria-hidden="true"><path d="m9 5 7 7-7 7" {...stroke} /></svg>;
+}
+
+export function MosqueIcon({ className = "" }: P) {
+  return <svg viewBox="0 0 24 24" className={`${box} ${className}`} aria-hidden="true"><path d="M11.5 1h1v4c1 3 6 4 6 8v2h-13v-2c0-4 5-5 6-8ZM4 13h2v9H3V11h1ZM18 13h2v-2h1v11h-3ZM6 16h12v6h-4v-4a2 2 0 0 0-4 0v4H6Z" fill="currentColor" /></svg>;
+}
+
 export const ICONS = {
   leaf: LeafIcon,
   rings: RingsIcon,
+  mosque: MosqueIcon,
   people: PeopleIcon,
   heart: HeartIcon,
   shield: ShieldIcon,

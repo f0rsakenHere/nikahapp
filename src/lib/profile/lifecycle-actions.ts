@@ -19,7 +19,7 @@ import { eraseEverything, exportEverything } from "@/lib/repositories/erasure";
 export type LifecycleState = { error?: string; done?: string };
 
 const MESSAGES: Record<string, string> = {
-  "cannot-pause": "There is nothing to pause yet — your profile has not been sent in.",
+  "cannot-pause": "There is nothing to pause yet, your profile has not been sent in.",
   "not-paused": "Your profile is not paused.",
   "already-gone": "Your profile has already been withdrawn.",
 };

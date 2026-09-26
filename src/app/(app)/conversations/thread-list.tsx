@@ -50,7 +50,7 @@ export async function threadsFor(userId: string): Promise<ThreadSummary[]> {
       { projection: { userId: 1, initials: 1, gender: 1, "basics.birthYear": 1 } }
     )
     .toArray();
-  const initials = new Map(profiles.map((p) => [String(p.userId), (p.initials as string) ?? "—"]));
+  const initials = new Map(profiles.map((p) => [String(p.userId), (p.initials as string) ?? "?"]));
   const described = new Map(
     profiles.map((p) => {
       const age = p.basics?.birthYear ? year - Number(p.basics.birthYear) : null;
@@ -68,7 +68,7 @@ export async function threadsFor(userId: string): Promise<ThreadSummary[]> {
       state: c.state,
       messageCount: c.messageCount,
       lastMessageAt: c.lastMessageAt,
-      initials: initials.get(other?.userId ?? "") ?? "—",
+      initials: initials.get(other?.userId ?? "") ?? "?",
       described: described.get(other?.userId ?? "") ?? "A member",
       closed: CLOSED_STATES.has(c.state),
     };

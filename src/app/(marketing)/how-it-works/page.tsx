@@ -22,7 +22,7 @@ import { Chat, WaliPortal } from "@/components/app/screens/Conversation";
 import { FeeScreen, ContactShared } from "@/components/app/screens/Completion";
 
 export const metadata: Metadata = {
-  title: `How it works — ${brand.name}`,
+  title: `How it works | ${brand.name}`,
   description:
     "The full NikahCanada process in six steps, with the screens a member and her wali see at each stage.",
 };

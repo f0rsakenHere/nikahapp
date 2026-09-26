@@ -79,7 +79,7 @@ export async function beginMfaEnrolment(): Promise<MfaState> {
 
   const { user } = found.session;
   if (user.mfa.enabled && user.mfa.secret) {
-    return { error: "Two-factor is already on for this account." };
+    return { error: "Two factor is already on for this account." };
   }
 
   const secret = generateSecret();
@@ -94,7 +94,7 @@ export async function confirmMfaEnrolment(_prev: MfaState, form: FormData): Prom
   const secret = String(form.get("secret") ?? "");
   const code = String(form.get("code") ?? "");
 
-  if (!secret) return { error: "Start again — the setup did not carry through." };
+  if (!secret) return { error: "Start again, the setup did not carry through." };
   if (!verifyTotp(secret, code, Date.now())) {
     return { secret, uri: otpauthUri(secret, session.user.email), error: "That code is not right." };
   }

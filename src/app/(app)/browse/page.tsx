@@ -21,7 +21,7 @@ import { AskButton } from "./ask";
 import { MarkButtons } from "./mark";
 import { Filters } from "./filters";
 
-export const metadata: Metadata = { title: "Browse — NikahCanada" };
+export const metadata: Metadata = { title: "Browse | NikahCanada" };
 
 type Search = {
   ageMin?: string;
@@ -67,7 +67,7 @@ export default async function BrowsePage({
           <p className="text-[18px] font-semibold text-peach-deep">Not yet.</p>
           <p className="mt-2 text-[18px] leading-[26px] text-text">
             {waitingOnWali
-              ? "Your profile is in, and it is with your wali. Browsing opens the moment he confirms — until then nobody can see you either, and asking somebody who cannot look back would be a poor introduction."
+              ? "Your profile is in, and it is with your wali. Browsing opens the moment he confirms, until then nobody can see you either, and asking somebody who cannot look back would be a poor introduction."
               : "Browsing opens once you have finished your profile and sent it in. Everyone you would see has done the same, which is only fair if it is also true of you."}
           </p>
           <Link
@@ -197,10 +197,10 @@ export default async function BrowsePage({
       {cards.length === 0 ? (
         <p className="mt-6 rounded-md border border-soft-green bg-mist px-4 py-6 text-center text-[18px] leading-[26px] text-text">
           {scope === "saved"
-            ? "Nothing saved yet. The heart on a card sets somebody aside to think about — it costs no connection and they are never told."
+            ? "Nothing saved yet. The heart on a card sets somebody aside to think about, it costs no connection and they are never told."
             : scope === "new"
               ? "Nobody new this week. The pool is small and grows a person at a time."
-              : "Nobody matches that just now. Widening the age range or the province is usually enough — the pool is small and deliberately so."}
+              : "Nobody matches that just now. Widening the age range or the province is usually enough, the pool is small and deliberately so."}
         </p>
       ) : (
         <ul
@@ -234,7 +234,7 @@ export default async function BrowsePage({
       )}
 
       <p className="mt-6 text-[18px] leading-[26px] text-text/70">
-        Members appear as initials. No names and no photographs — those come later, and only with
+        Members appear as initials. No names and no photographs, those come later, and only with
         consent.
       </p>
     </AppFrame>

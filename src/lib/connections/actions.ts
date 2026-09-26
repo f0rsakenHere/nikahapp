@@ -43,10 +43,10 @@ const REFUSALS: Record<SendRefusal, string> = {
   "weekly-asks-spent":
     "You have asked as many people as you can this week. A few more become available each day.",
   "recipient-inbox-full":
-    "They are not taking new requests at the moment. Try again in a few days — this happens when someone has several waiting.",
+    "They are not taking new requests at the moment. Try again in a few days, this happens when someone has several waiting.",
   "already-asked": "You already have a request open with them.",
   "already-answered-no": "They have already answered. We do not pass on a second request.",
-  "awaiting-your-answer": "They asked you first — answer that instead.",
+  "awaiting-your-answer": "They asked you first, answer that instead.",
   "not-verified": "Your own profile has to be live before you can ask anybody.",
   /* Same refusal, different world. Under deferred approval "live" is a
      thing staff do afterwards, so telling a member to wait for it would

@@ -96,7 +96,7 @@ export function InvitationForm({
             <div className="rounded-md border border-peach/40 bg-soft-peach/60 px-3.5 py-3">
               <p className="text-[18px] leading-[26px] text-text">
                 You already have a NikahCanada account on this address. Sign in first, then open
-                this link again — we will not ask you for a new password.
+                this link again, we will not ask you for a new password.
               </p>
               <Link
                 href="/login"

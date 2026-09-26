@@ -5,7 +5,7 @@ import { AuthShell } from "../../auth-shell";
 import { InvitationForm } from "./form";
 
 export const metadata: Metadata = {
-  title: "You have been asked to act as a wali — NikahCanada",
+  title: "You have been asked to act as a wali | NikahCanada",
   robots: { index: false, follow: false },
 };
 

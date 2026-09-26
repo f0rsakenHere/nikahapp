@@ -22,7 +22,7 @@ import {
 import { AppFrame } from "../frame";
 import { AnswerForm } from "./answer";
 
-export const metadata: Metadata = { title: "Requests — NikahCanada" };
+export const metadata: Metadata = { title: "Requests | NikahCanada" };
 
 /* One heading shape for the three lists, so the page reads as three of
    the same thing rather than three different screens stacked. */
@@ -80,7 +80,7 @@ function PersonRow({ person, lead, meta }: { person?: Person; lead: string; meta
        which is what the row was meant to do at that width. */
     <div className="flex min-w-[240px] flex-1 items-center gap-3.5">
       <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-soft-peach font-manrope text-[18px] font-bold text-peach-deep">
-        {person?.initials ?? "—"}
+        {person?.initials ?? "?"}
       </span>
       <div className="flex min-w-0 flex-col">
         {/* Not the initials again — they are in the tile beside this, and
@@ -124,7 +124,7 @@ async function peopleFor(userIds: string[]): Promise<Map<string, Person>> {
       return [
         String(d.userId),
         {
-          initials: (d.initials as string) ?? "—",
+          initials: (d.initials as string) ?? "?",
           label: `${d.gender === "sister" ? "Sister" : "Brother"}${age ? `, ${age}` : ""}`,
         },
       ];

@@ -149,7 +149,7 @@ export const SignupInputSchema = z.object({
   acceptedTerms: z.boolean(),
 })
   .refine((i) => i.acceptedMarriageIntention, {
-    message: "the marriage-only declaration must be accepted",
+    message: "the marriage only declaration must be accepted",
     path: ["acceptedMarriageIntention"],
   })
   .refine((i) => i.acceptedTerms, {
