@@ -69,13 +69,20 @@ export function middleware(request: NextRequest) {
    *
    * Same derivation as `issue-link.ts`, which had to solve this already
    * for the links that go out by email. */
-  const host =
+  /* First value only. A forwarded header is a comma-separated list —
+   * this proxy sets X-Forwarded-Proto in two places, so it arrives as
+   * "https, https" and `new URL("/login", "https, https://...")` throws,
+   * which turns every protected route into a 500. */
+  const first = (value: string) => value.split(",")[0].trim();
+  const host = first(
     request.headers.get("x-forwarded-host") ??
-    request.headers.get("host") ??
-    request.nextUrl.host;
-  const proto =
+      request.headers.get("host") ??
+      request.nextUrl.host
+  );
+  const proto = first(
     request.headers.get("x-forwarded-proto") ??
-    (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+      (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https")
+  );
   const login = new URL("/login", `${proto}://${host}`);
   /* Carry where they were going, so signing in resumes it rather than
    * dropping them on a dashboard and making them navigate again. The
