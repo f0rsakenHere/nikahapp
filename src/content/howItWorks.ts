@@ -83,7 +83,7 @@ export const stages: {
           "before anything else.",
         pins: [
           { n: 1, x: 0, y: 9, text: "Progress is always visible; the profile can be finished across several sittings." },
-          { n: 2, x: 0, y: 28, text: "Salah, dress and madhhab are structured fields, so matching can genuinely use them." },
+          { n: 2, x: 0, y: 28, text: "Salah and dress are structured fields, so matching can genuinely use them." },
           { n: 3, x: 0, y: 80, text: "Free text is optional and shared only with a match — never published." },
         ],
       },
@@ -130,7 +130,7 @@ export const stages: {
         label: "Reading a profile",
         what:
           "Everything needed to make a decision is present except the photograph — deen, family, " +
-          "education, work, and what he is looking for.",
+          "education, work, and what he says about himself.",
         pins: [
           { n: 1, x: 0, y: 24, text: "The photo slot is visible but locked, with the rule written on it rather than hidden in a policy." },
           { n: 2, x: 0, y: 80, text: "Identity and reference checks are surfaced as a verified badge." },

@@ -100,14 +100,8 @@ const mongo = new MongoClient(uri, {
       }],
       ["deen", async () => {
         await her.click('label:has(input[name="deen.salah"][value="fiveDaily"])');
-        await her.click('label:has(input[name="deen.madhhab"][value="hanafi"])');
         await her.click('label:has(input[name="deen.dress"][value="hijab"])');
         await her.fill('textarea[name="freeText.aboutMe"]', "A short paragraph in her own words.");
-      }],
-      ["lookingFor", async () => {
-        await her.fill('input[name="lookingFor.ageMin"]', "27");
-        await her.fill('input[name="lookingFor.ageMax"]', "38");
-        await her.click('label:has(input[name="lookingFor.provinces"][value="QC"])');
       }],
     ]) {
       await her.goto(`${BASE}/onboarding/${step}`, { waitUntil: "networkidle" });
@@ -222,7 +216,7 @@ const mongo = new MongoClient(uri, {
 
     await s.goto(`${BASE}/admin/members/${profileId}`, { waitUntil: "networkidle" });
     const page360 = await s.textContent("body");
-    check("the member page shows her answers", /Montreal/.test(page360) && /Hanafi/.test(page360));
+    check("the member page shows her answers", /Montreal/.test(page360) && /Five daily/.test(page360));
     check("it shows her wali as confirmed", /Ahmed Al-Rashid/.test(page360));
     check("it shows the audit history", /profile\.|Nothing recorded/.test(page360));
 

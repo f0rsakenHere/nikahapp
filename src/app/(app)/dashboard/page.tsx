@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { currentUser } from "@/lib/auth/current";
 import { findProfileByUserId, poolCounts } from "@/lib/repositories/profiles";
-import { suggestionsFor } from "@/lib/repositories/browse";
 import { hasConfirmedWali } from "@/lib/repositories/guardianships";
 import { listNotifications } from "@/lib/repositories/notifications";
 import {
@@ -39,7 +38,6 @@ import {
   SentIcon,
   ShieldIcon,
   SparkIcon,
-  SparkleIcon,
   WaliIcon,
 } from "@/components/app/icons";
 import { ProfileCard } from "@/components/app/profile-card";
@@ -245,19 +243,11 @@ export default async function DashboardPage({
   const blockers = submitBlockers(me, ctx);
   const nextStep = stepsFor(me.gender).find((s) => blockers.some((b) => b.step === s.id));
 
-  const [waiting, sent, conversations, asksThisWeek, suggestions, feed, pool] = await Promise.all([
+  const [waiting, sent, conversations, asksThisWeek, feed, pool] = await Promise.all([
     countPendingInbound(user.id),
     listRequests(user.id, "out"),
     listConversationsFor(user.id),
     asksSince(user.id, weekAgo(now)),
-    /* Only for somebody who can actually act on them. Ranking a pool a
-       member is not yet allowed to see would be showing them a door and
-       the key at the same time. Four rather than three: the grid is
-       two-up on a laptop and four-up on a wide monitor, and both fill
-       without leaving one card stranded on a row of its own. */
-    canParticipate(me, ctx, settings)
-      ? suggestionsFor({ userId: user.id, gender: me.gender }, settings, 4)
-      : Promise.resolve([]),
     /* Read, not marked read — the bell is the thing that clears, and a
        glance at the dashboard is not an acknowledgement. */
     listNotifications(user.id, 4),
@@ -631,26 +621,6 @@ export default async function DashboardPage({
           note={pendingSent.length ? "Still unanswered." : "You have asked nobody."}
         />
       </div>
-
-      {/* ---- who to look at -------------------------------------------- */}
-      {suggestions.length ? (
-        <section className="mt-8">
-          <SectionHead
-            Icon={SparkleIcon}
-            title="Suggested for you"
-            blurb="From what you said you were looking for. Every one says why."
-            href="/browse"
-            more="See everyone"
-          />
-          <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-4">
-            {suggestions.map(({ card, reasons }) => (
-              <li key={card.profileId} className="h-full">
-                <ProfileCard card={card} reasons={reasons} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
 
       {/* ---- what has happened ------------------------------------------
           Everything in this product happens on somebody else's screen —

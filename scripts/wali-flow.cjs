@@ -331,13 +331,7 @@ const mongo = new MongoClient(uri, {
       }],
       ["deen", async () => {
         await her.click('label:has(input[name="deen.salah"][value="fiveDaily"])');
-        await her.click('label:has(input[name="deen.madhhab"][value="hanafi"])');
         await her.click('label:has(input[name="deen.dress"][value="hijab"])');
-      }],
-      ["lookingFor", async () => {
-        await her.fill('input[name="lookingFor.ageMin"]', "27");
-        await her.fill('input[name="lookingFor.ageMax"]', "38");
-        await her.click('label:has(input[name="lookingFor.provinces"][value="QC"])');
       }],
     ]) {
       await her.goto(`${BASE}/onboarding/${step}`, { waitUntil: "networkidle" });

@@ -68,9 +68,8 @@ async function member(browser, db, gender, name) {
         liveAt: new Date(),
         basics: { birthYear: 1995, city: "Montreal", province: "QC", citizenship: "citizen" },
         background: { maritalStatus: "neverMarried", children: "none", languages: ["English"] },
-        deen: { salah: "fiveDaily", madhhab: "hanafi", ...(gender === "sister" ? { dress: "hijab" } : { beard: "yes" }) },
+        deen: { salah: "fiveDaily", ...(gender === "sister" ? { dress: "hijab" } : { beard: "yes" }) },
         education: { level: "bachelor" },
-        lookingFor: { ageMin: 25, ageMax: 45, provinces: ["QC"], maritalStatus: [], madhhab: [] },
       },
     }
   );

@@ -12,7 +12,7 @@ import {
   weekAgo,
   readSettings,
 } from "@/lib/repositories/connections";
-import { MADHHAB, PROVINCES, canParticipate, inPool } from "@/lib/domain/profile";
+import { PROVINCES, canParticipate, inPool } from "@/lib/domain/profile";
 import { hasConfirmedWali } from "@/lib/repositories/guardianships";
 import { SparkIcon } from "@/components/app/icons";
 import { ProfileCard } from "@/components/app/profile-card";
@@ -27,7 +27,6 @@ type Search = {
   ageMin?: string;
   ageMax?: string;
   province?: string;
-  madhhab?: string;
   saved?: string;
   new?: string;
 };
@@ -89,7 +88,6 @@ export default async function BrowsePage({
     ageMin: params.ageMin ? Number(params.ageMin) : undefined,
     ageMax: params.ageMax ? Number(params.ageMax) : undefined,
     provinces: params.province ? [params.province as (typeof PROVINCES)[number]] : undefined,
-    madhhab: params.madhhab ? [params.madhhab as (typeof MADHHAB)[number]] : undefined,
   };
 
   /* `saved` and `new` are the same page with a different scope rather

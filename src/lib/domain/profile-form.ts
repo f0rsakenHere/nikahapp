@@ -12,7 +12,6 @@ import {
   CITIZENSHIP,
   DRESS,
   EDUCATION,
-  MADHHAB,
   MARITAL_STATUS,
   PROVINCES,
   QURAN,
@@ -27,7 +26,6 @@ import {
   DRESS_LABELS,
   EDUCATION_LABELS,
   HEIGHT_OPTIONS,
-  MADHHAB_LABELS,
   MARITAL_STATUS_LABELS,
   PROVINCE_LABELS,
   QURAN_LABELS,
@@ -148,13 +146,6 @@ export const STEP_FIELDS: Record<Exclude<StepId, "guardian">, FieldSpec[]> = {
       options: toOptions(SALAH, SALAH_LABELS),
     },
     {
-      path: "deen.madhhab",
-      kind: "radio",
-      label: "Madhhab",
-      required: true,
-      options: toOptions(MADHHAB, MADHHAB_LABELS),
-    },
-    {
       path: "deen.dress",
       kind: "radio",
       label: "Dress",
@@ -211,52 +202,6 @@ export const STEP_FIELDS: Record<Exclude<StepId, "guardian">, FieldSpec[]> = {
     },
   ],
 
-  lookingFor: [
-    {
-      path: "lookingFor.ageMin",
-      kind: "number",
-      label: "Youngest age you would consider",
-      required: true,
-      min: 18,
-      max: 99,
-    },
-    {
-      path: "lookingFor.ageMax",
-      kind: "number",
-      label: "Oldest age you would consider",
-      required: true,
-      min: 18,
-      max: 99,
-    },
-    {
-      path: "lookingFor.provinces",
-      kind: "multiselect",
-      label: "Where they can live",
-      required: true,
-      options: toOptions(PROVINCES, PROVINCE_LABELS),
-    },
-    {
-      path: "lookingFor.maritalStatus",
-      kind: "multiselect",
-      label: "Marital status you would consider",
-      options: toOptions(MARITAL_STATUS, MARITAL_STATUS_LABELS),
-      hint: "Leave all unticked if you have no preference.",
-    },
-    {
-      path: "lookingFor.madhhab",
-      kind: "multiselect",
-      label: "Madhhab you would consider",
-      options: toOptions(MADHHAB, MADHHAB_LABELS),
-      hint: "Leave all unticked if you have no preference.",
-    },
-    {
-      path: "lookingFor.freeText",
-      kind: "textarea",
-      label: "Anything else that matters to you",
-      max: 4000,
-      hint: "Read by our team and by a match — not used to filter.",
-    },
-  ],
 };
 
 export function fieldsForStep(step: StepId, gender: "brother" | "sister"): FieldSpec[] {

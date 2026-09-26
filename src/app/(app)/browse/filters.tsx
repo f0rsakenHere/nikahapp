@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { MADHHAB, PROVINCES } from "@/lib/domain/profile";
-import { MADHHAB_LABELS, PROVINCE_LABELS } from "@/lib/domain/profile-labels";
+import { PROVINCES } from "@/lib/domain/profile";
+import { PROVINCE_LABELS } from "@/lib/domain/profile-labels";
 
 const FIELD =
   "h-11 rounded-md border border-soft-green bg-white px-3 text-[18px] text-black outline-none focus:border-accent-deep";
@@ -16,7 +16,7 @@ const FIELD =
 export function Filters({
   current,
 }: {
-  current: { ageMin?: string; ageMax?: string; province?: string; madhhab?: string };
+  current: { ageMin?: string; ageMax?: string; province?: string };
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -28,7 +28,7 @@ export function Filters({
     router.push(`/browse?${next.toString()}`);
   }
 
-  const any = Boolean(current.ageMin || current.ageMax || current.province || current.madhhab);
+  const any = Boolean(current.ageMin || current.ageMax || current.province);
 
   return (
     <div
@@ -58,11 +58,7 @@ export function Filters({
         />
       </div>
 
-      {/* Two abreast from 360. On a 320 screen each half is 136px and
-          "Any madhhab" needs 152 with its own arrow, so the placeholder
-          read "Any madhh" — a native select truncates without an
-          ellipsis and without telling anyone. */}
-      <div className="grid flex-1 grid-cols-1 gap-2 min-[360px]:grid-cols-2">
+      <div className="grid flex-1 grid-cols-1 gap-2">
         <select
           value={current.province ?? ""}
           onChange={(e) => set("province", e.target.value)}
@@ -73,20 +69,6 @@ export function Filters({
           {PROVINCES.map((p) => (
             <option key={p} value={p}>
               {PROVINCE_LABELS[p]}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={current.madhhab ?? ""}
-          onChange={(e) => set("madhhab", e.target.value)}
-          className={FIELD}
-          aria-label="Madhhab"
-        >
-          <option value="">Any madhhab</option>
-          {MADHHAB.map((m) => (
-            <option key={m} value={m}>
-              {MADHHAB_LABELS[m]}
             </option>
           ))}
         </select>

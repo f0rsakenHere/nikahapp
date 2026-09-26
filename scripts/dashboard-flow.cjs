@@ -110,7 +110,7 @@ const body = (p) => p.innerText("body");
       /Browsing opens once you have finished your profile and sent it in/.test(text)
     );
 
-    /* Her wali is one of the five steps she has not reached yet. Being
+    /* Her wali is one of the four steps she has not reached yet. Being
        told off about it on day one is not a state worth having. */
     check("no wali alarm while the profile is still hers to finish", !/wali has not confirmed/i.test(text));
 

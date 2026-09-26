@@ -59,7 +59,6 @@ export type WritableSection =
   | "work"
   | "family"
   | "reference"
-  | "lookingFor"
   | "freeText";
 
 /** Merges one step's answers into the draft and recomputes progress.

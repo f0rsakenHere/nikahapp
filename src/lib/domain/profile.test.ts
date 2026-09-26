@@ -45,8 +45,7 @@ function complete(over: Partial<ProfileDraft> = {}): ProfileDraft {
       languages: ["English", "Arabic"],
     },
     education: { level: "bachelor" },
-    deen: { salah: "fiveDaily", madhhab: "hanafi", dress: "hijab" },
-    lookingFor: { ageMin: 27, ageMax: 38, provinces: ["QC", "ON"] },
+    deen: { salah: "fiveDaily", dress: "hijab" },
     ...over,
   } as Partial<ProfileDraft>);
 }
@@ -63,9 +62,6 @@ describe("ProfileDraftSchema", () => {
   it("gives the array fields real defaults when the whole section is absent", () => {
     const empty = draft();
     expect(empty.background.languages).toEqual([]);
-    expect(empty.lookingFor.provinces).toEqual([]);
-    expect(empty.lookingFor.maritalStatus).toEqual([]);
-    expect(empty.lookingFor.madhhab).toEqual([]);
   });
 
   it("does not throw when asked for progress on a completely empty draft", () => {
@@ -83,30 +79,13 @@ describe("ProfileDraftSchema", () => {
   it("offers a way out of every sensitive question", () => {
     /* A required radio group with no escape gets answered dishonestly,
        and a dishonest answer is worse than a missing one here. */
-    for (const field of ["salah", "madhhab", "dress", "beard", "quran"] as const) {
+    for (const field of ["salah", "dress", "beard", "quran"] as const) {
       const parsed = ProfileDraftSchema.safeParse({
         ...draft(),
         deen: { [field]: "preferNotToSay" },
       });
       expect(parsed.success).toBe(true);
     }
-  });
-
-  it("refuses an age range that runs backwards", () => {
-    const bad = ProfileDraftSchema.safeParse({
-      ...draft(),
-      lookingFor: { ageMin: 40, ageMax: 30, provinces: [], maritalStatus: [], madhhab: [] },
-    });
-    expect(bad.success).toBe(false);
-    expect(!bad.success && bad.error.issues[0].message).toMatch(/youngest/);
-  });
-
-  it("allows a range with only one end set, mid-draft", () => {
-    const partial = ProfileDraftSchema.safeParse({
-      ...draft(),
-      lookingFor: { ageMin: 40, provinces: [], maritalStatus: [], madhhab: [] },
-    });
-    expect(partial.success).toBe(true);
   });
 
   it("stores a birth year, never an exact date", () => {
@@ -142,7 +121,6 @@ describe("stepsFor", () => {
       "background",
       "deen",
       "guardian",
-      "lookingFor",
     ]);
   });
 
@@ -152,7 +130,6 @@ describe("stepsFor", () => {
       "background",
       "deen",
       "reference",
-      "lookingFor",
     ]);
   });
 
@@ -174,22 +151,21 @@ describe("stepsFor", () => {
       basics: { birthYear: 1995, city: "Montreal", province: "QC", citizenship: "citizen" },
       background: { maritalStatus: "neverMarried", children: "none", languages: ["English"] },
       education: { level: "bachelor" },
-      deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "yes" },
+      deen: { salah: "fiveDaily", beard: "yes" },
       reference: { name: "Imam", relationship: "Imam", phone: "+15145550100" },
-      lookingFor: { ageMin: 25, ageMax: 40, provinces: ["QC"], maritalStatus: [], madhhab: [] },
     } as Partial<ProfileDraft>);
 
     expect(completeness(full, { hasConfirmedWali: false }).percent).toBe(100);
     expect(submitBlockers(full, { hasConfirmedWali: false })).toEqual([]);
   });
 
-  it("matches the mock-ups: deen is step 3 of 5, the wali step 4", () => {
+  it("deen is step 3 of 4, and the wali step 4", () => {
     expect(stepById("deen")?.n).toBe(3);
     expect(stepById("guardian")?.n).toBe(4);
   });
 
-  it("keeps six definitions for five visible steps — slot 4 has two forms", () => {
-    expect(STEPS).toHaveLength(6);
+  it("keeps five definitions for four visible steps — slot 4 has two forms", () => {
+    expect(STEPS).toHaveLength(5);
     expect(stepById("guardian")?.n).toBe(4);
     expect(stepById("reference")?.n).toBe(4);
   });
@@ -197,11 +173,11 @@ describe("stepsFor", () => {
 
 describe("completeness", () => {
   it("starts at nothing", () => {
-    expect(completeness(draft())).toEqual({ step: 1, of: 5, percent: 0 });
+    expect(completeness(draft())).toEqual({ step: 1, of: 4, percent: 0 });
   });
 
-  it("counts a brother out of five, like a sister", () => {
-    expect(completeness(draft({ gender: "brother" })).of).toBe(5);
+  it("counts a brother out of four, like a sister", () => {
+    expect(completeness(draft({ gender: "brother" })).of).toBe(4);
   });
 
   it("resumes at the first unfinished step, not the furthest reached", () => {
@@ -212,34 +188,34 @@ describe("completeness", () => {
     expect(completeness(skipped).step).toBe(2);
   });
 
-  it("holds a fully-answered sister at 80% until her wali confirms", () => {
+  it("holds a fully-answered sister at 75% until her wali confirms", () => {
     /* The honest number. Her profile cannot go live yet, and showing
        100% next to "waiting on your wali" is the kind of contradiction
        that makes people distrust the whole screen. */
     const c = completeness(complete());
-    expect(c.percent).toBe(80);
+    expect(c.percent).toBe(75);
     expect(c.step).toBe(4); // resume lands on the wali step
   });
 
-  it("holds a brother at 80% until he names a reference", () => {
-    const brother = complete({ gender: "brother", deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "yes" } } as Partial<ProfileDraft>);
-    expect(completeness(brother).percent).toBe(80);
+  it("holds a brother at 75% until he names a reference", () => {
+    const brother = complete({ gender: "brother", deen: { salah: "fiveDaily", beard: "yes" } } as Partial<ProfileDraft>);
+    expect(completeness(brother).percent).toBe(75);
     expect(completeness(brother).step).toBe(4);
   });
 
   it("reaches 100% for a brother once he has", () => {
     const brother = complete({
       gender: "brother",
-      deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "yes" },
+      deen: { salah: "fiveDaily", beard: "yes" },
       reference: { name: "Imam Suleiman", relationship: "My imam", phone: "5140000000" },
     } as Partial<ProfileDraft>);
-    expect(completeness(brother)).toEqual({ step: 5, of: 5, percent: 100 });
+    expect(completeness(brother)).toEqual({ step: 4, of: 4, percent: 100 });
   });
 });
 
 describe("the deen step is gendered", () => {
   it("asks a sister about hijab, and will not accept a beard instead", () => {
-    const sister = complete({ deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "yes" } } as Partial<ProfileDraft>);
+    const sister = complete({ deen: { salah: "fiveDaily", beard: "yes" } } as Partial<ProfileDraft>);
     expect(submitBlockers(sister, { hasConfirmedWali: true })).toContainEqual({
       step: "deen",
       reason: "incomplete",
@@ -249,7 +225,7 @@ describe("the deen step is gendered", () => {
   it("asks a brother about his beard, and will not accept hijab instead", () => {
     const brother = complete({
       gender: "brother",
-      deen: { salah: "fiveDaily", madhhab: "hanafi", dress: "hijab" },
+      deen: { salah: "fiveDaily", dress: "hijab" },
     } as Partial<ProfileDraft>);
     expect(submitBlockers(brother, { hasConfirmedWali: false })).toContainEqual({
       step: "deen",
@@ -296,7 +272,7 @@ describe("submitBlockers", () => {
   it("never asks a brother for a wali, but does ask for a reference", () => {
     const noReference = complete({
       gender: "brother",
-      deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "trimmed" },
+      deen: { salah: "fiveDaily", beard: "trimmed" },
     } as Partial<ProfileDraft>);
     expect(submitBlockers(noReference, { hasConfirmedWali: false })).toEqual([
       { step: "reference", reason: "incomplete" },
@@ -304,7 +280,7 @@ describe("submitBlockers", () => {
 
     const withReference = complete({
       gender: "brother",
-      deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "trimmed" },
+      deen: { salah: "fiveDaily", beard: "trimmed" },
       reference: { name: "Imam Suleiman", relationship: "My imam", phone: "5140000000" },
     } as Partial<ProfileDraft>);
     expect(submitBlockers(withReference, { hasConfirmedWali: false })).toEqual([]);
@@ -316,7 +292,6 @@ describe("submitBlockers", () => {
       "basics",
       "background",
       "deen",
-      "lookingFor",
     ]);
   });
 
@@ -328,14 +303,14 @@ describe("submitBlockers", () => {
 });
 
 describe("completeness with the guardianship in view", () => {
-  it("holds a sister at 80% while nobody has confirmed", () => {
-    expect(completeness(complete(), { hasConfirmedWali: false }).percent).toBe(80);
+  it("holds a sister at 75% while nobody has confirmed", () => {
+    expect(completeness(complete(), { hasConfirmedWali: false }).percent).toBe(75);
   });
 
   it("reaches 100% once her wali has", () => {
     expect(completeness(complete(), { hasConfirmedWali: true })).toEqual({
-      step: 5,
-      of: 5,
+      step: 4,
+      of: 4,
       percent: 100,
     });
   });
@@ -343,7 +318,7 @@ describe("completeness with the guardianship in view", () => {
   /* The safe default: a screen that cannot see the guardianship must
      not claim she is finished. */
   it("assumes no wali when it is not told", () => {
-    expect(completeness(complete()).percent).toBe(80);
+    expect(completeness(complete()).percent).toBe(75);
   });
 });
 

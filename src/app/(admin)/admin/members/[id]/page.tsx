@@ -8,7 +8,6 @@ import {
   CHILDREN_LABELS,
   CITIZENSHIP_LABELS,
   EDUCATION_LABELS,
-  MADHHAB_LABELS,
   MARITAL_STATUS_LABELS,
   PROVINCE_LABELS,
   SALAH_LABELS,
@@ -121,10 +120,6 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
 
         <Section title="Deen">
           <Row label="Salah" value={profile.deen.salah ? SALAH_LABELS[profile.deen.salah] : undefined} />
-          <Row
-            label="Madhhab"
-            value={profile.deen.madhhab ? MADHHAB_LABELS[profile.deen.madhhab] : undefined}
-          />
           <Row label={profile.gender === "sister" ? "Dress" : "Beard"} value={profile.deen.dress ?? profile.deen.beard} />
         </Section>
 
@@ -162,23 +157,6 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
           </p>
         </Section>
 
-        <Section title="What they are looking for">
-          <Row
-            label="Age"
-            value={
-              profile.lookingFor.ageMin && profile.lookingFor.ageMax
-                ? `${profile.lookingFor.ageMin}–${profile.lookingFor.ageMax}`
-                : undefined
-            }
-          />
-          <Row
-            label="Provinces"
-            value={profile.lookingFor.provinces.map((p) => PROVINCE_LABELS[p]).join(", ") || undefined}
-          />
-          <p className="mt-2 whitespace-pre-wrap text-[13px] leading-[21px] text-black">
-            {profile.lookingFor.freeText || ""}
-          </p>
-        </Section>
       </div>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-2">

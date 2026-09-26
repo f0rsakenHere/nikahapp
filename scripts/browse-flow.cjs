@@ -80,11 +80,10 @@ async function makeMember(browser, db, gender, name, over = {}) {
         liveAt: new Date(),
         basics: { birthYear: 1995, city: "Montreal", province: "QC", citizenship: "citizen" },
         background: { maritalStatus: "neverMarried", children: "none", languages: ["English"] },
-        deen: { salah: "fiveDaily", madhhab: "hanafi", ...(gender === "sister" ? { dress: "hijab" } : { beard: "yes" }) },
+        deen: { salah: "fiveDaily", ...(gender === "sister" ? { dress: "hijab" } : { beard: "yes" }) },
         education: { level: "bachelor" },
         work: { occupation: "Teacher" },
         freeText: { aboutMe: "A short paragraph." },
-        lookingFor: { ageMin: 25, ageMax: 45, provinces: ["QC"], maritalStatus: [], madhhab: [] },
         ...over,
       },
     }
@@ -177,7 +176,7 @@ async function makeMember(browser, db, gender, name, over = {}) {
 
     await b.goto(`${BASE}/browse/${sisterProfileId}`, { waitUntil: "networkidle" });
     const detail = await b.textContent("body");
-    check("the profile shows her answers", /Montreal/.test(detail) && /Hanafi/.test(detail));
+    check("the profile shows her answers", /Montreal/.test(detail) && /Five daily/.test(detail));
     check("the photograph is locked, with the rule on it", /Photograph locked/.test(detail));
     check("the button no longer names a price", !/uses 1 connection/.test(detail));
     check("and says asking is free", /Asking is free/.test(detail), detail.slice(0, 200));

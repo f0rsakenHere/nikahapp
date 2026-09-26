@@ -8,7 +8,7 @@
  * What this drives, through the real UI and against the real database:
  *
  *   register            a brand-new brother, from the public form
- *   every step          basics, background, deen, reference, lookingFor
+ *   every step          basics, background, deen, reference
  *   submit              and land on the dashboard, not back on the list
  *   browse              profiles are there, and the count is not nought
  *   be browsed          another member sees him without anyone approving
@@ -85,7 +85,6 @@ async function fillSteps(p) {
 
   await step(p, "deen", async (p) => {
     await p.click('label:has(input[name="deen.salah"][value="fiveDaily"])');
-    await p.click('label:has(input[name="deen.madhhab"][value="hanafi"])');
     await p.click('label:has(input[name="deen.beard"][value="yes"])');
   });
 
@@ -95,11 +94,6 @@ async function fillSteps(p) {
     await p.fill('input[name="reference.phone"]', "514-555-0142");
   });
 
-  await step(p, "lookingFor", async (p) => {
-    await p.fill('input[name="lookingFor.ageMin"]', "24");
-    await p.fill('input[name="lookingFor.ageMax"]', "40");
-    await p.click('label:has(input[name="lookingFor.provinces"][value="QC"])');
-  });
 }
 
 async function cardCount(p) {

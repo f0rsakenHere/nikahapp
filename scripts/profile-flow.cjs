@@ -71,7 +71,7 @@ const mongo = new MongoClient(uri, {
       const email = await register(p, "sister");
 
       const steps = await p.locator("ol li a").count();
-      check("a sister sees five steps", steps === 5, `saw ${steps}`);
+      check("a sister sees four steps", steps === 4, `saw ${steps}`);
       check("a sister starts at 0% — the wali step is not hers to finish", (await p.textContent("body")).includes("0%"));
       check(
         "the wali step reads as waiting on someone else",
@@ -102,7 +102,7 @@ const mongo = new MongoClient(uri, {
         "a citizenship a guessed list would have rejected survives",
         profile?.basics?.citizenship === "refugee"
       );
-      check("progress was recomputed on save", profile?.completeness?.percent === 20, String(profile?.completeness?.percent));
+      check("progress was recomputed on save", profile?.completeness?.percent === 25, String(profile?.completeness?.percent));
 
       /* --- resume: the promise the marketing page makes -------------- */
       await p.goto(BASE + "/onboarding/basics", { waitUntil: "networkidle" });
@@ -131,7 +131,7 @@ const mongo = new MongoClient(uri, {
       );
       check(
         "an unfinished step does not count towards progress",
-        profile?.completeness?.percent === 20,
+        profile?.completeness?.percent === 25,
         String(profile?.completeness?.percent)
       );
 
@@ -141,27 +141,18 @@ const mongo = new MongoClient(uri, {
       check("a sister is not asked about a beard", !/Beard/.test(deen));
       check("there is a way to decline every question", /Prefer not to say/.test(deen));
 
-      /* --- an age range that runs backwards -------------------------- */
-      await p.goto(BASE + "/onboarding/lookingFor", { waitUntil: "networkidle" });
-      await p.fill('input[name="lookingFor.ageMin"]', "40");
-      await p.fill('input[name="lookingFor.ageMax"]', "30");
-      await p.click('label:has(input[name="lookingFor.provinces"][value="QC"])');
+      /* --- a finished step returns to the overview ------------------- */
+      await p.click('label:has(input[name="deen.salah"][value="fiveDaily"])');
+      await p.click('label:has(input[name="deen.dress"][value="hijab"])');
       await p.click('button[type="submit"]');
-      await p.waitForTimeout(2000);
-      check(
-        "an age range that runs backwards is refused",
-        /youngest/i.test(await p.textContent("body")),
-        p.url()
-      );
-
-      await p.fill('input[name="lookingFor.ageMax"]', "45");
-      await p.click('button[type="submit"]');
-      await p.waitForURL("**/onboarding", { timeout: 20_000 });
+      /* Compared exactly rather than by glob, which would also match the
+         step we are standing on and return before the save had run. */
+      await p.waitForURL((u) => new URL(u).pathname !== "/onboarding/deen", { timeout: 20_000 });
       profile = await db.collection("profiles").findOne({ userId: user._id });
-      check("the corrected range saves", profile?.lookingFor?.ageMax === 45);
+      check("her deen answers were stored", profile?.deen?.salah === "fiveDaily");
       check(
-        "the last step returns to the overview",
-        new URL(p.url()).pathname === "/onboarding",
+        "a finished step hands her on to the next one",
+        new URL(p.url()).pathname === "/onboarding/guardian",
         p.url()
       );
 
@@ -174,9 +165,9 @@ const mongo = new MongoClient(uri, {
       const email = await register(p, "brother");
 
       const steps = await p.locator("ol li a").count();
-      /* Five, the same as hers. The reference sits where her wali does;
-         he is not shown both, and he is not shown a sixth. */
-      check("a brother sees five steps", steps === 5, `saw ${steps}`);
+      /* Four, the same as hers. The reference sits where her wali does;
+         he is not shown both, and he is not shown a fifth. */
+      check("a brother sees four steps", steps === 4, `saw ${steps}`);
       check("a brother starts at 0% too", (await p.textContent("body")).includes("0%"));
       const brotherSteps = await p.textContent("body");
       check("he is shown the reference step", /Your reference/.test(brotherSteps));
@@ -195,7 +186,7 @@ const mongo = new MongoClient(uri, {
       await p.fill('input[name="reference.relationship"]', "The imam of my masjid");
       await p.fill('input[name="reference.phone"]', "5140000000");
       await p.click('button[type="submit"]');
-      await p.waitForURL("**/onboarding/lookingFor", { timeout: 20_000 });
+      await p.waitForURL("**/onboarding", { timeout: 20_000 });
 
       const brother = await db.collection("users").findOne({ email });
       const bProfile = await db.collection("profiles").findOne({ userId: brother._id });

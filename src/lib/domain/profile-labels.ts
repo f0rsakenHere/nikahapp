@@ -15,7 +15,6 @@ import {
   CITIZENSHIP,
   DRESS,
   EDUCATION,
-  MADHHAB,
   MARITAL_STATUS,
   PROVINCES,
   QURAN,
@@ -30,15 +29,6 @@ export const SALAH_LABELS: Labels<typeof SALAH> = {
   mostPrayers: "Most prayers",
   somePrayers: "Some prayers",
   rarely: "Rarely",
-  preferNotToSay: "Prefer not to say",
-};
-
-export const MADHHAB_LABELS: Labels<typeof MADHHAB> = {
-  hanafi: "Hanafi",
-  maliki: "Maliki",
-  shafii: "Shafi'i",
-  hanbali: "Hanbali",
-  none: "No specific madhhab",
   preferNotToSay: "Prefer not to say",
 };
 

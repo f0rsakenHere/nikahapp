@@ -41,7 +41,7 @@ const client = new MongoClient(requireEnv("MONGODB_URI"), {
   serverSelectionTimeoutMS: 10_000,
 });
 
-/* Spread across provinces, ages, madhhabs and marital status so the
+/* Spread across provinces, ages and marital status so the
    browse filters have something to actually filter. */
 const SISTERS = [
   ["Aisha", "Rahman", 1996, "Montreal", "QC", "hanafi", "fiveDaily", "hijab", "neverMarried", "citizen", "Pharmacist", "bachelor", ["English", "French", "Bengali"]],
@@ -96,7 +96,6 @@ const VOCAB = {
     "islamicStudies",
     "other",
   ],
-  madhhab: ["hanafi", "maliki", "shafii", "hanbali", "none", "preferNotToSay"],
   salah: ["fiveDaily", "mostPrayers", "somePrayers", "rarely", "preferNotToSay"],
   maritalStatus: ["neverMarried", "divorced", "widowed", "separated"],
   citizenship: [
@@ -118,7 +117,6 @@ function assertVocabulary(people) {
   for (const p of people) {
     for (const [field, key] of [
       ["education", "education"],
-      ["madhhab", "madhhab"],
       ["salah", "salah"],
       ["maritalStatus", "maritalStatus"],
       ["citizenship", "citizenship"],
@@ -145,7 +143,9 @@ FAIL  ${wrong.length} seeded value(s) the profile schema will reject:
 const slug = (first, last) => `${first}.${last}`.toLowerCase().replace(/[^a-z.]/g, "");
 
 function personFrom(row, gender) {
-  const [first, last, birthYear, city, province, madhhab, salah, look, maritalStatus, citizenship, occupation, education, languages] = row;
+  /* The sixth column was the madhhab, which the product no longer asks
+     anybody for. The rows keep their shape; the value is dropped. */
+  const [first, last, birthYear, city, province, , salah, look, maritalStatus, citizenship, occupation, education, languages] = row;
   return {
     first,
     last,
@@ -154,7 +154,6 @@ function personFrom(row, gender) {
     birthYear,
     city,
     province,
-    madhhab,
     salah,
     look,
     maritalStatus,
@@ -209,7 +208,7 @@ function profileDoc(p, userId, now) {
     liveAt: now,
     submittedAt: now,
     initials: `${p.first[0]}.${p.last[0]}.`,
-    completeness: { step: 5, of: 5, percent: 100 },
+    completeness: { step: 4, of: 4, percent: 100 },
     basics: {
       birthYear: p.birthYear,
       city: p.city,
@@ -228,7 +227,6 @@ function profileDoc(p, userId, now) {
     work: { occupation: p.occupation },
     deen: {
       salah: p.salah,
-      madhhab: p.madhhab,
       quran: "reads",
       ...(p.gender === "sister" ? { dress: p.look } : { beard: p.look }),
     },
@@ -239,14 +237,6 @@ function profileDoc(p, userId, now) {
       phone: "+15145550100",
     },
     freeText: { aboutMe: ABOUT(p) },
-    lookingFor: {
-      ageMin: 22,
-      ageMax: 45,
-      provinces: ["QC", "ON", "AB", "BC", "MB"],
-      maritalStatus: [],
-      madhhab: [],
-      freeText: "",
-    },
     createdAt: now,
     updatedAt: now,
   };

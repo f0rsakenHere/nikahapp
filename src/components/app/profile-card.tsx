@@ -4,7 +4,6 @@ import type { BrowseCard } from "@/lib/repositories/browse";
 import { ACTIVITY_LABELS } from "@/lib/domain/activity";
 import {
   EDUCATION_LABELS,
-  MADHHAB_LABELS,
   MARITAL_STATUS_LABELS,
   PROVINCE_LABELS,
   SALAH_LABELS,
@@ -17,20 +16,17 @@ import {
   PrayerIcon,
   RingsIcon,
   SchoolIcon,
-  SparkleIcon,
   SpeechIcon,
   WorkIcon,
 } from "./icons";
 
 /* One member, as a card.
  *
- * Lives here rather than in the browse page because the dashboard shows
- * the same people — suggestions are browse results in a different order —
- * and two hand-written cards for one thing is how two screens end up
- * disagreeing about what a profile looks like. What differs between the
- * callers is passed in: browse hangs Ask and Save off the bottom, the
- * dashboard prints the reasons a profile was suggested. Neither changes
- * the shape.
+ * Lives here rather than in the browse page because more than one screen
+ * shows the same people, and two hand-written cards for one thing is how
+ * two screens end up disagreeing about what a profile looks like. What
+ * differs between the callers is passed in — browse hangs Ask and Save
+ * off the bottom — and none of it changes the shape.
  */
 
 /* Stored in centimetres, read in feet and inches by most of this
@@ -40,20 +36,13 @@ function feetAndInches(cm: number): string {
   return `${Math.floor(inches / 12)}′${inches % 12}″ · ${cm} cm`;
 }
 
-/* The one reason that is worth more than the others put together, so it
-   is the one that gets the accent rather than the mist. */
-const MUTUAL = "you fit what they are looking for";
-
 export function ProfileCard({
   card: c,
-  /** Why this person is in front of the reader, in their own answers. */
-  reasons,
   /** Buttons for the foot of the card. Anything here must opt back into
    *  pointer events — the whole card is covered by a stretched link. */
   actions,
 }: {
   card: BrowseCard;
-  reasons?: string[];
   actions?: ReactNode;
 }) {
   /* One shape for every fact, so the eye finds the same thing in the
@@ -66,7 +55,6 @@ export function ProfileCard({
       label: "Practice",
       text: [
         c.salah ? SALAH_LABELS[c.salah as never] : null,
-        c.madhhab ? MADHHAB_LABELS[c.madhhab as never] : null,
       ]
         .filter(Boolean)
         .join(" · "),
@@ -220,29 +208,6 @@ export function ProfileCard({
             </div>
           ))}
         </dl>
-
-        {/* Why they are being shown, when somebody is being shown rather
-            than searched for. Kept to the foot of the card: the reader
-            wants to know who this is first and why we thought so second. */}
-        {reasons?.length ? (
-          <ul className="pointer-events-none relative mt-4 flex flex-wrap gap-1.5 border-t border-soft-green pt-3.5">
-            {reasons.map((r) =>
-              r === MUTUAL ? (
-                <li
-                  key={r}
-                  className="flex items-center gap-1.5 rounded-pill bg-accent/30 px-2.5 py-1 text-[18px] font-semibold text-black"
-                >
-                  <SparkleIcon className="text-[17px] text-accent-deep" />
-                  {r}
-                </li>
-              ) : (
-                <li key={r} className="rounded-pill bg-mist px-2.5 py-1 text-[18px] text-text">
-                  {r}
-                </li>
-              )
-            )}
-          </ul>
-        ) : null}
 
         {/* Pinned to the bottom, so every button in a row sits on the
             same line however much its card had to say. */}

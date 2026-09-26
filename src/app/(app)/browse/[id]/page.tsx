@@ -9,7 +9,6 @@ import { planNote } from "@/lib/domain/plan";
 import {
   CHILDREN_LABELS,
   EDUCATION_LABELS,
-  MADHHAB_LABELS,
   MARITAL_STATUS_LABELS,
   PROVINCE_LABELS,
   QURAN_LABELS,
@@ -54,7 +53,6 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
   const education = (p.education ?? {}) as Record<string, string>;
   const work = (p.work ?? {}) as Record<string, string>;
   const freeText = (p.freeText ?? {}) as Record<string, string>;
-  const lookingFor = (p.lookingFor ?? {}) as Record<string, unknown>;
 
   return (
     <AppFrame active="browse" title={`${p.gender === "sister" ? "Sister" : "Brother"}${basics.birthYear ? ` · ${YEAR - Number(basics.birthYear)}` : ""}`}>
@@ -86,7 +84,6 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
             .join(", ")}
         />
         <Row label="Salah" value={deen.salah ? SALAH_LABELS[deen.salah as never] : null} />
-        <Row label="Madhhab" value={deen.madhhab ? MADHHAB_LABELS[deen.madhhab as never] : null} />
         <Row label="Qur'an" value={deen.quran ? QURAN_LABELS[deen.quran as never] : null} />
         <Row
           label="Marital status"
@@ -111,7 +108,6 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
         />
         <Row label="Work" value={work.occupation} />
         <Row label="In their own words" value={freeText.aboutMe} />
-        <Row label="What they are looking for" value={lookingFor.freeText as string} />
       </div>
 
       <div className="mt-6">

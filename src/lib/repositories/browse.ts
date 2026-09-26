@@ -11,11 +11,9 @@ import { getDb } from "@/lib/db/client";
 import { appearsInBrowse } from "@/lib/domain/connection";
 import type { Settings } from "@/lib/domain/settings";
 import { inPool, poolStatuses } from "@/lib/domain/profile";
-import type { MADHHAB, MARITAL_STATUS, PROVINCES } from "@/lib/domain/profile";
-import { bestOf, scorePair, type Facts, type Preferences } from "@/lib/domain/suggestions";
+import type { MARITAL_STATUS, PROVINCES } from "@/lib/domain/profile";
 import { activityBand, isNewToPool, type ActivityBand } from "@/lib/domain/activity";
 import {
-  MADHHAB_LABELS,
   MARITAL_STATUS_LABELS,
   PROVINCE_LABELS,
 } from "@/lib/domain/profile-labels";
@@ -39,7 +37,6 @@ export type BrowseFilters = {
   ageMax?: number;
   provinces?: (typeof PROVINCES)[number][];
   maritalStatus?: (typeof MARITAL_STATUS)[number][];
-  madhhab?: (typeof MADHHAB)[number][];
 };
 
 export type BrowseCard = {
@@ -52,7 +49,6 @@ export type BrowseCard = {
   province?: string;
   occupation?: string;
   salah?: string;
-  madhhab?: string;
   maritalStatus?: string;
   children?: string;
   education?: string;
@@ -80,18 +76,6 @@ export type BrowseCard = {
 };
 
 const YEAR = new Date().getUTCFullYear();
-
-/** A profile document's "looking for", in the shape the scorer wants. */
-function preferencesOf(doc: Record<string, any> | null | undefined): Preferences {
-  const l = doc?.lookingFor ?? {};
-  return {
-    ageMin: typeof l.ageMin === "number" ? l.ageMin : undefined,
-    ageMax: typeof l.ageMax === "number" ? l.ageMax : undefined,
-    provinces: Array.isArray(l.provinces) ? l.provinces.map(String) : [],
-    maritalStatus: Array.isArray(l.maritalStatus) ? l.maritalStatus.map(String) : [],
-    madhhab: Array.isArray(l.madhhab) ? l.madhhab.map(String) : [],
-  };
-}
 
 /* Enough to judge whether to read the rest, cut at a word so it does not
    end mid-syllable. */
@@ -147,7 +131,6 @@ export async function browseFor(
   if (filters.maritalStatus?.length) {
     query["background.maritalStatus"] = { $in: filters.maritalStatus };
   }
-  if (filters.madhhab?.length) query["deen.madhhab"] = { $in: filters.madhhab };
 
   const now = new Date();
 
@@ -239,7 +222,6 @@ export async function browseFor(
       province: doc.basics?.province,
       occupation: doc.work?.occupation,
       salah: doc.deen?.salah,
-      madhhab: doc.deen?.madhhab,
       maritalStatus: doc.background?.maritalStatus,
       children: doc.background?.children,
       education: doc.education?.level,
@@ -258,71 +240,6 @@ export async function browseFor(
   }
 
   return cards;
-}
-
-/** The pool, ranked against what this member said they were looking for.
- *
- *  Built on `browseFor` rather than beside it, so every rule about who
- *  may be seen — live, wali confirmed, not at their inbound cap, not
- *  passed over — is enforced in exactly one place. This only reorders
- *  what browse would already have shown, and explains the order. */
-export async function suggestionsFor(
-  viewer: { userId: string; gender: "brother" | "sister" },
-  settings: Settings,
-  take = 3
-): Promise<{ card: BrowseCard; reasons: string[] }[]> {
-  const db = await getDb();
-
-  const mine = await db.collection(COLLECTIONS.profiles).findOne({
-    userId: new ObjectId(viewer.userId),
-  });
-  const myPrefs = preferencesOf(mine);
-  const myFacts: Facts = {
-    age: mine?.basics?.birthYear ? YEAR - Number(mine.basics.birthYear) : null,
-    province: mine?.basics?.province,
-    maritalStatus: mine?.background?.maritalStatus,
-    madhhab: mine?.deen?.madhhab,
-  };
-
-  /* No stated preferences and nothing stated about them is a member the
-     ranking has nothing to say about. Better to show nothing than an
-     arbitrary three with no reasons under them. */
-  const cards = await browseFor(viewer, {}, settings, 60);
-  if (cards.length === 0) return [];
-
-  const theirs = await db
-    .collection(COLLECTIONS.profiles)
-    .find(
-      { _id: { $in: cards.map((c) => new ObjectId(c.profileId)) } },
-      { projection: { lookingFor: 1 } }
-    )
-    .toArray();
-  const prefsById = new Map(theirs.map((d) => [d._id.toHexString(), preferencesOf(d)]));
-
-  const scored = cards.map((card) => ({
-    item: card,
-    suggestion: scorePair(
-      myPrefs,
-      {
-        age: card.age,
-        province: card.province,
-        maritalStatus: card.maritalStatus,
-        madhhab: card.madhhab,
-      },
-      prefsById.get(card.profileId) ?? { provinces: [], maritalStatus: [], madhhab: [] },
-      myFacts,
-      {
-        province: (code) => PROVINCE_LABELS[code as never] ?? code,
-        maritalStatus: (code) => MARITAL_STATUS_LABELS[code as never] ?? code,
-        madhhab: (code) => MADHHAB_LABELS[code as never] ?? code,
-      }
-    ),
-  }));
-
-  return bestOf(scored, take).map(({ item, suggestion }) => ({
-    card: item,
-    reasons: suggestion.reasons,
-  }));
 }
 
 /** One profile, as a member is allowed to see it.

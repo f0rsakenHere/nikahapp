@@ -274,7 +274,6 @@ async function signIn(context, email) {
       "/onboarding",
       "/onboarding/basics",
       "/onboarding/deen",
-      "/onboarding/lookingFor",
       /* His slot-4 screen. He used to be sent to /onboarding/guardian
          here, which is a sister's screen and is no longer his. */
       "/onboarding/reference",

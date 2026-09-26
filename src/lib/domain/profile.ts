@@ -31,7 +31,6 @@ import { z } from "zod";
 /* ------------------------------------------------------------ options -- */
 
 export const SALAH = ["fiveDaily", "mostPrayers", "somePrayers", "rarely", "preferNotToSay"] as const;
-export const MADHHAB = ["hanafi", "maliki", "shafii", "hanbali", "none", "preferNotToSay"] as const;
 /* Sisters only. */
 export const DRESS = ["niqab", "hijab", "hijabSometimes", "noHijab", "preferNotToSay"] as const;
 /* Brothers only. */
@@ -217,7 +216,6 @@ export const ProfileDraftSchema = z.object({
   deen: z
     .object({
       salah: z.enum(SALAH).optional(),
-      madhhab: z.enum(MADHHAB).optional(),
       dress: z.enum(DRESS).optional(),
       beard: z.enum(BEARD).optional(),
       quran: z.enum(QURAN).optional(),
@@ -257,18 +255,6 @@ export const ProfileDraftSchema = z.object({
     })
     .default({}),
 
-  lookingFor: z
-    .object({
-      ageMin: z.number().int().min(18).max(99).optional(),
-      ageMax: z.number().int().min(18).max(99).optional(),
-      provinces: z.array(z.enum(PROVINCES)).max(14).default([]),
-      maritalStatus: z.array(z.enum(MARITAL_STATUS)).max(4).default([]),
-      madhhab: z.array(z.enum(MADHHAB)).max(6).default([]),
-      mustBeInCanada: z.boolean().optional(),
-      freeText: optionalText(4000), // 🔒
-    })
-    .default({ provinces: [], maritalStatus: [], madhhab: [] }),
-
   freeText: z
     .object({ aboutMe: optionalText(4000), anythingElse: optionalText(2000) })
     .default({}), // 🔒
@@ -277,14 +263,7 @@ export const ProfileDraftSchema = z.object({
 
   createdAt: z.date(),
   updatedAt: z.date(),
-})
-  .refine(
-    (p) => {
-      const { ageMin, ageMax } = p.lookingFor;
-      return ageMin === undefined || ageMax === undefined || ageMin <= ageMax;
-    },
-    { message: "the youngest age cannot be above the oldest", path: ["lookingFor", "ageMin"] }
-  );
+});
 
 export type ProfileDraft = z.infer<typeof ProfileDraftSchema>;
 
@@ -297,8 +276,7 @@ export type StepId =
   /** Sisters only. */
   | "guardian"
   /** Brothers only — the same slot in the flow. */
-  | "reference"
-  | "lookingFor";
+  | "reference";
 
 /** What a step needs that is not on the profile document.
  *
@@ -319,8 +297,10 @@ export type Step = {
   required: (p: ProfileDraft, ctx: StepContext) => boolean;
 };
 
-/* Five, matching the mock-ups: the deen screen shows "step 3 of 5" and
- * the wali screen "step 4 of 5". */
+/* Four. It was five until "What you are looking for" was taken out: a
+ * whole screen of preferences that only the suggestions ever read, and
+ * the product now puts people in front of each other by browsing and
+ * filtering instead. Nobody is asked a question no screen uses. */
 export const STEPS: readonly Step[] = [
   {
     id: "basics",
@@ -351,7 +331,6 @@ export const STEPS: readonly Step[] = [
     blurb: "The section a match reads before anything else.",
     required: (p) =>
       p.deen.salah !== undefined &&
-      p.deen.madhhab !== undefined &&
       /* Gendered: a sister is asked about hijab, a brother about his
        * beard. Neither question is asked of the other. */
       (p.gender === "sister" ? p.deen.dress !== undefined : p.deen.beard !== undefined),
@@ -377,16 +356,6 @@ export const STEPS: readonly Step[] = [
     blurb: "Someone who can vouch for you. We telephone them before your profile goes live.",
     required: (p) =>
       !!p.reference.name && !!p.reference.relationship && !!p.reference.phone,
-  },
-  {
-    id: "lookingFor",
-    n: 5,
-    title: "What you are looking for",
-    blurb: "Used to decide who you see, and who sees you.",
-    required: (p) =>
-      p.lookingFor.ageMin !== undefined &&
-      p.lookingFor.ageMax !== undefined &&
-      p.lookingFor.provinces.length > 0,
   },
 ] as const;
 
