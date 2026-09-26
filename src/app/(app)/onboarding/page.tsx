@@ -170,14 +170,23 @@ export default async function OnboardingPage({
           full page: a submit button as wide as a monitor reads as a
           banner, not something to press. */}
       {profile.status === "draft" && blockers.length === 0 ? (
-        <form action={submitProfile} className="mt-8 max-w-[420px]">
-          <button
-            type="submit"
-            className="h-12 w-full rounded-pill bg-peach text-[18px] font-semibold text-black"
-          >
-            Send my profile for review
-          </button>
-        </form>
+        user.emailVerifiedAt ? (
+          <form action={submitProfile} className="mt-8 max-w-[420px]">
+            <button
+              type="submit"
+              className="h-12 w-full rounded-pill bg-peach text-[18px] font-semibold text-black"
+            >
+              Send my profile for review
+            </button>
+          </form>
+        ) : (
+          /* Finished, but unreachable. The panel at the top of this page
+             is where the link is re-sent, so this says what is missing
+             rather than repeating the button. */
+          <p className="mt-8 max-w-[420px] rounded-md border border-peach bg-soft-peach/40 px-4 py-4 text-[18px] leading-[26px] text-text">
+            Your profile is finished. Confirm your email address above and you can send it in.
+          </p>
+        )
       ) : null}
 
       <div className="mt-8 flex max-w-[420px] flex-col gap-3 border-t border-soft-green pt-6">

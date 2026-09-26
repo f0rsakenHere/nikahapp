@@ -160,6 +160,25 @@ async function cardCount(p) {
     check("and the profile is still a draft until it is sent", profile?.status === "draft");
 
     /* ---------------------------------------------------- submit ------ */
+    /* A finished profile with an unconfirmed address cannot be sent: it
+       would go live on its own, and the link in the inbox is the only
+       thing standing between the pool and an unreachable stranger. */
+    await p.goto(`${BASE}/onboarding`, { waitUntil: "networkidle" });
+    check(
+      "an unconfirmed address holds the finished profile back",
+      (await p.locator('button:has-text("Send my profile for review")').count()) === 0
+    );
+    check(
+      "and the screen says which of the two is missing",
+      /Confirm your email address above/i.test(await p.textContent("main"))
+    );
+
+    /* Confirmed the short way. The link itself is walked end to end by
+       scripts/verify-email-flow.cjs. */
+    await db
+      .collection("users")
+      .updateOne({ email: EMAIL }, { $set: { emailVerifiedAt: new Date() } });
+
     await p.goto(`${BASE}/onboarding`, { waitUntil: "networkidle" });
     const submit = p.locator('button:has-text("Send my profile for review")').first();
     if (

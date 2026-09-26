@@ -311,6 +311,12 @@ const mongo = new MongoClient(uri, {
     }
 
     /* ---------- submit for review ----------------------------------- */
+    /* Confirmed the short way; the link is walked end to end by
+       scripts/verify-email-flow.cjs. */
+    await db
+      .collection("users")
+      .updateOne({ email: SISTER }, { $set: { emailVerifiedAt: new Date() } });
+
     await her.goto(BASE + "/onboarding", { waitUntil: "networkidle" });
     check(
       "an unfinished profile offers no submit button",

@@ -66,6 +66,14 @@ export async function submitProfile(): Promise<void> {
   });
   if (blockers.length) redirect("/onboarding");
 
+  /* And the address has to be confirmed. Decided by the client: a
+   * profile goes live on its own, with no staff approval in front of it,
+   * so the one thing standing between an unreachable stranger and the
+   * pool is the link in their inbox. Refused here and not only hidden on
+   * the screen — the button is absent, which is not the same as the
+   * endpoint being shut. */
+  if (!session.user.emailVerifiedAt) redirect("/onboarding");
+
   const now = new Date();
   await submitForReview(session.user.id, now);
 

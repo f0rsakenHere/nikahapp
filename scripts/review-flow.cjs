@@ -114,6 +114,13 @@ const mongo = new MongoClient(uri, {
        left her finished and with nothing to do but wait on somebody
        else's inbox — his gate moved to the profile itself, so she
        submits and it sits with him. */
+    /* Confirmed the short way; the link is walked end to end by
+       scripts/verify-email-flow.cjs, and without it nothing can be sent
+       in at all. */
+    await db
+      .collection("users")
+      .updateOne({ email: SISTER }, { $set: { emailVerifiedAt: new Date() } });
+
     await her.goto(BASE + "/onboarding", { waitUntil: "networkidle" });
     check(
       "she can send it in even though her wali has not answered",
