@@ -40,8 +40,8 @@ export const howItWorks = {
       icon: "profile",
       title: "Create Your Profile for Free",
       body:
-        "Tell us about yourself and what you are looking for in a spouse.",
-      mobileBody: "Tell us about yourself and what you are looking for in a spouse.",
+        "Tell us where you live, something of your background, and how you practise.",
+      mobileBody: "Tell us where you live, your background, and how you practise.",
     },
     {
       n: 2,

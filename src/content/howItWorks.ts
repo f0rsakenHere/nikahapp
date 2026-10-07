@@ -29,19 +29,31 @@
 
 export const intro = {
   eyebrow: "How it works",
-  title: "Five steps, and a wali where one belongs.",
+  title: "Three steps, and a wali where one belongs.",
   body:
-    "Nothing here happens quietly. Below is the whole path, from registering to the first " +
-    "conversation, with the screens a member and her wali actually see at each stage.",
+    "The same three steps the homepage names, in full: what each one asks of you, what happens " +
+    "between them, and the screens a member and her wali actually see.",
 };
 
-/* Five, and every one of them is something the product does. */
+/* The three steps, worded exactly as the homepage words them. Two pages
+   describing the same service with different step counts is the kind of
+   thing a reader notices and nobody else does. */
 export const spine = [
-  { n: "01", label: "Register", note: "Free. No photograph, at any point." },
-  { n: "02", label: "Confirm your email", note: "A link, and a profile cannot be sent in without it." },
-  { n: "03", label: "Fill in your profile", note: "Three steps. A sister has a fourth: her wali." },
-  { n: "04", label: "Browse, and send an interest", note: "Free, five a week." },
-  { n: "05", label: "Talk", note: "Once you both said yes, with her wali copied in." },
+  {
+    n: "01",
+    label: "Create your profile for free",
+    note: "Three steps, four for a sister. Confirm your email and send it in.",
+  },
+  {
+    n: "02",
+    label: "Search for a compatible spouse",
+    note: "Browse the pool, and narrow it by age and province.",
+  },
+  {
+    n: "03",
+    label: "Express interest and connect",
+    note: "Free to ask, five a week. When it is mutual, you talk.",
+  },
 ];
 
 export type ScreenSpec = {
@@ -59,7 +71,7 @@ export const stages: {
   screens: ScreenSpec[];
 }[] = [
   {
-    eyebrow: "Steps 01 to 03",
+    eyebrow: "Step 01",
     title: "Joining, and naming a wali",
     body:
       "Registering is free and asks for no photograph. What it does ask for, before anything " +
@@ -82,7 +94,7 @@ export const stages: {
       },
       {
         id: "profile",
-        step: "Step 03",
+        step: "Step 01",
         label: "Building the profile",
         what:
           "Three steps for a brother, four for a sister. This is the third, how you practise, which " +
@@ -95,7 +107,7 @@ export const stages: {
       },
       {
         id: "wali",
-        step: "Step 03",
+        step: "Step 01",
         label: "Registering the wali",
         what:
           "Shown to sisters only. His details are taken and he is emailed an invitation. Her profile " +
@@ -109,7 +121,7 @@ export const stages: {
     ],
   },
   {
-    eyebrow: "Step 04",
+    eyebrow: "Step 02",
     title: "Browsing, and asking to talk",
     body:
       "Everybody can look through the pool, and be looked through in turn. Sending an interest is " +
@@ -119,7 +131,7 @@ export const stages: {
     screens: [
       {
         id: "browse",
-        step: "Step 04",
+        step: "Step 02",
         label: "Browsing the pool",
         what:
           "The home screen. Looking and asking are both free; what is bounded is how many people you " +
@@ -132,7 +144,7 @@ export const stages: {
       },
       {
         id: "detail",
-        step: "Step 04",
+        step: "Step 02",
         label: "Reading a profile",
         what:
           "Everything needed to make a decision is present except the photograph: deen, family, " +
@@ -145,7 +157,7 @@ export const stages: {
       },
       {
         id: "mutual",
-        step: "Step 04",
+        step: "Step 03",
         label: "When an interest is accepted",
         what:
           "Both sides have said yes, so the conversation opens. A sister's wali is in it from the " +
@@ -159,7 +171,7 @@ export const stages: {
     ],
   },
   {
-    eyebrow: "Step 05",
+    eyebrow: "Step 03",
     title: "Talking, with the wali in the room",
     body:
       "Her wali confirmed her profile before anybody could see it, so his consent is already given " +
@@ -169,7 +181,7 @@ export const stages: {
     screens: [
       {
         id: "chat",
-        step: "Step 05",
+        step: "Step 03",
         label: "The conversation",
         what:
           "The wali reads every word of this. Both members see the same banner naming him, pinned " +
