@@ -1,11 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { socialMetadata } from "@/lib/social-metadata";
 import { AuthShell } from "../auth-shell";
 import { ForgotPasswordForm } from "./form";
 
 export const metadata: Metadata = {
   title: "Reset your password | NikahCanada",
   robots: { index: false, follow: false },
+  ...socialMetadata("Reset your password | NikahCanada", "Request a password reset for your NikahCanada account.", "/forgot-password"),
 };
 
 export default function ForgotPasswordPage() {

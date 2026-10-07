@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
 
-export const socialImage = {
-  url: "/images/social-share-v1.jpg",
-  width: 1200,
-  height: 630,
-  type: "image/jpeg",
-  alt: "NikahCanada. Serious about Nikah? A thoughtful path to marriage, with faith, family, and sincere intentions.",
-};
+const image = (url: string, alt: string) => ({ url, width: 1200, height: 630, type: "image/jpeg", alt });
 
-export function socialMetadata(title: string, description: string, path: string): Pick<Metadata, "openGraph" | "twitter"> {
+export const socialImages = {
+  home: image("/images/social-share-v1.jpg", "NikahCanada. Serious about Nikah? A thoughtful path to marriage."),
+  pricing: image("/images/social-pricing-v1.jpg", "NikahCanada. Simple, transparent pricing."),
+  howItWorks: image("/images/social-how-it-works-v3.jpg", "NikahCanada. A thoughtful path to Nikah."),
+} as const;
+
+export function socialMetadata(
+  title: string,
+  description: string,
+  path: string,
+  socialImage: (typeof socialImages)[keyof typeof socialImages] = socialImages.home,
+): Pick<Metadata, "openGraph" | "twitter"> {
   return {
     openGraph: {
       type: "website",

@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { currentUser } from "@/lib/auth/current";
 import { pricing } from "@/content/pricing";
-import { socialMetadata } from "@/lib/social-metadata";
+import { socialImages, socialMetadata } from "@/lib/social-metadata";
 import { LandingHeader } from "@/components/marketing/LandingHeader";
 import { LandingFooter } from "@/components/marketing/sections";
 import { ArrowIcon, HeartIcon, LeafIcon, PeopleIcon, ProfileIcon, ShieldIcon } from "@/components/marketing/icons";
@@ -12,7 +12,7 @@ import "@/components/marketing/pricing.css";
 export const metadata: Metadata = {
   title: "Simple, transparent pricing | NikahCanada",
   description: "Explore 1, 3, or 5 connection packages. Browse for free and connect when the interest is mutual.",
-  ...socialMetadata("Simple, transparent pricing | NikahCanada", "Explore 1, 3, or 5 connection packages. Browse for free and connect when the interest is mutual.", "/pricing"),
+  ...socialMetadata("Simple, transparent pricing | NikahCanada", "Explore 1, 3, or 5 connection packages. Browse for free and connect when the interest is mutual.", "/pricing", socialImages.pricing),
 };
 
 function PricingBackdrop() {

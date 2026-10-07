@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { socialMetadata } from "@/lib/social-metadata";
 import { currentUser } from "@/lib/auth/current";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
 import { isStaffActor } from "@/lib/domain/authorisation";
 import { AuthShell } from "../auth-shell";
 import { RegisterForm } from "./form";
 
-export const metadata: Metadata = { title: "Create your account | NikahCanada" };
+export const metadata: Metadata = {
+  title: "Create your account | NikahCanada",
+  description: "Create a free NikahCanada profile and begin your journey toward marriage.",
+  ...socialMetadata("Create your account | NikahCanada", "Create a free NikahCanada profile and begin your journey toward marriage.", "/register"),
+};
 
 export default async function RegisterPage() {
   /* Signing up again is not what somebody with an account wants, and

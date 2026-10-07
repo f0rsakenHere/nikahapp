@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { socialMetadata } from "@/lib/social-metadata";
 import { pendingMfaSession } from "@/lib/auth/current";
 import { AuthShell } from "../auth-shell";
 import { MfaChallengeForm } from "./form";
@@ -8,6 +9,7 @@ import { MfaEnrolAtSignIn } from "./enrol";
 export const metadata: Metadata = {
   title: "Two factor | NikahCanada",
   robots: { index: false, follow: false },
+  ...socialMetadata("Two factor | NikahCanada", "Complete sign in to your NikahCanada account.", "/mfa"),
 };
 
 /* The half-authenticated screen. The cookie exists but `currentUser()`

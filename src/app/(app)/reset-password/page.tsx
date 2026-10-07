@@ -1,11 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { socialMetadata } from "@/lib/social-metadata";
 import { AuthShell } from "../auth-shell";
 import { ResetPasswordForm } from "./form";
 
 export const metadata: Metadata = {
   title: "Choose a new password | NikahCanada",
   robots: { index: false, follow: false },
+  ...socialMetadata("Choose a new password | NikahCanada", "Choose a new password for your NikahCanada account.", "/reset-password"),
 };
 
 export default async function ResetPasswordPage({

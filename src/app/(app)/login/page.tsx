@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { socialMetadata } from "@/lib/social-metadata";
 import { currentUser } from "@/lib/auth/current";
 import { safeNext } from "@/lib/auth/redirect";
 import { AuthShell } from "../auth-shell";
 import { LoginForm } from "./form";
 
-export const metadata: Metadata = { title: "Sign in | NikahCanada" };
+export const metadata: Metadata = {
+  title: "Sign in | NikahCanada",
+  description: "Sign in to your NikahCanada account.",
+  ...socialMetadata("Sign in | NikahCanada", "Sign in to your NikahCanada account.", "/login"),
+};
 
 export default async function LoginPage({
   searchParams,

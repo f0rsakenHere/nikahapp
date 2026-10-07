@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { socialMetadata } from "@/lib/social-metadata";
 import { verifyEmailToken } from "@/lib/auth/account-actions";
 import { currentUser } from "@/lib/auth/current";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
@@ -8,6 +9,7 @@ import { AuthShell } from "../auth-shell";
 export const metadata: Metadata = {
   title: "Confirm your email | NikahCanada",
   robots: { index: false, follow: false },
+  ...socialMetadata("Confirm your email | NikahCanada", "Confirm the email address for your NikahCanada account.", "/verify-email"),
 };
 
 /* Public: the link is usually opened in whatever browser the person's

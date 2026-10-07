@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { socialMetadata } from "@/lib/social-metadata";
 
 /* Placeholders for the privacy policy and the terms.
  *
@@ -45,9 +46,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { doc } = await params;
   const entry = DOCS[doc as Doc];
-  return entry
-    ? { title: `${entry.title} | NikahCanada`, robots: { index: false, follow: false } }
-    : {};
+  if (!entry) return {};
+  const title = `${entry.title} | NikahCanada`;
+  const description = `${entry.title} is not published yet. Contact NikahCanada if you have questions before registering.`;
+  return { title, description, robots: { index: false, follow: false }, ...socialMetadata(title, description, `/legal/${doc}`) };
 }
 
 export default async function LegalPage({ params }: { params: Promise<{ doc: string }> }) {

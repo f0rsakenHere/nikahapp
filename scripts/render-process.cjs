@@ -82,7 +82,7 @@ async function main() {
           bodySize: parseFloat(getComputedStyle(document.querySelector('.landing-description')).fontSize),
           sectionPadding,
           gutters,
-          mobileBackground: getComputedStyle(document.querySelector('.landing-hero')).backgroundImage,
+          heroBackground: getComputedStyle(document.querySelector('.landing-hero')).backgroundImage,
           marksTop: [...document.querySelectorAll('.landing-marks li')].map(item => Math.round(item.getBoundingClientRect().top)),
           valuesTop: [...document.querySelectorAll('.landing-values li')].map(item => Math.round(item.getBoundingClientRect().top)),
           steps,
@@ -93,8 +93,9 @@ async function main() {
       if (Math.abs(layout.logoRatio - 1200 / 303) > 0.02) failures.push(`${width}: logo is distorted`);
       if (layout.heroPadding.top !== layout.heroPadding.bottom) failures.push(`${width}: hero padding is uneven`);
       if (layout.sectionPadding.some(section => section.top !== section.bottom)) failures.push(`${width}: section padding is uneven`);
-      if (!layout.mobileBackground.includes('mobile-mosque-blossoms.webp')) failures.push(`${width}: generated hero artwork is missing`);
-      if (!(await page.request.get(BASE + '/images/mobile-mosque-blossoms.webp')).ok()) failures.push(`${width}: generated artwork failed to load`);
+      const heroArtwork = width <= 767 ? 'mobile-mosque-blossoms.webp' : 'how-hero.webp';
+      if (!layout.heroBackground.includes(heroArtwork)) failures.push(`${width}: hero artwork is missing`);
+      if (!(await page.request.get(BASE + `/images/${heroArtwork}`)).ok()) failures.push(`${width}: hero artwork failed to load`);
       if (width <= 767) {
         if (layout.heroGaps.some(gap => gap !== 8)) failures.push(`${width}: mobile hero gaps are uneven`);
         if (layout.steps.some(step => step.horizontalGap < 8 || step.bodyGap !== 4)) failures.push(`${width}: mobile card layout is incorrect`);
@@ -139,6 +140,9 @@ async function main() {
     const processPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     const processResponse = await processPage.goto(BASE + '/how-it-works', { waitUntil: 'networkidle' });
     if (!processResponse.ok()) failures.push(`How-it-works: HTTP ${processResponse.status()}`);
+    const processArtwork = await processPage.locator('.how-hero-art').evaluate(element => getComputedStyle(element).backgroundImage);
+    if (!processArtwork.includes('how-canada-hero-v2.webp')) failures.push('How-it-works: Canada hero artwork is missing');
+    if (!(await processPage.request.get(BASE + '/images/how-canada-hero-v2.webp')).ok()) failures.push('How-it-works: Canada hero artwork failed to load');
     await processPage.close();
     if (failures.length) throw new Error(failures.join('\n'));
     console.log('PASS: responsive layouts, illustration/text spacing, reference logo proportions, menu, FAQ, registration links, and shared process page.');

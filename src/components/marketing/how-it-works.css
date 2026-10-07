@@ -5,7 +5,7 @@
 .how-eyebrow { display: inline-block; color: #47776a; font-size: 11px; line-height: 1.4; font-weight: 700; letter-spacing: .16em; }
 
 .how-hero { position: relative; overflow: hidden; background: #faf8f1; }
-.how-hero-art { position: absolute; inset: 0; background-image: linear-gradient(90deg, #faf8f1 0%, #faf8f1e8 27%, #faf8f133 65%, transparent 100%), url("/images/how-hero.webp"); background-position: center, center; background-size: cover; background-repeat: no-repeat; }
+.how-hero-art { position: absolute; inset: 0; background-image: linear-gradient(90deg, #faf8f1 0%, #faf8f1e8 27%, #faf8f133 65%, transparent 100%), url("/images/how-canada-hero-v2.webp"); background-position: center, center; background-size: cover; background-repeat: no-repeat; }
 .how-hero-inner { position: relative; display: flex; align-items: center; min-height: 510px; padding-block: 70px 92px; }
 .how-hero-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; max-width: 590px; }
 .how-hero h1 { font-size: clamp(44px, 4.3vw, 58px); line-height: 1.08; }
@@ -91,7 +91,7 @@
   .how-values li { font-size: 11px; padding-inline: 6px; }
 }
 @media (max-width: 767px) {
-  .how-hero-art { opacity: .62; background-position: center, 70% center; }
+  .how-hero-art { background-image: linear-gradient(90deg, #faf8f1 0%, #faf8f1f2 40%, #faf8f17a 80%, #faf8f133 100%), url("/images/how-canada-hero-v2.webp"); background-position: center, 62% center; }
   .how-hero-inner { min-height: 500px; padding-block: 50px 75px; }
   .how-hero-copy { gap: 17px; max-width: 440px; }
   .how-hero h1 { font-size: clamp(35px, 9vw, 47px); }

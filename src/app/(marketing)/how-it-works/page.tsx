@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { currentUser } from "@/lib/auth/current";
-import { socialMetadata } from "@/lib/social-metadata";
+import { socialImages, socialMetadata } from "@/lib/social-metadata";
 import { brand } from "@/content/home";
 import { never, spine, stages } from "@/content/howItWorks";
 import { LandingHeader } from "@/components/marketing/LandingHeader";
@@ -19,7 +19,7 @@ const description = "See how NikahCanada takes you from a free profile to a thou
 export const metadata: Metadata = {
   title,
   description,
-  ...socialMetadata(title, description, "/how-it-works"),
+  ...socialMetadata(title, description, "/how-it-works", socialImages.howItWorks),
 };
 
 const steps = [

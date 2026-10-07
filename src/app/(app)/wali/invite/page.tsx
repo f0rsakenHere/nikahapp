@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { socialMetadata } from "@/lib/social-metadata";
 import { readInvitation } from "@/lib/guardianship/actions";
 import { AuthShell } from "../../auth-shell";
 import { InvitationForm } from "./form";
@@ -7,6 +8,7 @@ import { InvitationForm } from "./form";
 export const metadata: Metadata = {
   title: "You have been asked to act as a wali | NikahCanada",
   robots: { index: false, follow: false },
+  ...socialMetadata("Wali invitation | NikahCanada", "A private invitation to join NikahCanada as a wali.", "/wali/invite"),
 };
 
 const RELATIONSHIP_TO_HER: Record<string, string> = {
