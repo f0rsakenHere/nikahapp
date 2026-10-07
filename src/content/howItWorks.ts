@@ -89,7 +89,7 @@ export const stages: {
         pins: [
           { n: 1, x: 0, y: 18, text: "No photograph is requested here or anywhere later." },
           { n: 2, x: 0, y: 38, text: "Choosing “A sister” adds the wali step. A brother has three steps and names nobody." },
-          { n: 3, x: 0, y: 74, text: "The marriage-only intention is agreed here, in plain words, not buried in terms." },
+          { n: 3, x: 0, y: 74, text: "The intention to seek marriage is agreed here in plain words, not buried in terms." },
         ],
       },
       {
@@ -219,7 +219,7 @@ export const never = {
     { title: "No swiping", body: "There is no stack and no endless feed. Interests are capped by the week, so the pace stays deliberate." },
     { title: "No private messaging", body: "A sister's conversations include her wali. There is no channel that bypasses him." },
     { title: "No public photographs", body: "Pictures are never on a profile. They are exchanged privately, on consent, or not at all." },
-    { title: "No open-ended chatting", body: "Conversations move toward a family meeting, or they are closed." },
+    { title: "No endless chatting", body: "Conversations move toward a family meeting, or they are closed." },
     { title: "No selling your data", body: "Profiles live in our own database and are never sold, shared or advertised against." },
   ],
 };
@@ -230,5 +230,5 @@ export const close = {
     "Registering, browsing and sending an interest are free, and it takes about ten minutes to " +
     "put a profile together. What a connection costs is on the pricing page.",
   cta: { label: "Register now", href: "/register" },
-  note: "Parents and walis are welcome to read all of this first — the pricing page is at /pricing.",
+  note: "Parents and walis are welcome to read all of this first. See the pricing page for connection details.",
 };

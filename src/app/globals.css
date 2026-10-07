@@ -421,8 +421,3 @@
 @utility photo-warm {
   filter: sepia(0.16) saturate(0.94) contrast(1.03);
 }
-
-/* A hairline rule that fades out — used under eyebrow labels. */
-@utility rule-fade {
-  background-image: linear-gradient(90deg, var(--color-brass) 0%, transparent 100%);
-}

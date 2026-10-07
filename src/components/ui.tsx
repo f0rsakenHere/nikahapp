@@ -5,10 +5,7 @@ import type { CSSProperties, ReactNode } from "react";
    delay (on-load). See the MOTION block in globals.css. */
 export const stagger = (i: number) => ({ "--i": i }) as CSSProperties;
 
-/* ------------------------------------------------------------------
-   Eyebrow — small caps label with a fading brass rule beneath it.
-   Sits above every section title.
-   ------------------------------------------------------------------ */
+/* Small caps label above a section title. */
 export function Eyebrow({
   children,
   onDark = false,
@@ -25,7 +22,6 @@ export function Eyebrow({
       >
         {children}
       </span>
-      <span className={`rule-fade h-px w-16 ${center ? "opacity-70" : ""}`} />
     </div>
   );
 }

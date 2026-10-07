@@ -74,7 +74,6 @@ export default async function PricingPage() {
                   {featured && <span className="pricing-popular"><CrownIcon />Most Popular</span>}
                   <span className="pricing-plan-icon" aria-hidden="true"><Icon /></span>
                   <h2>{plan.connections} {plan.connections === 1 ? "Connection" : "Connections"}</h2>
-                  <span className="pricing-rule" aria-hidden="true" />
                   <p className="pricing-price"><span className="pricing-currency">CAD</span><span>${plan.price}</span></p>
                   <p className="pricing-plan-description">{plan.description}</p>
                   <Link href={startHref} className={`landing-button pricing-plan-button${featured ? "" : " is-secondary"}`} aria-label={`Get started with ${plan.connections} ${plan.connections === 1 ? "connection" : "connections"}`}>Get started<span className="landing-button-arrow" aria-hidden="true"><ArrowIcon /></span></Link>

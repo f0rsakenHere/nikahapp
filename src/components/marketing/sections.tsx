@@ -36,16 +36,11 @@ export function TrustMarks() {
   );
 }
 
-function Ornament() {
-  return <div className="landing-ornament" aria-hidden="true"><span /><i /><span /></div>;
-}
-
 export function HowItWorks() {
   return (
     <section id="how" className="landing-steps landing-shell" aria-labelledby="landing-how-title">
       <div className="landing-steps-panel">
         <h2 id="landing-how-title"><span className="landing-desktop-only">{howItWorks.title}</span><span className="landing-mobile-only">{howItWorks.mobileTitle}</span></h2>
-        <Ornament />
         <p className="landing-steps-intro landing-mobile-only">{howItWorks.mobileIntro}</p>
         <ol className="landing-step-grid">
           {howItWorks.steps.map((step) => {
@@ -79,7 +74,7 @@ export function Why() {
           return (
             <li key={point.title}>
               <span className={`landing-value-icon ${index % 2 ? "is-coral" : "is-sage"}`}><Icon /></span>
-              <h3>{point.title}</h3><span className="landing-value-rule" aria-hidden="true" />
+              <h3>{point.title}</h3>
             </li>
           );
         })}

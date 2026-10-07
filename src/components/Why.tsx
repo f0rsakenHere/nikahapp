@@ -24,7 +24,6 @@ export function Why() {
               <span className="font-display text-[15px] text-brass">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <span className="rule-fade h-px w-full" />
               <h3 className="text-d4 text-ink">{p.title}</h3>
               <p className="text-body text-body">{p.body}</p>
             </li>

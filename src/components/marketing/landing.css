@@ -78,11 +78,7 @@
 .landing-marks svg { width: 28px; height: 28px; color: #e98470; }
 
 .landing-steps-panel { padding: var(--landing-panel-space); border-radius: 22px; background: #fffffff0; }
-.landing-ornament { display: flex; align-items: center; justify-content: center; gap: 8px; margin: var(--landing-space) auto; color: #f47f75; }
-.landing-ornament > span { width: 50px; height: 1px; background: currentColor; }
-.landing-ornament i { position: relative; width: 11px; height: 11px; border: 1px solid currentColor; transform: rotate(45deg); }
-.landing-ornament i::after { content: ''; position: absolute; inset: 2px; border: 1px solid currentColor; }
-.landing-step-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: 96px auto auto; gap: var(--landing-space) 48px; }
+.landing-step-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: 96px auto auto; gap: var(--landing-space) 48px; margin-top: 24px; }
 .landing-step-grid li { position: relative; display: grid; grid-row: span 3; grid-template-rows: subgrid; text-align: center; }
 .landing-step-illustration { position: relative; display: grid; place-items: center; width: 96px; height: 96px; border-radius: 50%; background: radial-gradient(circle, #fff0e9, #fdf0ed); color: #e98069; margin-inline: auto; }
 .landing-step-illustration > svg { width: 66px; height: 66px; }
@@ -104,7 +100,6 @@
 .landing-value-icon.is-coral { background: #ffe4dd; color: #ec7d68; }
 .landing-value-icon > svg { width: 32px; height: 32px; }
 .landing-values h3 { max-width: 190px; margin: auto; font-family: var(--font-manrope-sans), sans-serif; font-size: 17px; line-height: 1.4; font-weight: 400; color: #354453; text-wrap: initial; }
-.landing-value-rule { display: block; width: 46px; height: 2px; margin: var(--landing-space) auto 0; background: #ed897b; }
 
 .landing-faq { padding-block: var(--landing-section-space); }
 .landing-faq-panel { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.55fr); align-items: start; gap: 48px; padding: 36px; border: 1px solid #e4e9df; border-radius: 24px; background: linear-gradient(135deg, #edf4ee, #f7f8f2); }
@@ -207,12 +202,8 @@
   .landing-marks li:nth-child(even) svg { color: #5b9183; }
   .landing-steps-panel { padding: 12px 8px; background: #fffdf8b3; border-radius: 14px; }
   .landing-page h2 { font-size: 28px; }
-  .landing-ornament { margin-block: 8px; }
-  .landing-ornament > span { width: 32px; }
-  .landing-ornament i { width: 7px; height: 7px; }
-  .landing-ornament i::after { inset: 1px; }
   .landing-steps-intro { margin: 0 auto 12px; max-width: 48ch; padding-inline: 12px; font-size: 13px; line-height: 1.4; color: #4b5767; text-align: center; }
-  .landing-step-grid { grid-template-columns: 1fr; grid-template-rows: none; gap: 8px; }
+  .landing-step-grid { grid-template-columns: 1fr; grid-template-rows: none; gap: 8px; margin-top: 0; }
   .landing-step-grid li { grid-row: auto; grid-template-columns: 56px minmax(0, 1fr) 20px; grid-template-rows: auto; align-items: center; gap: 12px; min-height: 80px; padding: 10px; background: #ffffffbd; border-radius: 14px; text-align: left; }
   .landing-step-illustration { width: 56px; height: 56px; margin: 0; }
   .landing-step-illustration > svg { width: 40px; height: 40px; }
@@ -231,7 +222,6 @@
   .landing-value-icon { width: 34px; height: 34px; margin-bottom: 6px; }
   .landing-value-icon > svg { width: 22px; height: 22px; }
   .landing-values h3 { font-size: 9px; max-width: 85px; line-height: 1.2; }
-  .landing-value-rule { width: 24px; height: 1px; margin-top: 6px; }
   .landing-faq-panel { grid-template-columns: 1fr; gap: 24px; padding: 24px 16px; border-radius: 20px; }
   .landing-faq-intro { padding: 0 4px; }
   .landing-faq-eyebrow { margin-bottom: 12px; }

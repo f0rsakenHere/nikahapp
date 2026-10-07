@@ -1,314 +1,169 @@
 import type { Metadata } from "next";
-import type { CSSProperties, ReactNode } from "react";
-import Image from "next/image";
+import Link from "next/link";
 import { currentUser } from "@/lib/auth/current";
 import { socialMetadata } from "@/lib/social-metadata";
-import { ART, PHOTO, brand } from "@/content/home";
-import { intro, spine, stages, never, close, type ScreenSpec } from "@/content/howItWorks";
-
+import { brand } from "@/content/home";
+import { never, spine, stages } from "@/content/howItWorks";
 import { LandingHeader } from "@/components/marketing/LandingHeader";
-import { SiteFooter } from "@/components/bridely/SiteFooter";
-import { Eyebrow, Lead, SectionHeading } from "@/components/bridely/primitives/Type";
-import { PillButton } from "@/components/bridely/primitives/PillButton";
-import { Reveal } from "@/components/bridely/primitives/Reveal";
-import { Twinkle } from "@/components/bridely/primitives/Twinkle";
-import { BannerWash } from "@/components/bridely/primitives/Decor";
-import { MotionProvider } from "@/components/bridely/primitives/MotionProvider";
-import { ClipboardList } from "@/components/bridely/primitives/Icons";
-
+import { LandingFooter } from "@/components/marketing/sections";
+import { ArrowIcon, ConnectIcon, HeartIcon, ProfileCardIcon, SearchIcon, ShieldIcon } from "@/components/marketing/icons";
 import { Phone } from "@/components/app/Phone";
-import { SignUp, ProfileDeen, WaliSetup } from "@/components/app/screens/Onboarding";
-import { Browse, ProfileDetail, MutualInterest } from "@/components/app/screens/Matching";
-import { Chat, WaliPortal } from "@/components/app/screens/Conversation";
+import { SignUp } from "@/components/app/screens/Onboarding";
+import { Browse } from "@/components/app/screens/Matching";
+import { Chat } from "@/components/app/screens/Conversation";
+import "@/components/marketing/how-it-works.css";
+
+const title = `How it works | ${brand.name}`;
+const description = "See how NikahCanada takes you from a free profile to a thoughtful conversation, with mutual interest and wali involvement where it belongs.";
 
 export const metadata: Metadata = {
-  title: `How it works | ${brand.name}`,
-  description:
-    "The whole NikahCanada process, from registering to the first conversation, with the screens a member and her wali see at each stage.",
-  ...socialMetadata(`How it works | ${brand.name}`, "The whole NikahCanada process, from registering to the first conversation, with the screens a member and her wali see at each stage.", "/how-it-works"),
+  title,
+  description,
+  ...socialMetadata(title, description, "/how-it-works"),
 };
 
-/* Screen id → component. Keeps all copy in the content file while the
-   markup stays here. */
-const SCREENS: Record<string, ReactNode> = {
-  signup: <SignUp />,
-  profile: <ProfileDeen />,
-  wali: <WaliSetup />,
-  browse: <Browse />,
-  detail: <ProfileDetail />,
-  mutual: <MutualInterest />,
-  chat: <Chat />,
-  portal: <WaliPortal />,
-};
+const steps = [
+  {
+    ...spine[0],
+    id: "profile",
+    eyebrow: "BEGIN WITH YOU",
+    title: "A profile that reflects who you are.",
+    description: "Create an account for free, confirm your email, and tell people what matters to you. Sisters also invite a wali before their profile becomes visible.",
+    details: stages[0].screens,
+    screen: <SignUp />,
+    Icon: ProfileCardIcon,
+  },
+  {
+    ...spine[1],
+    id: "search",
+    eyebrow: "LOOK WITH INTENTION",
+    title: "Find someone worth getting to know.",
+    description: "Explore member profiles and narrow your search by age and province. Read about faith, family, and everyday life before expressing interest.",
+    details: stages[1].screens.slice(0, 2),
+    screen: <Browse />,
+    Icon: SearchIcon,
+  },
+  {
+    ...spine[2],
+    id: "connect",
+    eyebrow: "MOVE FORWARD TOGETHER",
+    title: "A conversation starts when interest is mutual.",
+    description: "Send an interest without writing a message. When the other person accepts, your conversation opens. A sister’s wali can follow the conversation in his own account.",
+    details: [stages[1].screens[2], ...stages[2].screens],
+    screen: <Chat />,
+    Icon: ConnectIcon,
+  },
+] as const;
 
-/* One screen, laid out as a full row: the device on one side, the
-   explanation and numbered callouts on the other. Sides alternate so the
-   page has a rhythm instead of reading as a grid of thumbnails.
-
-   The callout numerals repeat the peach pins pinned over the device, so
-   the list and the screen are obviously the same numbering.
-
-   Alternating is done by placing the two children into explicit columns
-   rather than by reordering them. Reordering would leave the copy in
-   whichever track it landed in, so the text measure would shrink to the
-   device column's width on every flipped row and the paragraphs would
-   visibly rewrap down the page. Here the device always takes the fixed
-   track and the copy always takes the fluid one; only which side they
-   sit on changes. */
-function ScreenRow({ spec, flip }: { spec: ScreenSpec; flip: boolean }) {
-  return (
-    <div
-      className={`grid items-center gap-12 lg:gap-16 xl:gap-[90px] ${
-        flip
-          ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)]"
-          : "lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)]"
-      }`}
-    >
-      <Reveal
-        className={
-          flip ? "lg:col-start-2 lg:row-start-1 lg:justify-self-end" : "lg:col-start-1"
-        }
-      >
-        <Phone scale={0.92} pins={spec.pins}>
-          {SCREENS[spec.id]}
-        </Phone>
-      </Reveal>
-
-      <Reveal
-        delay={0.1}
-        className={`max-w-[540px] ${flip ? "lg:col-start-1 lg:row-start-1" : "lg:col-start-2"}`}
-      >
-        <Eyebrow>{spec.step}</Eyebrow>
-
-        <h3 className="mb-4 font-playfair text-[26px] font-bold leading-[34px] text-black sm:text-[32px] sm:leading-[40px] xl:mb-5 xl:text-[36px] xl:leading-[44px]">
-          {spec.label}
-        </h3>
-
-        <Lead className="mb-7 xl:mb-8">{spec.what}</Lead>
-
-        <ol className="flex flex-col gap-4 border-t border-soft-green pt-7">
-          {spec.pins.map((p) => (
-            <li key={p.n} className="flex gap-3.5">
-              {/* peach-deep, not peach: a 13px numeral reversed out of
-                  #f4a492 is 2:1, and these numerals are the only thing
-                  tying the list to the pins on the device */}
-              <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-peach-deep text-[13px] font-semibold text-white">
-                {p.n}
-              </span>
-              <span className="font-jost text-[16px] font-light leading-[26px] text-text xl:text-[17px]">
-                {p.text}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </Reveal>
-    </div>
-  );
-}
+const values = [
+  { label: "Free to create a profile", Icon: ProfileCardIcon },
+  { label: "Private member browsing", Icon: ShieldIcon },
+  { label: "Mutual interest first", Icon: HeartIcon },
+  { label: "Wali involvement", Icon: ConnectIcon },
+] as const;
 
 export default async function HowItWorksPage() {
-  /* Same nav as the homepage, so it has to know the same thing: a member
-     is offered their dashboard here, not an invitation to register for
-     what they already have. Reading the session makes this page render
-     per request rather than statically — the same trade the homepage
-     makes, and for the same reason. */
   const signedIn = Boolean(await currentUser());
-  let rowIndex = 0;
+  const startHref = signedIn ? "/dashboard" : "/register";
 
   return (
-    <MotionProvider>
-      <div className="bg-white font-jost text-[16px] leading-6 text-black">
-        {/* ---- Banner ----
-            Shares the homepage's watercolour ground: the same 1102x1187 PNG
-            pinned top-left at its natural size, so arriving here from "/"
-            reads as one page continuing rather than a second site. */}
-        <div
-          className="relative overflow-hidden bg-[length:auto] bg-left-top bg-no-repeat"
-          style={{ backgroundImage: `url(${ART}/banner-background.png)` }}
-        >
-          <BannerWash />
-          <LandingHeader signedIn={signedIn} />
-
-          <div className="relative pb-16 pt-14 sm:pt-20 xl:pb-[90px] xl:pt-[120px]">
-            <Twinkle
-              src={`${ART}/banner-img1.png`}
-              width={178}
-              height={178}
-              className="pointer-events-none absolute left-[-72px] top-[120px] hidden h-[178px] w-[178px] xl:block"
-            />
-            <Twinkle
-              src={`${ART}/banner-img2.png`}
-              width={248}
-              height={235}
-              className="pointer-events-none absolute right-[-12px] top-[300px] hidden h-[235px] w-[248px] xl:block"
-            />
-
-            <div className="shell-b relative">
-              <Reveal className="mx-auto max-w-[760px] text-center">
-                <Image
-                  src={`${ART}/ring-icon-banner.png`}
-                  alt=""
-                  width={106}
-                  height={82}
-                  aria-hidden
-                  className="mx-auto mb-6 h-auto w-[86px] xl:mb-8 xl:w-[106px]"
-                />
-
-                <Eyebrow>{intro.eyebrow}</Eyebrow>
-
-                {/* SectionHeading renders an h2; the page's one h1 is set
-                    here at the banner size instead. */}
-                <h1 className="mb-5 font-playfair text-[36px] font-bold leading-[44px] text-black sm:text-[46px] sm:leading-[54px] xl:mb-7 xl:text-[58px] xl:leading-[66px]">
-                  {intro.title}
-                </h1>
-
-                <Lead>{intro.body}</Lead>
-              </Reveal>
-
-              {/* ---- the six published steps ---- */}
-              <ul className="mt-12 grid gap-5 sm:grid-cols-2 xl:mt-[70px] xl:grid-cols-3 xl:gap-[30px]">
-                {spine.map((s, i) => (
-                  <Reveal
-                    as="li"
-                    key={s.n}
-                    delay={i * 0.05}
-                    className="rounded-tl-[40px] rounded-br-[40px] border border-soft-green bg-white/90 px-7 py-8 text-center shadow-[0_6px_38px_0_#dae0e5] backdrop-blur-sm xl:text-left"
-                  >
-                    <span className="font-playfair text-[40px] font-bold leading-none text-peach">
-                      {s.n}
-                    </span>
-                    <h2 className="mb-1.5 mt-4 font-playfair text-[22px] font-bold leading-[28px] text-black">
-                      {s.label}
-                    </h2>
-                    <p className="font-jost text-[16px] font-light leading-[24px] text-text">
-                      {s.note}
-                    </p>
-                  </Reveal>
-                ))}
-              </ul>
+    <div className="landing-page how-page">
+      <LandingHeader signedIn={signedIn} />
+      <main id="top">
+        <section className="how-hero" aria-labelledby="how-title">
+          <div className="how-hero-art" aria-hidden="true" />
+          <div className="landing-shell how-hero-inner">
+            <div className="how-hero-copy">
+              <span className="how-eyebrow">HOW NIKAHCANADA WORKS</span>
+              <h1 id="how-title">A thoughtful path <span>to Nikah.</span></h1>
+              <p>From your first profile to a meaningful conversation, each step gives you room to move forward with sincerity and care.</p>
+              <div className="how-hero-actions">
+                <Link href={startHref} className="landing-button">{signedIn ? "Go to your account" : "Create your free profile"}<span className="landing-button-arrow" aria-hidden="true"><ArrowIcon /></span></Link>
+                <Link href="#journey" className="how-text-link">Explore the steps <ArrowIcon /></Link>
+              </div>
             </div>
           </div>
+        </section>
+
+        <div className="landing-shell how-values">
+          <ul aria-label="Our approach">
+            {values.map(({ label, Icon }) => <li key={label}><span className="how-value-icon"><Icon /></span>{label}</li>)}
+          </ul>
         </div>
 
-        {/* ---- Stages ----
-            White and mint alternate down the page. `--pin-ring` follows,
-            because the numbered pins punch a halo out of the section
-            ground and would otherwise show a white ring on mint. */}
-        {stages.map((stage, si) => {
-          const onMist = si % 2 === 1;
-          return (
-            <section
-              key={stage.title}
-              className={`relative overflow-hidden py-20 sm:py-24 xl:py-[130px] ${
-                onMist ? "bg-mist" : "bg-white"
-              }`}
-              style={{ "--pin-ring": onMist ? "#edf7f8" : "#ffffff" } as CSSProperties}
-            >
-              <div className="shell-b relative">
-                {/* ---- stage head ---- */}
-                <div className="relative mb-16 grid gap-6 xl:mb-[100px] xl:grid-cols-2 xl:items-end xl:gap-[30px]">
-                  <Reveal>
-                    <Eyebrow>{stage.eyebrow}</Eyebrow>
-                    <SectionHeading>{stage.title}</SectionHeading>
-                  </Reveal>
+        <section id="journey" className="landing-shell how-overview" aria-labelledby="how-overview-title">
+          <div className="how-section-heading">
+            <span className="how-eyebrow">THE JOURNEY</span>
+            <h2 id="how-overview-title">Three clear steps to connect.</h2>
+            <p>Take your time. Each stage begins only when you are ready.</p>
+          </div>
+          <ol className="how-overview-grid">
+            {steps.map(({ n, label, note, id, Icon }) => (
+              <li key={id}>
+                <span className="how-overview-icon"><Icon /></span>
+                <span className="how-overview-number">{n}</span>
+                <h3>{label}</h3>
+                <p>{note}</p>
+                <Link href={`#${id}`} aria-label={`Read about ${label.toLowerCase()}`}>See this step <ArrowIcon /></Link>
+              </li>
+            ))}
+          </ol>
+        </section>
 
-                  <Reveal delay={0.1}>
-                    <Lead>{stage.body}</Lead>
-                  </Reveal>
+        <div className="how-journey">
+          {steps.map(({ id, n, eyebrow, title: stepTitle, description: stepDescription, details, screen, Icon }, index) => (
+            <section id={id} className={`how-stage ${index % 2 ? "is-sage" : ""}`} key={id} aria-labelledby={`${id}-title`}>
+              <div className="landing-shell how-stage-inner">
+                <div className="how-stage-copy">
+                  <div className="how-stage-kicker"><span className="how-stage-number">{n}</span><span>{eyebrow}</span></div>
+                  <span className="how-stage-icon"><Icon /></span>
+                  <h2 id={`${id}-title`}>{stepTitle}</h2>
+                  <p className="how-stage-description">{stepDescription}</p>
+                  <ol className="how-stage-details">
+                    {details.map(({ id: detailId, label, what }) => (
+                      <li key={detailId}>
+                        <span className="how-detail-check" aria-hidden="true">✓</span>
+                        <div><h3>{label}</h3><p>{what}</p></div>
+                      </li>
+                    ))}
+                  </ol>
+                  {index === 0 && <Link href={startHref} className="how-inline-link">{signedIn ? "Go to your account" : "Start your free profile"}<ArrowIcon /></Link>}
+                  {index === 2 && <Link href="/pricing" className="how-inline-link">See connection pricing <ArrowIcon /></Link>}
                 </div>
-
-                {/* ---- screens ---- */}
-                <div className="flex flex-col gap-24 xl:gap-[130px]">
-                  {stage.screens.map((spec) => (
-                    <ScreenRow key={spec.id} spec={spec} flip={rowIndex++ % 2 === 1} />
-                  ))}
+                <div className="how-stage-visual" aria-label={`${stepTitle} example screen`}>
+                  <span className="how-visual-orbit" aria-hidden="true" />
+                  <Phone scale={0.76}>{screen}</Phone>
+                  <div className="how-visual-caption"><span className="how-visual-caption-dot" /> A look inside NikahCanada</div>
                 </div>
               </div>
             </section>
-          );
-        })}
+          ))}
+        </div>
 
-        {/* ---- What it will never have ----
-            Photographic ground under a heavy white wash, the same treatment
-            the homepage gives its scholars band. */}
-        <section
-          className="relative overflow-hidden bg-cover bg-center bg-no-repeat py-20 sm:py-24 xl:py-[140px]"
-          style={{ backgroundImage: `url(${PHOTO}/event-bg.jpg)` }}
-        >
-          <div className="absolute inset-0 bg-white/[0.92]" aria-hidden />
-
-          <div className="shell-b relative">
-            <Reveal className="mx-auto mb-14 max-w-[680px] text-center xl:mb-[70px]">
-              <Eyebrow>{never.eyebrow}</Eyebrow>
-              <SectionHeading className="mb-5 xl:mb-6">{never.title}</SectionHeading>
-              <Lead>{never.body}</Lead>
-            </Reveal>
-
-            <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 xl:gap-[30px]">
-              {never.items.map((item, i) => (
-                <Reveal
-                  as="li"
-                  key={item.title}
-                  delay={(i % 3) * 0.05}
-                  className="rounded-tl-[40px] rounded-br-[40px] border border-soft-green bg-white px-7 py-8"
-                >
-                  <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-full border-2 border-peach text-peach">
-                    <svg
-                      viewBox="0 0 24 24"
-                      aria-hidden
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                    >
-                      <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                  <h3 className="mb-2 font-playfair text-[22px] font-bold leading-[28px] text-black">
-                    {item.title}
-                  </h3>
-                  <p className="font-jost text-[16px] font-light leading-[26px] text-text">
-                    {item.body}
-                  </p>
-                </Reveal>
-              ))}
+        <section className="how-promise" aria-labelledby="how-promise-title">
+          <div className="landing-shell">
+            <div className="how-section-heading">
+              <span className="how-eyebrow">BUILT WITH INTENTION</span>
+              <h2 id="how-promise-title">Space for what matters.</h2>
+              <p>Thoughtful choices that keep the focus on a serious path to marriage.</p>
+            </div>
+            <ul className="how-promise-grid">
+              {never.items.slice(0, 4).map((item, index) => {
+                const Icon = [ShieldIcon, SearchIcon, ConnectIcon, HeartIcon][index];
+                return <li key={item.title}><span className="how-promise-icon"><Icon /></span><h3>{item.title}</h3><p>{item.body}</p></li>;
+              })}
             </ul>
           </div>
         </section>
 
-        {/* ---- Close ---- */}
-        <section className="relative overflow-hidden bg-mist py-20 sm:py-24 xl:py-[130px]">
-          <Twinkle
-            src={`${ART}/categories-img1.png`}
-            width={139}
-            height={100}
-            className="pointer-events-none absolute left-[25px] top-[70px] hidden xl:block"
-          />
-
-          <div className="shell-b relative">
-            <Reveal className="mx-auto max-w-[680px] text-center">
-              <Image
-                src={`${ART}/categories-logo-img.png`}
-                alt=""
-                width={150}
-                height={94}
-                aria-hidden
-                className="mx-auto mb-6 h-auto w-[110px] xl:mb-8 xl:w-[150px]"
-              />
-              <SectionHeading className="mb-5 xl:mb-6">{close.title}</SectionHeading>
-              <Lead className="mb-8 xl:mb-9">{close.body}</Lead>
-              <PillButton href={close.cta.href} icon={<ClipboardList />}>
-                {close.cta.label}
-              </PillButton>
-              <p className="mx-auto mt-7 max-w-[460px] font-jost text-[16px] font-light leading-[26px] text-text">
-                {close.note}
-              </p>
-            </Reveal>
+        <section className="landing-shell how-close" aria-labelledby="how-close-title">
+          <div className="how-close-panel">
+            <div><span className="how-eyebrow">YOUR NEXT STEP</span><h2 id="how-close-title">Begin with a free profile.</h2><p>Learn about someone at your own pace. A conversation starts when the interest is shared.</p></div>
+            <Link href={startHref} className="landing-button">{signedIn ? "Go to your account" : "Create your profile"}<span className="landing-button-arrow" aria-hidden="true"><ArrowIcon /></span></Link>
           </div>
         </section>
-
-        <SiteFooter />
-      </div>
-    </MotionProvider>
+      </main>
+      <LandingFooter />
+    </div>
   );
 }
