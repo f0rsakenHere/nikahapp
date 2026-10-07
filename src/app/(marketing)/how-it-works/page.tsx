@@ -20,13 +20,12 @@ import { Phone } from "@/components/app/Phone";
 import { SignUp, ProfileDeen, WaliSetup } from "@/components/app/screens/Onboarding";
 import { Browse, ProfileDetail, MutualInterest } from "@/components/app/screens/Matching";
 import { Chat, WaliPortal } from "@/components/app/screens/Conversation";
-import { FeeScreen, ContactShared } from "@/components/app/screens/Completion";
 
 export const metadata: Metadata = {
   title: `How it works | ${brand.name}`,
   description:
-    "The full NikahCanada process in six steps, with the screens a member and her wali see at each stage.",
-  ...socialMetadata(`How it works | ${brand.name}`, "The full NikahCanada process in six steps, with the screens a member and her wali see at each stage.", "/how-it-works"),
+    "The whole NikahCanada process, from registering to the first conversation, with the screens a member and her wali see at each stage.",
+  ...socialMetadata(`How it works | ${brand.name}`, "The whole NikahCanada process, from registering to the first conversation, with the screens a member and her wali see at each stage.", "/how-it-works"),
 };
 
 /* Screen id → component. Keeps all copy in the content file while the
@@ -40,8 +39,6 @@ const SCREENS: Record<string, ReactNode> = {
   mutual: <MutualInterest />,
   chat: <Chat />,
   portal: <WaliPortal />,
-  fee: <FeeScreen />,
-  contact: <ContactShared />,
 };
 
 /* One screen, laid out as a full row: the device on one side, the

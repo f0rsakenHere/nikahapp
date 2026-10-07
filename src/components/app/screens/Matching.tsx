@@ -7,7 +7,7 @@ const QUEUE = [
     who: "Brother · 29",
     where: "Toronto, ON",
     work: "Software engineer",
-    tags: ["Five daily", "Hanafi", "Never married"],
+    tags: ["Five daily", "Never married", "Ontario"],
     isNew: true,
   },
   {
@@ -32,9 +32,9 @@ const QUEUE = [
    scarce, so the count on the right is connections remaining rather than
    a monthly allowance of referrals.
 
-   PLACEHOLDER: "7 connections left" is illustrative. How many a member
-   gets, whether they are granted or bought, and whether an unanswered
-   request is refunded are all undecided — APP-PLAN §3.1. */
+   The ask counter mirrors the real one: asking is free and capped by the
+   week. What a connection costs once two people want to talk lives on
+   /pricing, and the two have still to be reconciled. */
 export function Browse() {
   return (
     <div className="flex h-full flex-col">
@@ -45,7 +45,7 @@ export function Browse() {
 
       <div className="flex items-center justify-between px-6 pb-3">
         <Chip tone="peach">New this week</Chip>
-        <span className="text-[11px] text-text/70">7 connections left</span>
+        <span className="text-[11px] text-text/70">3 asks left this week</span>
       </div>
 
       <div className="flex flex-1 flex-col gap-3 overflow-hidden px-6">
@@ -75,8 +75,8 @@ export function Browse() {
 
         <p className="mt-1 flex items-start gap-2 text-[11px] leading-[16px] text-text/70">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          Photographs are not shown here. They are exchanged only after a connection is accepted
-          and your wali approves.
+          Photographs are not shown here. They are exchanged privately, on consent, once you are
+          both talking.
         </p>
       </div>
 
@@ -105,7 +105,7 @@ export function ProfileDetail() {
           <Lock className="h-5 w-5 text-peach-deep" />
           <span className="text-[12px] font-semibold text-black">Photograph locked</span>
           <span className="max-w-[220px] text-[11px] leading-[15px] text-text">
-            Shared once he accepts your connection, and only after your wali approves.
+            Shared privately, on consent, once you are both talking.
           </span>
         </div>
 
@@ -114,9 +114,8 @@ export function ProfileDetail() {
             ["Education", "MSc Computer Science, McGill"],
             ["Work", "Software engineer"],
             ["Salah", "Five daily, at the masjid where he can"],
-            ["Madhhab", "Hanafi"],
             ["Family", "Born in Toronto, parents from Lahore"],
-            ["Looking for", "A practising sister settled in Canada"],
+            ["In his own words", "A practising sister settled in Canada"],
           ].map(([k, v]) => (
             <div key={k} className="flex flex-col gap-0.5 border-b border-soft-green pb-2">
               <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-text/60">
@@ -156,8 +155,8 @@ export function MutualInterest() {
   const timeline = [
     { label: "You sent a connection", meta: "Tuesday, 14:02", done: true },
     { label: "He accepted", meta: "Tuesday, 19:41", done: true },
-    { label: "Awaiting your wali's approval", meta: "Ahmed Al Rashid · notified", done: false },
-    { label: "Conversation opens", meta: "Once approved", done: false },
+    { label: "Your wali was sent a copy", meta: "Ahmed Al Rashid · notified", done: true },
+    { label: "Conversation open", meta: "Tuesday, 19:41", done: true },
   ];
 
   return (
@@ -206,9 +205,9 @@ export function MutualInterest() {
       </div>
 
       <div className="flex flex-col gap-2.5 px-6">
-        <Btn variant="danger">Waiting for approval</Btn>
+        <Btn>Open the conversation</Btn>
         <p className="text-center text-[11px] leading-[15px] text-text/70">
-          You cannot message before your wali approves. He was notified at 19:41.
+          Your wali reads every message in it. He was notified at 19:41.
         </p>
       </div>
 

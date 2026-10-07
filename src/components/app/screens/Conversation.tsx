@@ -30,7 +30,7 @@ export function Chat() {
 
       <div className="flex flex-1 flex-col gap-3 px-5 py-4">
         <p className="mx-auto max-w-[280px] rounded-md bg-soft-green/40 px-3 py-2 text-center text-[11px] leading-[15px] text-text">
-          Ahmed Al Rashid approved this conversation on Tuesday at 20:15 and joined it.
+          Ahmed Al Rashid joined this conversation on Tuesday at 19:41 and reads every message.
         </p>
 
         {messages.map((m, i) => (
@@ -81,7 +81,7 @@ export function WaliPortal() {
         <div className="flex flex-col gap-3 rounded-md border border-peach/40 bg-soft-peach/50 p-4">
           <div className="flex items-center justify-between">
             <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-peach-deep">
-              Awaiting your approval
+              Newly opened
             </span>
             <Chip tone="peach">1</Chip>
           </div>
@@ -91,19 +91,20 @@ export function WaliPortal() {
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <span className="text-[14px] font-semibold text-black">Brother · 29 · Toronto</span>
               <span className="text-[11px] leading-[15px] text-text">
-                Software engineer · Five daily · Hanafi · Identity verified
+                Software engineer · Five daily · Ontario
               </span>
             </div>
           </div>
 
           <div className="flex gap-2.5">
+            <Btn className="flex-1 !h-10">Read the conversation</Btn>
             <Btn variant="danger" className="flex-1 !h-10">
-              Decline
+              End it
             </Btn>
-            <Btn className="flex-1 !h-10">Approve</Btn>
           </div>
           <span className="text-[10px] leading-[14px] text-text/70">
-            Approving opens a conversation you can read in full at any time.
+            You confirmed her profile, so this opened without waiting on you. You can read every
+            word of it, and end it at any point.
           </span>
         </div>
 

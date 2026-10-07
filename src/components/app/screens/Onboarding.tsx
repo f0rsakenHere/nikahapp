@@ -81,18 +81,6 @@ export function ProfileDeen() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <span className="text-[12px] font-semibold uppercase tracking-[0.6px] text-text/70">
-            Madhhab
-          </span>
-          <div className="flex flex-wrap gap-2">
-            <Chip>Hanafi</Chip>
-            <Chip tone="selected">Shafi&apos;i</Chip>
-            <Chip>Maliki</Chip>
-            <Chip>Hanbali</Chip>
-            <Chip>Not specified</Chip>
-          </div>
-        </div>
 
         <Field label="Qur'an" value="Three juz memorised" />
 
@@ -127,9 +115,9 @@ export function WaliSetup() {
         <div className="flex flex-col gap-1.5 rounded-md border border-peach/30 bg-soft-peach/60 p-3.5">
           <span className="text-[13px] font-semibold text-peach-deep">He will be able to:</span>
           <ul className="flex flex-col gap-1.5 text-[12px] leading-[17px] text-black/75">
-            <li>· See every connection you send or accept</li>
+            <li>· Confirm your profile before it goes live</li>
+            <li>· See every interest you send or accept</li>
             <li>· Read every message you exchange</li>
-            <li>· Approve or decline before any conversation opens</li>
             <li>· End a conversation at any point</li>
           </ul>
         </div>

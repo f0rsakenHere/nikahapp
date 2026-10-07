@@ -1,42 +1,47 @@
 /* ============================================================
-   HOW IT WORKS — page copy.
+   HOW IT WORKS - page copy.
 
-   The spine is the six steps published on the live site. Each stage
-   below is annotated with numbered callouts that pin to a point on
-   the screen (x/y are percentages of the screen area).
+   Rewritten to the product as it actually runs. What stood here
+   described a service with six published steps, two of which do not
+   exist: a matchmaking fee charged to both sides, and an exchange of
+   names and contact details at the end. Neither is built, and the page
+   also claimed identity and reference checks nobody performs, a wali
+   who approves each match, a referral service, and a five-step profile.
 
-   PLACEHOLDERS — two invented figures, both needing a real answer:
+   What is true today, and what this page now says:
 
-     - the $149 on the fee screen. The live site publishes no amount.
-       Replace it in Completion.tsx.
-     - the connection counts on the browse and profile screens. The
-       allowance, what it costs and whether it is granted or bought are
-       all undecided (APP-PLAN §3.1 D1). Replace in Matching.tsx.
+     - Registering is free and asks for no photograph.
+     - The address is confirmed by email, and a profile cannot be sent
+       in until it has been.
+     - A brother fills in three steps; a sister four, the fourth being
+       her wali, who confirms by email before her profile goes live.
+     - Everybody browses, and sending an interest is free, with a cap of
+       five a week.
+     - When both sides have said yes a conversation opens, and a
+       sister's wali receives a copy of it. He does not approve it.
 
-   BROWSE MODEL: this page previously described a curated queue with no
-   member-facing search — "nobody searches for anybody". That was the
-   published promise and it has been reversed: members browse the pool,
-   and spend a connection to ask to talk. Everything downstream of the
-   acceptance — the supervised conversation, the wali's copy of it, the fee,
-   contact last — is unchanged.
+   Money is the one thing this page does not settle: /pricing sells
+   connection packages, the code charges a brother from his fourth
+   message in a conversation, and the charging is switched off. Until
+   those agree, this page points at /pricing rather than describing a
+   model of its own.
    ============================================================ */
 
 export const intro = {
   eyebrow: "How it works",
-  title: "Six steps, and a guardian at every one.",
+  title: "Five steps, and a wali where one belongs.",
   body:
-    "Nothing here happens quietly. Below is the whole path, from sending us your profile to " +
-    "exchanging contact details, with the screens a member and her wali actually see at each stage.",
+    "Nothing here happens quietly. Below is the whole path, from registering to the first " +
+    "conversation, with the screens a member and her wali actually see at each stage.",
 };
 
-/* The six steps as published on nikahcanada.com. */
+/* Five, and every one of them is something the product does. */
 export const spine = [
-  { n: "01", label: "Registration", note: "Free. No photograph required." },
-  { n: "02", label: "Searching for matches", note: "You browse. We refer as well." },
-  { n: "03", label: "Confirming your address", note: "By email, for members and the sister's wali." },
-  { n: "04", label: "Matchmaking", note: "Connections, acceptance, the supervised conversation." },
-  { n: "05", label: "Matchmaking fee", note: "Charged once, to both sides." },
-  { n: "06", label: "Contact information", note: "Names exchanged last." },
+  { n: "01", label: "Register", note: "Free. No photograph, at any point." },
+  { n: "02", label: "Confirm your email", note: "A link, and a profile cannot be sent in without it." },
+  { n: "03", label: "Fill in your profile", note: "Three steps. A sister has a fourth: her wali." },
+  { n: "04", label: "Browse, and send an interest", note: "Free, five a week." },
+  { n: "05", label: "Talk", note: "Once you both said yes, with her wali copied in." },
 ];
 
 export type ScreenSpec = {
@@ -55,11 +60,12 @@ export const stages: {
 }[] = [
   {
     eyebrow: "Steps 01 to 03",
-    title: "Applying, and naming a wali",
+    title: "Joining, and naming a wali",
     body:
-      "Registration is free and asks for no photograph. What it does ask for, before anything " +
-      "else, is whether you are a brother or a sister, because that determines whether a guardian " +
-      "must be registered before the profile can go live.",
+      "Registering is free and asks for no photograph. What it does ask for, before anything " +
+      "else, is whether you are a brother or a sister, because that decides whether a guardian " +
+      "is part of what follows. The profile saves as you go, and a link sent to your address has " +
+      "to be opened before it can be sent in.",
     screens: [
       {
         id: "signup",
@@ -69,35 +75,35 @@ export const stages: {
           "The account is created with an email and an intention. Gender is asked first because it " +
           "decides the shape of everything that follows.",
         pins: [
-          { n: 1, x: 0, y: 18, text: "No photograph is requested anywhere in sign up, matching the live service." },
-          { n: 2, x: 0, y: 38, text: "Choosing “A sister” adds the wali step to onboarding. For a brother it is skipped." },
-          { n: 3, x: 0, y: 74, text: "The marriage only intention is agreed here, in plain words, not buried in terms." },
+          { n: 1, x: 0, y: 18, text: "No photograph is requested here or anywhere later." },
+          { n: 2, x: 0, y: 38, text: "Choosing “A sister” adds the wali step. A brother has three steps and names nobody." },
+          { n: 3, x: 0, y: 74, text: "The marriage-only intention is agreed here, in plain words, not buried in terms." },
         ],
       },
       {
         id: "profile",
-        step: "Step 01",
+        step: "Step 03",
         label: "Building the profile",
         what:
-          "Five steps. This is the third, how you practise, which is the section a match reads " +
-          "before anything else.",
+          "Three steps for a brother, four for a sister. This is the third, how you practise, which " +
+          "is the section a match reads before anything else.",
         pins: [
-          { n: 1, x: 0, y: 9, text: "Progress is always visible; the profile can be finished across several sittings." },
-          { n: 2, x: 0, y: 28, text: "Salah and dress are structured fields, so matching can genuinely use them." },
-          { n: 3, x: 0, y: 80, text: "Free text is optional and shared only with a match, never published." },
+          { n: 1, x: 0, y: 9, text: "Progress is always visible, and the profile can be finished across several sittings." },
+          { n: 2, x: 0, y: 28, text: "Salah and dress are structured fields, so browsing can genuinely use them." },
+          { n: 3, x: 0, y: 80, text: "Free text is optional and shared only inside the service, never published." },
         ],
       },
       {
         id: "wali",
-        step: "Steps 02 to 03",
+        step: "Step 03",
         label: "Registering the wali",
         what:
           "Shown to sisters only. His details are taken and he is emailed an invitation. Her profile " +
           "does not enter the pool until he confirms.",
         pins: [
-          { n: 1, x: 0, y: 22, text: "His four powers are spelled out before a single detail is asked for." },
+          { n: 1, x: 0, y: 22, text: "What he will see and be able to do is spelled out before a single detail is asked for." },
           { n: 2, x: 0, y: 62, text: "The relationship is recorded, so a match can see who the wali actually is." },
-          { n: 3, x: 0, y: 88, text: "He confirms by email. Until then she appears to nobody, not in browsing, and not in a referral." },
+          { n: 3, x: 0, y: 88, text: "He confirms by email. Until then she appears to nobody, and cannot ask anybody either." },
         ],
       },
     ],
@@ -106,10 +112,10 @@ export const stages: {
     eyebrow: "Step 04",
     title: "Browsing, and asking to talk",
     body:
-      "You can look through the pool, and be looked through in turn. Asking costs nothing, what is " +
-      "deliberately limited is how many people you may approach in a week, so the pace stays " +
-      "considered rather than endless. A photograph exists in the interface only as a locked slot " +
-      "until both sides have agreed.",
+      "Everybody can look through the pool, and be looked through in turn. Sending an interest is " +
+      "free; what is deliberately limited is how many people you may approach in a week, so the " +
+      "pace stays considered rather than endless. A photograph exists in the interface only as a " +
+      "locked slot.",
     screens: [
       {
         id: "browse",
@@ -117,10 +123,10 @@ export const stages: {
         label: "Browsing the pool",
         what:
           "The home screen. Looking and asking are both free; what is bounded is how many people you " +
-          "may approach in a week, so the pace stays deliberate rather than endless.",
+          "may approach in a week.",
         pins: [
-          { n: 1, x: 0, y: 10, text: "Every member here has passed the identity and reference check. The pool is closed, nothing is visible from outside the service." },
-          { n: 2, x: 100, y: 21, text: "Asks remaining this week, always visible. Looking and asking are free; the number of people you approach is what is limited." },
+          { n: 1, x: 0, y: 10, text: "The pool is closed. Nothing here is visible from outside the service, and nothing is indexed." },
+          { n: 2, x: 100, y: 21, text: "What is left this week, always visible. Asking is free; the number of people you approach is what is limited." },
           { n: 3, x: 0, y: 34, text: "Members appear as initials only. No names and no photographs on this screen." },
         ],
       },
@@ -129,45 +135,45 @@ export const stages: {
         step: "Step 04",
         label: "Reading a profile",
         what:
-          "Everything needed to make a decision is present except the photograph, deen, family, " +
+          "Everything needed to make a decision is present except the photograph: deen, family, " +
           "education, work, and what he says about himself.",
         pins: [
           { n: 1, x: 0, y: 24, text: "The photo slot is visible but locked, with the rule written on it rather than hidden in a policy." },
           { n: 2, x: 0, y: 80, text: "Nothing on the card is anything but what the member answered themselves." },
-          { n: 3, x: 100, y: 93, text: "“Ask to talk” is the only way forward, and it carries no message, there is nothing to write until she has said yes." },
+          { n: 3, x: 100, y: 93, text: "“Ask to talk” carries no message. There is nothing to write until the other side has said yes." },
         ],
       },
       {
         id: "mutual",
         step: "Step 04",
-        label: "When a connection is accepted",
+        label: "When an interest is accepted",
         what:
-          "The request was accepted, and the conversation opens. Her wali is in it from the first " +
-          "message, and the screen says so rather than leaving anybody to guess.",
+          "Both sides have said yes, so the conversation opens. A sister's wali is in it from the " +
+          "first message, and the screen says so rather than leaving anybody to guess.",
         pins: [
-          { n: 1, x: 0, y: 22, text: "Nothing has been shared yet. Names and contact details remain private." },
-          { n: 2, x: 0, y: 62, text: "The timeline shows exactly which step has been reached and what happens next." },
-          { n: 3, x: 0, y: 92, text: "The wali was notified automatically the moment the connection was accepted." },
+          { n: 1, x: 0, y: 22, text: "Nothing has been shared yet. Names and contact details stay private." },
+          { n: 2, x: 0, y: 62, text: "Her wali is sent a copy. He is not asked to approve the match, and nobody waits on him here." },
+          { n: 3, x: 0, y: 92, text: "The conversation opens the moment the second person says yes." },
         ],
       },
     ],
   },
   {
-    eyebrow: "Step 04",
+    eyebrow: "Step 05",
     title: "Talking, with the wali in the room",
     body:
-      "Her wali approved her profile before anybody could see it, so his consent is already given " +
-      "and the two of them do not wait again. He receives a copy of everything they say, a " +
+      "Her wali confirmed her profile before anybody could see it, so his consent is already given " +
+      "and the two of them do not wait again. He receives a copy of everything they say: a " +
       "participant rather than a bystander, with his own account, his own view, and the ability to " +
       "end things at any point.",
     screens: [
       {
         id: "chat",
-        step: "Step 04",
+        step: "Step 05",
         label: "The conversation",
         what:
           "The wali reads every word of this. Both members see the same banner naming him, pinned " +
-          "under the header, there is no version of this where he is reading and they do not know.",
+          "under the header. There is no version of this where he is reading and they do not know.",
         pins: [
           { n: 1, x: 0, y: 13, text: "The banner cannot be dismissed or minimised by either side." },
           { n: 2, x: 0, y: 23, text: "A system message records when he joined the thread, with the time." },
@@ -179,51 +185,12 @@ export const stages: {
         step: "For guardians",
         label: "The wali's own account",
         what:
-          "He signs in separately. This is his home screen, everything concerning the woman he is " +
+          "He signs in separately. This is his home screen: everything concerning the woman he is " +
           "wali for, in one place.",
         pins: [
           { n: 1, x: 0, y: 28, text: "Every conversation she is having appears here the moment it opens." },
           { n: 2, x: 100, y: 55, text: "He can open and read any conversation in full, at any time." },
-          { n: 3, x: 0, y: 76, text: "Every action is logged with a timestamp, for him, and for us." },
-        ],
-      },
-    ],
-  },
-  {
-    eyebrow: "Steps 05 to 06",
-    title: "The fee, and then the names",
-    body:
-      /* Deliberately does not say "the only charge". Whether connections are
-         granted or sold is undecided (APP-PLAN §3.1), and if they are sold
-         this section is no longer the whole of the pricing story. */
-      "Nothing is charged to register, to be browsed, or to be referred. The matchmaking fee falls " +
-      "due only when both sides want to proceed, and because both must pay before details move, " +
-      "the payment itself is proof the interest is mutual.",
-    screens: [
-      {
-        id: "fee",
-        step: "Step 05",
-        label: "The matchmaking fee",
-        what:
-          "Charged once, to each side, at the point where a conversation has become serious. Not " +
-          "before.",
-        pins: [
-          { n: 1, x: 0, y: 32, text: "Registration, browsing and referral were all free. The matchmaking fee falls due here, and not before." },
-          { n: 2, x: 0, y: 63, text: "Both sides must pay. Yours alone changes nothing." },
-          { n: 3, x: 0, y: 85, text: "If the other side does not pay, nothing is shared and you are refunded." },
-        ],
-      },
-      {
-        id: "contact",
-        step: "Step 06",
-        label: "Contact details exchanged",
-        what:
-          "The last thing the platform does. Names and contact details go to both members, and to " +
-          "the wali, at the same moment.",
-        pins: [
-          { n: 1, x: 0, y: 46, text: "Only now does a real name appear. Everything before this was initials." },
-          { n: 2, x: 0, y: 63, text: "His reference is included, so both families can speak directly." },
-          { n: 3, x: 0, y: 82, text: "Her guardian receives the identical details at the same moment." },
+          { n: 3, x: 0, y: 76, text: "Every action is logged with a timestamp, for him and for us." },
         ],
       },
     ],
@@ -237,17 +204,19 @@ export const never = {
   body: "Each of these is a decision, not a feature we have yet to build.",
   items: [
     { title: "No public profiles", body: "The pool is closed. Nothing is visible from outside the service, and no profile is indexed or advertised." },
-    { title: "No swiping", body: "There is no stack and no endless feed. Asking to talk spends a connection, so the pace stays deliberate." },
-    { title: "No private messaging", body: "Every thread includes the guardian. There is no channel that bypasses him." },
+    { title: "No swiping", body: "There is no stack and no endless feed. Interests are capped by the week, so the pace stays deliberate." },
+    { title: "No private messaging", body: "A sister's conversations include her wali. There is no channel that bypasses him." },
     { title: "No public photographs", body: "Pictures are never on a profile. They are exchanged privately, on consent, or not at all." },
-    { title: "No open ended chatting", body: "Conversations move toward a family meeting, or they are closed." },
+    { title: "No open-ended chatting", body: "Conversations move toward a family meeting, or they are closed." },
     { title: "No selling your data", body: "Profiles live in our own database and are never sold, shared or advertised against." },
   ],
 };
 
 export const close = {
   title: "That is the whole process.",
-  body: "Registration is free and takes about ten minutes.",
-  cta: { label: "Register Now", href: "/register" },
-  note: "Questions from a parent or guardian? Contact us and we will walk through it with you.",
+  body:
+    "Registering, browsing and sending an interest are free, and it takes about ten minutes to " +
+    "put a profile together. What a connection costs is on the pricing page.",
+  cta: { label: "Register now", href: "/register" },
+  note: "Parents and walis are welcome to read all of this first — the pricing page is at /pricing.",
 };
