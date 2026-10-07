@@ -7,7 +7,10 @@ import { MarketingLogo } from "./MarketingLogo";
 import "./landing.css";
 
 const LINKS = [
-  { label: "How It Works", href: "/#how" },
+  /* The page, not the homepage section of the same name: the section is
+     three lines, the page is the whole process, and somebody reaching
+     for this in the nav wants the latter. */
+  { label: "How It Works", href: "/how-it-works" },
   { label: "Pricing", href: "/pricing" },
   { label: "Why NikahCanada", href: "/#why" },
   { label: "FAQ", href: "/#faq" },
