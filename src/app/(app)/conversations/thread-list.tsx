@@ -5,6 +5,7 @@ import { COLLECTIONS } from "@/lib/db/collections";
 import { getDb } from "@/lib/db/client";
 import { listConversationsFor } from "@/lib/repositories/conversations";
 import { ChatIcon, ClockIcon } from "@/components/app/icons";
+import { AppIllustration } from "@/components/app/illustration";
 
 /* The middle pane: every thread this person is in.
  *
@@ -105,9 +106,12 @@ export function ThreadList({
       </div>
 
       {threads.length === 0 ? (
-        <p className="px-5 py-8 text-[18px] leading-[26px] text-text">
-          No conversations yet. One opens when a request is accepted and the wali approves it.
-        </p>
+        <div className="flex flex-col items-center gap-3 px-5 py-8 text-center">
+          <AppIllustration kind="conversations" compact />
+          <p className="text-[18px] leading-[26px] text-text">
+            No conversations yet. One opens when a request is accepted and the wali approves it.
+          </p>
+        </div>
       ) : (
         <ul className="flex flex-col">
           {threads.map((t) => {

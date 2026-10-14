@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { requireStaff } from "@/lib/admin/actions";
 import { listQueue } from "@/lib/repositories/profiles";
 import { AdminShell } from "../shell";
+import { AppIllustration } from "@/components/app/illustration";
 
 export const metadata: Metadata = { title: "Review queue | NikahCanada staff" };
 
@@ -32,9 +33,10 @@ export default async function QueuePage() {
       user={user}
     >
       {rows.length === 0 ? (
-        <p className="rounded-md border border-soft-green bg-mist px-4 py-6 text-center text-[14px] text-text">
-          No profiles are waiting for review.
-        </p>
+        <div className="flex flex-col items-center gap-3 rounded-md border border-soft-green bg-mist/40 px-4 py-8 text-center">
+          <AppIllustration kind="review" compact />
+          <p className="text-[14px] text-text">No profiles are waiting for review.</p>
+        </div>
       ) : (
         <table className="w-full border-collapse text-left">
           <thead>

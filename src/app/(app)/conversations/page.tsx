@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { currentUser } from "@/lib/auth/current";
-import { ChatIcon } from "@/components/app/icons";
+import { AppIllustration } from "@/components/app/illustration";
 import { AppFrame } from "../frame";
 import { ThreadList, threadsFor } from "./thread-list";
 
@@ -29,9 +29,7 @@ export default async function ConversationsPage() {
       phone="list"
     >
       <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-soft-green bg-mist/40 px-6 py-16 text-center">
-        <span className="grid h-14 w-14 place-items-center rounded-full bg-white text-[26px] text-accent-deep">
-          <ChatIcon />
-        </span>
+        <AppIllustration kind="conversations" />
         <p className="text-[18px] leading-[26px] text-text">
           {threads.length
             ? "Pick a conversation to read it."

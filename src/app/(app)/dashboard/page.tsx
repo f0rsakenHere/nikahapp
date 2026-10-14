@@ -41,6 +41,7 @@ import {
   WaliIcon,
 } from "@/components/app/icons";
 import { ConfirmEmail } from "@/components/app/confirm-email";
+import { AppIllustration } from "@/components/app/illustration";
 import { AppFrame } from "../frame";
 
 export const metadata: Metadata = { title: "Your dashboard | NikahCanada" };
@@ -524,6 +525,11 @@ export default async function DashboardPage({
               left, and what the pool is. Neither is news, so neither is
               in the strip below. */}
           <div className="shrink-0 border-t border-soft-green bg-mist/40 p-5 lg:w-[320px] lg:border-l lg:border-t-0 lg:p-7">
+            <AppIllustration
+              kind={canBrowse ? "discover" : "review"}
+              compact
+              className="mx-auto mb-5 hidden lg:block"
+            />
             {canBrowse ? (
               <>
                 <p className="flex items-center gap-2 text-[18px] font-semibold uppercase tracking-[0.6px] text-text/70">

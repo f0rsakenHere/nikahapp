@@ -208,6 +208,21 @@ async function viaResend(message: Message): Promise<void> {
       signal: AbortSignal.timeout(10_000),
     });
 
+    if (response.ok) {
+      /* The provider's id for the message, and nothing else. Without it
+         there is no way to answer "did my reset email actually go out?"
+         except by asking the person to look in their spam folder: a
+         success left no trace at all, so every delivery question became
+         guesswork. The id is not a credential and the body is still
+         never logged. */
+      const id = await response
+        .json()
+        .then((r: { id?: string }) => r?.id)
+        .catch(() => undefined);
+      console.log(`[email] ${message.kind} accepted by Resend${id ? ` as ${id}` : ""}`);
+      return;
+    }
+
     if (!response.ok) {
       const detail = await response.text().catch(() => "");
       console.error(

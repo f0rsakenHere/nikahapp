@@ -15,6 +15,7 @@ import {
 import { PROVINCES, canParticipate, inPool } from "@/lib/domain/profile";
 import { hasConfirmedWali } from "@/lib/repositories/guardianships";
 import { SparkIcon } from "@/components/app/icons";
+import { AppIllustration } from "@/components/app/illustration";
 import { ProfileCard } from "@/components/app/profile-card";
 import { AppFrame } from "../frame";
 import { AskButton } from "./ask";
@@ -195,13 +196,16 @@ export default async function BrowsePage({
       <Filters current={params} />
 
       {cards.length === 0 ? (
-        <p className="mt-6 rounded-md border border-soft-green bg-mist px-4 py-6 text-center text-[18px] leading-[26px] text-text">
+        <div className="mt-6 flex flex-col items-center gap-3 rounded-lg border border-soft-green bg-mist/40 px-4 py-8 text-center">
+          <AppIllustration kind="discover" />
+          <p className="max-w-[52ch] text-[18px] leading-[26px] text-text">
           {scope === "saved"
             ? "Nothing saved yet. The heart on a card sets somebody aside to think about, it costs no connection and they are never told."
             : scope === "new"
               ? "Nobody new this week. The pool is small and grows a person at a time."
               : "Nobody matches that just now. Widening the age range or the province is usually enough, the pool is small and deliberately so."}
-        </p>
+          </p>
+        </div>
       ) : (
         <ul
           /* A column of full-width rows is right on a phone and wrong
