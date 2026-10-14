@@ -318,9 +318,17 @@ const mongo = new MongoClient(uri, {
       .updateOne({ email: SISTER }, { $set: { emailVerifiedAt: new Date() } });
 
     await her.goto(BASE + "/onboarding", { waitUntil: "networkidle" });
+    /* The button is present and refuses, rather than absent. A member
+       wrote in at 75% complete saying he could not see one and could not
+       work out what was wanted of him. */
     check(
-      "an unfinished profile offers no submit button",
-      (await her.locator('button:has-text("Send my profile for review")').count()) === 0
+      "an unfinished profile cannot be sent in",
+      await her.locator('button:has-text("Send my profile for review")').first().isDisabled()
+    );
+    check(
+      "and the screen names what is left",
+      /things? left|step left/i.test(await her.evaluate(() => document.body.innerText)),
+      (await her.evaluate(() => document.body.innerText)).replace(/\s+/g, " ").slice(0, 200)
     );
 
     for (const [step, fill] of [

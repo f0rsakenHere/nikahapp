@@ -29,7 +29,11 @@ export function ConfirmEmail({ email }: { email: string }) {
   );
 
   return (
-    <div className="mb-6 rounded-md border border-peach bg-soft-peach/40 px-4 py-4">
+    /* Mist rather than peach. On the profile checklist the peach panel
+       is the one that says what is left to do, and two of them side by
+       side made neither urgent. This is the tool for re-sending the
+       link, not the instruction. */
+    <div className="mb-6 rounded-md border border-soft-green bg-mist px-4 py-4">
       <p className="text-[18px] font-semibold text-black">Confirm your email address</p>
       <p className="mt-2 text-[18px] leading-[26px] text-text">
         We have sent a link to{" "}
