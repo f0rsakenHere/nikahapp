@@ -8,12 +8,14 @@ const artwork = {
   requests: "/images/app/requests.webp",
   privacy: "/images/app/privacy.webp",
   notifications: "/images/app/notifications.webp",
+  "sidebar-garden": "/images/app/sidebar-garden.webp",
 } as const;
 
 export type AppIllustrationKind = keyof typeof artwork;
 
 const dimensions = {
   small: { className: "h-16 w-16", sizes: "64px" },
+  sidebar: { className: "h-24 w-24", sizes: "96px" },
   compact: { className: "h-28 w-28", sizes: "112px" },
   standard: { className: "h-40 w-40", sizes: "160px" },
 } as const;

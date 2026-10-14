@@ -4,6 +4,7 @@ import { currentUser } from "@/lib/auth/current";
 import { countUnread } from "@/lib/repositories/notifications";
 import { touchActivity } from "@/lib/repositories/profiles";
 import { Logo } from "@/components/brand/Logo";
+import { SidebarStory } from "@/components/app/sidebar-story";
 import { AccountIcon, BellIcon, SignOutIcon } from "@/components/app/icons";
 import { logout } from "@/lib/auth/actions";
 import { SideNav, TabBar, type TabId } from "./nav";
@@ -124,7 +125,7 @@ export function AppShell({
           sideways on every conversation screen. */}
       <div className="flex min-h-dvh w-full flex-col lg:flex-row">
         {/* ---- pane one: where you can go --------------------------- */}
-        <aside className="hidden w-[264px] shrink-0 flex-col border-r border-soft-green bg-mist/40 px-4 py-6 lg:flex">
+        <aside className="hidden w-[264px] shrink-0 flex-col border-r border-soft-green bg-linear-to-b from-mist/80 via-white to-mist/50 px-4 py-6 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:overflow-y-auto">
           <Link href="/dashboard" aria-label="NikahCanada" className="-my-2.5 px-3 py-2.5">
             {/* The rail is 264px less 32 of its own padding and 24 of the
                 link's, so 208 is all there is. The wordmark at h-7 is
@@ -137,7 +138,10 @@ export function AppShell({
 
           <SideNav active={active} />
 
-          <div className="mt-auto flex flex-col gap-1">
+          <SidebarStory />
+
+          <div className="mt-auto flex shrink-0 flex-col gap-1 pt-5">
+            <div aria-hidden="true" className="mb-2 h-px bg-soft-green" />
             <Bell unread={unread} />
             <Link
               href="/settings"

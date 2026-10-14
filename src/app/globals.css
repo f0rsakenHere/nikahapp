@@ -50,6 +50,17 @@
   --color-gmail: #d13f2d;
 }
 
+/* Leave the navigation and account controls room on short laptop screens. */
+.sidebar-story {
+  display: none;
+}
+
+@media (min-height: 840px) {
+  .sidebar-story {
+    display: flex;
+  }
+}
+
 /* Two infinite decorative loops that MotionConfig cannot switch off on its
    own: it drops transforms for reduced-motion readers but happily keeps
    cycling opacity and colour forever. A stylesheet !important beats

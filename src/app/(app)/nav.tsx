@@ -64,7 +64,7 @@ export function SideNav({ active }: { active: TabId }) {
   const [current, press] = useOptimisticTab(active);
 
   return (
-    <nav className="mt-9 flex flex-col gap-1">
+    <nav aria-label="Main navigation" className="mt-8 flex shrink-0 flex-col gap-1.5">
       {TABS.map(({ id, href, label, Icon }) => {
         const on = id === current;
         return (
@@ -73,24 +73,32 @@ export function SideNav({ active }: { active: TabId }) {
             href={href}
             onClick={() => press(id)}
             aria-current={on ? "page" : undefined}
-            className="relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[18px] font-semibold transition-colors"
+            className="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[18px] font-semibold transition-colors hover:bg-white/70"
           >
             {on ? (
               <>
                 <motion.span
                   layoutId="sidenav-pill"
                   transition={GLIDE}
-                  className="absolute inset-0 rounded-lg bg-white shadow-[0_2px_10px_-6px_rgba(20,18,18,0.3)]"
+                  className="absolute inset-0 rounded-xl border border-soft-green/80 bg-white shadow-app"
                 />
                 <motion.span
                   layoutId="sidenav-marker"
                   transition={GLIDE}
-                  className="absolute inset-y-2 -right-4 w-1 rounded-full bg-peach"
+                  className="absolute inset-y-3 right-0 w-0.5 rounded-full bg-peach"
                 />
               </>
             ) : null}
             {/* Above the pill, which is absolutely positioned behind. */}
-            <Icon className={`relative text-[20px] ${on ? "text-accent-deep" : ""}`} />
+            <span
+              className={`relative grid h-9 w-9 shrink-0 place-items-center rounded-xl border ${
+                on
+                  ? "border-accent-deep bg-accent-deep text-white"
+                  : "border-soft-green/80 bg-white/80 text-accent-deep"
+              }`}
+            >
+              <Icon className="text-[20px]" />
+            </span>
             <span className={`relative ${on ? "text-black" : "text-text"}`}>{label}</span>
           </Link>
         );

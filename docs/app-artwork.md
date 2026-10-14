@@ -73,3 +73,24 @@ The shared `AppEmptyState` uses a gentle mint-to-white gradient, rounded corners
 - TypeScript check and `git diff --check` passed.
 - Visual checks cover sign-in, registration, profile overview, requests, and notifications at 320px, 390px, 768px, and 1440px (20 views). No horizontal overflow; artwork loads successfully. Sign-in and registration use the running app. Authenticated screens are rendered from their actual components with in-memory preview data and no database access.
 - Screenshots and the isolated render harness are in `.next/qa/premium-artwork/`, excluded from Git.
+
+## Sidebar artwork
+
+Generated with the built-in image generation tool, using `public/images/app/discover-source.png` as the style reference.
+
+- `public/images/app/sidebar-garden.webp`: 512 × 512 transparent artwork for `SidebarStory`; the original PNG is `sidebar-garden-source.png`. Displayed at 96px inside the sidebar card.
+- `public/images/app/sidebar-flourish.webp`: 600 × 120 transparent botanical divider; the original PNG is `sidebar-flourish-source.png`. This artwork is saved for reuse, and is no longer displayed beneath the logo following the requested removal.
+
+The sidebar uses a light mint gradient, framed SVG navigation icons, a teal active tile, and a subtle peach selection marker. It stays within the viewport as the content scrolls. Its controls can scroll independently on short screens. The illustrated guide card appears on desktop viewports at least 840px tall. Both loading states and loaded pages use the same `AppShell`.
+
+### sidebar-garden prompt
+
+Use case: stylized-concept. Create a custom decorative raster illustration for the sidebar of NikahCanada, a Muslim marriage app. The supplied image is a STYLE REFERENCE ONLY. Match its premium hand-painted watercolor wedding-stationery look, fine botanical detail, soft ivory, mint #9ACCC9, deep teal #2F6F6B, peach #F4A492 and gentle warm gold accents. Delicate dimensional shading, airy balanced composition, crisp enough to read at small UI scale. Genuine transparent alpha background. No paper ground, no background wash, no checkerboard. No text, words, lettering, digits, logo, watermark, people or faces. Subject: a single elegant small pointed arch in mint, framing two delicate intertwined wedding bands resting together at its base. An understated peach blossom branch and mint foliage grow around the lower-left of the arch, with a tiny peach Canadian maple leaf nestled on the opposite side. Refined, warm, restrained, optimistic, suitable for a small ornamental sidebar card. Square format with comfortable transparent padding around the full composition. Objects centered, with generous negative space inside the upper arch. Not a building or mosque scene.
+
+### sidebar-flourish prompt
+
+Use case: stylized-concept. Create a custom decorative raster illustration for the sidebar of NikahCanada, a Muslim marriage app. The supplied image is a STYLE REFERENCE ONLY. Match its premium hand-painted watercolor wedding-stationery look, fine botanical detail, soft ivory, mint #9ACCC9, deep teal #2F6F6B, peach #F4A492 and gentle warm gold accents. Delicate dimensional shading, airy balanced composition, crisp enough to read at small UI scale. Genuine transparent alpha background. No paper ground, no background wash, no checkerboard. No text, words, lettering, digits, logo, watermark, people or faces. Subject: a single slim horizontal botanical divider: two light mint leafy sprigs with one small peach blossom each stretch outward from a tiny central peach heart, with fine warm-gold stems. Balanced left/right composition with very sparse foliage, about three times as wide as it is tall. Keep the drawing slender and delicate so it works as a 200px wide, 40px tall ornament beneath the sidebar wordmark. Wide landscape canvas, fully transparent surroundings. No arch, rings or maple leaf in this divider.
+
+### Sidebar verification
+
+TypeScript check passed. The actual `AppShell` was rendered with isolated data across all five tabs at 1440 × 900, 1280 × 720, 1024 × 600, 1200 × 500, and 390 × 844 (25 views). Checks cover active links, image loading, horizontal overflow, sticky positioning, short-screen card visibility, and access to Sign out. No database is accessed by the preview harness. Screenshots are in `.next/qa/sidebar-artwork/`.
