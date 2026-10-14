@@ -36,13 +36,10 @@ import { PageTransition } from "./transition";
 
 /* The bell, wherever the chrome has room for it.
  *
- * Read here rather than passed in by every page: a count that some
- * screens remember to fetch and others do not is worse than none, and
- * this is one indexed count against a collection the member owns. */
-async function Bell({ compact }: { compact?: boolean }) {
-  const session = await currentUser();
-  const unread = session ? await countUnread(session.user.id) : 0;
-
+ * The count is passed in rather than read here, so this same chrome can
+ * be rendered by a route's `loading` state — which cannot await
+ * anything — while the page behind it is still being built. */
+function Bell({ compact, unread }: { compact?: boolean; unread: number }) {
   return (
     <Link
       href="/notifications"
@@ -75,7 +72,15 @@ async function Bell({ compact }: { compact?: boolean }) {
   );
 }
 
-export async function AppFrame({
+/** The chrome, with nothing fetched.
+ *
+ *  Separate from `AppFrame` so that a route's `loading.tsx` can render
+ *  the same sidebar, header and tab bar around a skeleton. Switching
+ *  tabs used to sit on the old screen until the next one had been built
+ *  on the server — no spinner, no skeleton, nothing to say the tap had
+ *  registered — because the chrome was inside the page and a loading
+ *  state would have blanked the whole window. */
+export function AppShell({
   active,
   title,
   /** Sits opposite the title — a filter row, a count, an action. */
@@ -95,6 +100,7 @@ export async function AppFrame({
   /** `wide` gives the content pane its full width; the default keeps a
    *  reading column for pages that are mostly prose or a form. */
   width = "reading",
+  unread = 0,
   children,
 }: {
   active: TabId;
@@ -103,17 +109,10 @@ export async function AppFrame({
   list?: ReactNode;
   phone?: "list" | "content";
   width?: "reading" | "wide";
+  /** Unread notifications, for the badge. Zero while a page loads. */
+  unread?: number;
   children: ReactNode;
 }) {
-  /* Being here is recorded here, in the one component every member
-     screen renders, rather than in each page — a presence signal that
-     some screens report and others do not would say "last seen Tuesday"
-     about somebody who has been reading their messages all week. Rate
-     limited to one write an hour in the query itself, and it never
-     throws: see `touchActivity`. */
-  const here = await currentUser();
-  if (here) await touchActivity(here.user.id, new Date());
-
   /* Full bleed. This was a floating panel capped at 1520px, which on a
      wide monitor spends the extra width on empty margins either side —
      and the pool is a grid, so the room is worth having. */
@@ -139,7 +138,7 @@ export async function AppFrame({
           <SideNav active={active} />
 
           <div className="mt-auto flex flex-col gap-1">
-            <Bell />
+            <Bell unread={unread} />
             <Link
               href="/settings"
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[18px] font-semibold text-accent-deep transition-colors hover:bg-white/70"
@@ -168,7 +167,7 @@ export async function AppFrame({
             <Logo className="h-4" priority />
           </Link>
           <div className="flex items-center gap-5">
-            <Bell compact />
+            <Bell compact unread={unread} />
             <Link
               href="/settings"
               aria-label="Your account"
@@ -214,6 +213,23 @@ export async function AppFrame({
 
     </div>
   );
+}
+
+/** The chrome, with the member's own numbers in it.
+ *
+ *  Being here is recorded here, in the one component every member screen
+ *  renders, rather than in each page — a presence signal that some
+ *  screens report and others do not would say "last seen Tuesday" about
+ *  somebody who has been reading their messages all week. Rate limited to
+ *  one write an hour in the query itself, and it never throws. */
+export async function AppFrame(
+  props: Omit<Parameters<typeof AppShell>[0], "unread">
+) {
+  const here = await currentUser();
+  if (here) await touchActivity(here.user.id, new Date());
+  const unread = here ? await countUnread(here.user.id) : 0;
+
+  return <AppShell {...props} unread={unread} />;
 }
 
 export type { TabId };

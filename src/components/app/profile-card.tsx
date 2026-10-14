@@ -115,7 +115,7 @@ export function ProfileCard({
        browse, and a form inside an anchor is invalid and fights the
        click. The whole surface is still clickable: a stretched link
        covers it, and only the buttons take pointer events above it. */
-    <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-soft-green bg-white transition-all hover:-translate-y-0.5 hover:border-accent-deep hover:shadow-[0_12px_32px_-20px_rgba(20,18,18,0.45)]">
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-soft-green bg-white shadow-app transition-all hover:-translate-y-0.5 hover:border-accent-deep hover:shadow-[0_12px_32px_-20px_rgba(20,18,18,0.45)]">
       <Link
         href={`/browse/${c.profileId}`}
         className="absolute inset-0 z-0"

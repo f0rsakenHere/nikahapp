@@ -13,6 +13,7 @@ import {
   WaliIcon,
 } from "@/components/app/icons";
 import { AppFrame } from "../frame";
+import { AppEmptyState } from "@/components/app/empty-state";
 
 export const metadata: Metadata = { title: "Notifications | NikahCanada" };
 
@@ -47,15 +48,10 @@ export default async function NotificationsPage() {
   return (
     <AppFrame active="home" title="Notifications">
       {items.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-soft-green bg-mist/40 px-6 py-14 text-center">
-          <span className="grid h-14 w-14 place-items-center rounded-full bg-white text-[26px] text-accent-deep">
-            <BellIcon />
-          </span>
-          <p className="text-[18px] leading-[26px] text-text">
-            Nothing yet. You will hear when somebody asks to talk, when a request is answered, and
-            when a conversation opens.
-          </p>
-        </div>
+        <AppEmptyState kind="notifications">
+          Nothing yet. You will hear when somebody asks to talk, when a request is answered, and
+          when a conversation opens.
+        </AppEmptyState>
       ) : (
         <ul className="flex flex-col gap-2">
           {items.map((n) => {

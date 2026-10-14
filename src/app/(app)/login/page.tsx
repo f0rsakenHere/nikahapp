@@ -43,6 +43,7 @@ export default async function LoginPage({
   return (
     <AuthShell
       title="Sign in"
+      illustration="privacy"
       blurb="Members and walis sign in here."
       footer={
         <>

@@ -34,6 +34,7 @@ export default async function RegisterPage() {
   return (
     <AuthShell
       title="Create your account"
+      illustration="profile"
       /* The three claims that are still true under browsing. "Never
          public" was narrowed to "never outside the service" when the
          model changed — see src/content/home.ts. */

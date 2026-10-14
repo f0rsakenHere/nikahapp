@@ -401,7 +401,7 @@ export default async function DashboardPage({
           The old right-hand card held two sentences about the pool in a
           third of a monitor's width; the rule does the same separating
           for none of the space. */}
-      <section className="overflow-hidden rounded-lg border border-soft-green bg-white">
+      <section className="overflow-hidden rounded-2xl border border-soft-green bg-white shadow-app">
         <div className="flex flex-col lg:flex-row">
           <div className="min-w-0 flex-1 p-5 lg:p-7">
             <p className="flex items-center gap-2 text-[18px] font-semibold uppercase tracking-[0.6px] text-text/70">

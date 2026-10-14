@@ -28,6 +28,10 @@ export function LandingHeader({ signedIn = false }: { signedIn?: boolean }) {
         <Link href="/" className="landing-brand-link" aria-label="NikahCanada home"><MarketingLogo className="landing-logo" priority /></Link>
         <nav className="landing-desktop-nav" aria-label="Main navigation">
           {LINKS.map((link) => <Link key={link.href} href={link.href} aria-current={pathname === link.href ? "page" : undefined}>{link.label}</Link>)}
+          {/* A returning member had nowhere to sign in from here: the
+              header offered Register Now and nothing else, and the only
+              other way in was a line in the footer. */}
+          {!signedIn && <Link href="/login">Sign in</Link>}
         </nav>
         <Link href={cta.href} className="landing-button landing-register">{cta.label}</Link>
         <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="landing-nav" className="landing-menu-button" aria-label={open ? "Close menu" : "Open menu"}>

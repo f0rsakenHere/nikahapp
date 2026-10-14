@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/brand/Logo";
+import { AppIllustration, type AppIllustrationKind } from "@/components/app/illustration";
 import { ScrollToTop } from "./scroll-top";
 
 /* The frame around sign-up and sign-in.
@@ -14,6 +15,7 @@ export function AuthShell({
   blurb,
   children,
   footer,
+  illustration,
   /* A way back, at the top, for the screens a signed-in member reaches
      from inside the app. This shell has no tab bar and no header — right
      for sign-in, wrong for the account screen, which a member opens from
@@ -31,6 +33,7 @@ export function AuthShell({
   blurb: string;
   children: ReactNode;
   footer?: ReactNode;
+  illustration?: AppIllustrationKind;
   back?: { href: string; label: string };
   width?: "form" | "page";
 }) {
@@ -47,7 +50,7 @@ export function AuthShell({
         className={
           page
             ? "mt-8 w-full max-w-[940px]"
-            : "mt-8 w-full max-w-[440px] rounded-lg border border-soft-green bg-white p-6 sm:p-8"
+            : "mt-8 w-full max-w-[440px] rounded-2xl border border-soft-green bg-white p-6 shadow-app sm:p-8"
         }
       >
         {back ? (
@@ -58,9 +61,14 @@ export function AuthShell({
             ← {back.label}
           </Link>
         ) : null}
-        <h1 className="font-manrope text-[28px] font-bold leading-tight text-black lg:text-[32px]">
-          {title}
-        </h1>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="min-w-0 font-manrope text-[28px] font-bold leading-tight text-black lg:text-[32px]">
+            {title}
+          </h1>
+          {illustration ? (
+            <AppIllustration kind={illustration} size="small" className="hidden min-[360px]:block" />
+          ) : null}
+        </div>
         <p className="mt-2 text-[18px] leading-[26px] text-text">{blurb}</p>
         <div className="mt-7">{children}</div>
       </div>

@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: "Your account | NikahCanada" };
    below is CSS columns, and a card that splits across the fold is worse
    than any gap it would close. */
 const PANEL =
-  "mb-5 flex break-inside-avoid flex-col gap-3 rounded-lg border border-soft-green bg-white p-5 sm:p-6";
+  "mb-5 flex break-inside-avoid flex-col gap-3 rounded-2xl border border-soft-green bg-white p-5 shadow-app sm:p-6";
 const PANEL_TITLE = "text-[18px] font-semibold uppercase tracking-[0.6px] text-text/70";
 
 function when(date: Date): string {
@@ -41,6 +41,7 @@ export default async function SettingsPage() {
     <AuthShell
       width="page"
       title="Your account"
+      illustration="privacy"
       blurb="Your email, your password, and where you are signed in."
       back={{ href: "/dashboard", label: "Back to the app" }}
       footer={

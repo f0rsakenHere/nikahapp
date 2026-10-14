@@ -55,6 +55,7 @@ export default async function WaliInvitePage({
   return (
     <AuthShell
       title={`${invitation.memberFirstName} has named you as her wali`}
+      illustration="requests"
       /* Her first name only, until he accepts. If she mistyped his
        * address, a stranger learns that someone called Fatima is seeking
        * marriage — recoverable. Her full name would not be. */

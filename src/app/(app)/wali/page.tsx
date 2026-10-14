@@ -47,6 +47,7 @@ export default async function WaliPortalPage() {
   return (
     <AuthShell
       title={`Assalamu alaikum, ${user.legalName.first}`}
+      illustration="privacy"
       blurb={
         waiting.length
           ? `${waiting.length} conversation${waiting.length === 1 ? "" : "s"} waiting on you.`

@@ -375,13 +375,17 @@ async function makeMember(browser, db, gender, name, over = {}) {
       .collection("guardianships")
       .updateOne({ memberUserId: String(other.user._id) }, { $set: { status: "revoked" } });
 
-    const gone = await t.goto(`${BASE}/browse/${otherProfile._id.toHexString()}`, {
+    await t.goto(`${BASE}/browse/${otherProfile._id.toHexString()}`, {
       waitUntil: "networkidle",
     });
+    /* On what renders rather than the status: with a loading skeleton
+       above it the shell flushes first, so a streamed `notFound()`
+       arrives inside a 200. What matters is that her profile does not. */
+    const goneText = await visible(t);
     check(
       "her profile stops resolving once the wali is revoked",
-      gone.status() === 404,
-      String(gone.status())
+      /could not be found|not found/i.test(goneText),
+      goneText.replace(/\s+/g, " ").slice(0, 160)
     );
     await t.goto(BASE + "/browse", { waitUntil: "networkidle" });
     check("and she is not in the list either", !(await visible(t)).includes("A.F"));

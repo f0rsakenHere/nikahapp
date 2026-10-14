@@ -21,6 +21,7 @@ import {
 } from "@/components/app/icons";
 import { AppFrame } from "../frame";
 import { AnswerForm } from "./answer";
+import { AppEmptyState } from "@/components/app/empty-state";
 
 export const metadata: Metadata = { title: "Requests | NikahCanada" };
 
@@ -53,19 +54,6 @@ function Section({
       <p className="mb-4 text-[18px] leading-[26px] text-text/70">{blurb}</p>
       {children}
     </section>
-  );
-}
-
-/* Nothing here yet, said with the same weight as something. A flat bar
-   with a sentence in it reads as a failed load. */
-function Empty({ Icon, line }: { Icon: (p: { className?: string }) => ReactNode; line: string }) {
-  return (
-    <div className="flex flex-col items-center gap-2.5 rounded-xl border border-dashed border-soft-green bg-mist/40 px-4 py-9 text-center">
-      <span className="grid h-12 w-12 place-items-center rounded-full bg-white text-[22px] text-accent-deep">
-        <Icon />
-      </span>
-      <p className="text-[18px] leading-[26px] text-text">{line}</p>
-    </div>
   );
 }
 
@@ -217,11 +205,11 @@ export default async function RequestsPage() {
           blurb="They asked. Nothing is shared until you answer."
         >
           {waiting.length === 0 ? (
-            <Empty Icon={RequestsIcon} line="Nobody is waiting on an answer." />
+            <AppEmptyState kind="requests" compact>Nobody is waiting on an answer.</AppEmptyState>
           ) : (
             <ul className="flex flex-col gap-3">
               {waiting.map((r) => (
-                <li key={r.id} className="rounded-xl border border-soft-green bg-white p-4">
+                <li key={r.id} className="rounded-2xl border border-soft-green bg-white p-4 shadow-app">
                   {/* One line where there is room for one. Stacked, the
                       controls inherited the card's whole width and two
                       ordinary buttons became a pair of slabs; side by
@@ -250,11 +238,11 @@ export default async function RequestsPage() {
           blurb="Waiting on them. Withdrawing returns the connection."
         >
           {sent.length === 0 ? (
-            <Empty Icon={SentIcon} line="You have not asked anybody yet." />
+            <AppEmptyState kind="discover" compact>You have not asked anybody yet.</AppEmptyState>
           ) : (
             <ul className="flex flex-col gap-3">
               {sent.map((r) => (
-                <li key={r.id} className="rounded-xl border border-soft-green bg-white p-4">
+                <li key={r.id} className="rounded-2xl border border-soft-green bg-white p-4 shadow-app">
                   <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
                     <PersonRow
                       person={names.get(r.toUserId)}

@@ -9,6 +9,7 @@ import { hasConfirmedWali } from "@/lib/repositories/guardianships";
 import { completeness, stepsFor, submitBlockers } from "@/lib/domain/profile";
 import { Check } from "@/components/app/kit";
 import { ConfirmEmail } from "@/components/app/confirm-email";
+import { AppIllustration } from "@/components/app/illustration";
 import { AppFrame } from "../frame";
 
 export const metadata: Metadata = { title: "Your profile | NikahCanada" };
@@ -98,7 +99,10 @@ export default async function OnboardingPage({
         </span>
       }
     >
-      <p className="-mt-3 mb-6 text-[18px] leading-[26px] text-text">{blurb}</p>
+      <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-soft-green bg-linear-to-r from-mist/60 to-white px-5 py-4 shadow-app sm:px-6">
+        <p className="max-w-[60ch] text-[18px] leading-[26px] text-text">{blurb}</p>
+        <AppIllustration kind="profile" size="small" />
+      </div>
       {profile.status !== "draft" ? (
         /* Once it is submitted the checklist is no longer the point;
            what they want to know is what happens next. It used to say we
@@ -207,7 +211,7 @@ export default async function OnboardingPage({
                    looks different. Four rows in the same grey, one of
                    them carrying a dashed circle instead of a tick, is a
                    difference nobody reads as "this one is for you". */
-                className={`flex h-full items-center gap-3.5 rounded-md border px-3.5 py-3 transition-colors ${
+                className={`flex h-full items-center gap-3.5 rounded-xl border px-4 py-4 shadow-app transition-[border-color,box-shadow,background-color] hover:shadow-soft ${
                   done
                     ? "border-soft-green hover:border-accent-deep"
                     : waitingOnWali

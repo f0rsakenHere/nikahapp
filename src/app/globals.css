@@ -41,6 +41,7 @@
   --color-soft-green: #daeded; /* hairlines */
   --color-soft-peach: #fad2c9;
   --color-offwhite: #fdfdfd;
+  --shadow-app: 0 2px 8px -4px rgb(47 111 107 / 0.1), 0 16px 40px -28px rgb(47 111 107 / 0.22);
   --color-yellow: #fdde47;
 
   --color-facebook: #3b5998;

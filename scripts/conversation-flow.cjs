@@ -169,8 +169,23 @@ async function member(browser, db, gender, name) {
     {
       const stranger = await member(browser, db, "sister", "Aisha");
       const s = stranger.page;
-      const res = await s.goto(`${BASE}/conversations/${cid}`, { waitUntil: "networkidle" });
-      check("a stranger gets a 404, not a thread", res.status() === 404, String(res.status()));
+      await s.goto(`${BASE}/conversations/${cid}`, { waitUntil: "networkidle" });
+      /* Asserted on what renders, not on the status code. The route has
+         a loading skeleton now, so the shell flushes before the page
+         decides, and a streamed `notFound()` arrives inside a 200 — a
+         Next trade-off, and the privacy property is the page, not the
+         number. */
+      const strangerSees = await visible(s);
+      check(
+        "a stranger gets the not-found page, not a thread",
+        /could not be found|not found/i.test(strangerSees),
+        strangerSees.replace(/\s+/g, " ").slice(0, 160)
+      );
+      check(
+        "and none of it reaches them",
+        !/Assalamu alaikum|wali/i.test(strangerSees),
+        strangerSees.replace(/\s+/g, " ").slice(0, 160)
+      );
       await s.close();
     }
 

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { currentUser } from "@/lib/auth/current";
-import { AppIllustration } from "@/components/app/illustration";
+import { AppEmptyState } from "@/components/app/empty-state";
 import { AppFrame } from "../frame";
 import { ThreadList, threadsFor } from "./thread-list";
 
@@ -28,14 +28,11 @@ export default async function ConversationsPage() {
       list={<ThreadList threads={threads} />}
       phone="list"
     >
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-soft-green bg-mist/40 px-6 py-16 text-center">
-        <AppIllustration kind="conversations" />
-        <p className="text-[18px] leading-[26px] text-text">
-          {threads.length
-            ? "Pick a conversation to read it."
-            : "Nothing here yet. A conversation opens when a request is accepted and the wali approves it."}
-        </p>
-      </div>
+      <AppEmptyState kind="conversations" className="py-12">
+        {threads.length
+          ? "Pick a conversation to read it."
+          : "Nothing here yet. A conversation opens when a request is accepted and the wali approves it."}
+      </AppEmptyState>
     </AppFrame>
   );
 }
