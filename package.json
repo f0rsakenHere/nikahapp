@@ -33,6 +33,7 @@
     "check:plan": "node scripts/plan-gate-flow.cjs",
     "check:redirects": "node scripts/redirect-check.cjs",
     "check:walis": "node scripts/two-walis-flow.cjs",
+    "check:finish": "node scripts/finish-flow.cjs",
     "brand:crop": "node scripts/brand-crop.cjs",
     "shot": "node scripts/screenshot.cjs .",
     "shot:phone": "node scripts/phone-shots.cjs"

@@ -2,8 +2,14 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { currentUser } from "@/lib/auth/current";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
-import { fieldsForStep } from "@/lib/domain/profile-form";
-import { completeness, stepById, stepsFor, type ProfileDraft } from "@/lib/domain/profile";
+import { fieldsForStep, missingRequired } from "@/lib/domain/profile-form";
+import {
+  completeness,
+  stepById,
+  stepsFor,
+  submitBlockers,
+  type ProfileDraft,
+} from "@/lib/domain/profile";
 import { AppFrame } from "../../frame";
 import { StepForm } from "./form";
 import { GuardianStep } from "./guardian";
@@ -45,9 +51,9 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
    * a theoretical one. */
   if (!visible.some((s) => s.id === step.id)) redirect("/onboarding");
 
-  const progress = completeness(profile, {
-    hasConfirmedWali: await hasConfirmedWali(session.user.id),
-  });
+  const ctx = { hasConfirmedWali: await hasConfirmedWali(session.user.id) };
+  const progress = completeness(profile, ctx);
+  const blockers = submitBlockers(profile, ctx);
   const position = visible.findIndex((s) => s.id === step.id) + 1;
   const fields = fieldsForStep(step.id, profile.gender);
 
@@ -80,6 +86,8 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
     confirmedAt: g.confirmedAt ? day(g.confirmedAt) : "",
   }));
 
+  const missing = missingRequired(step.id, profile.gender, valuesOf(profile));
+
   /* Framed like the rest of the app, but kept to a reading column: this
      is one form at a time, and a field set stretched across a monitor is
      harder to fill in, not easier. What the desktop gains here is the
@@ -109,6 +117,24 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
         </div>
       </div>
 
+      {/* What this step is still waiting for, by name. Answers save as
+          they are typed, so leaving one out is silent: the step simply
+          does not tick, and the member is left to guess which box did
+          it. */}
+      {missing.length > 0 && step.id !== "guardian" ? (
+        <div className="mb-6 max-w-[560px] rounded-md border border-peach bg-soft-peach/40 px-4 py-4">
+          <p className="text-[18px] font-semibold text-black">
+            {missing.length === 1
+              ? "One answer is still needed here"
+              : `${missing.length} answers are still needed here`}
+          </p>
+          <p className="mt-1 text-[18px] leading-[26px] text-text">
+            {missing.map((f) => f.label).join(", ")}. Everything else on this page is optional, and
+            whatever you have typed is already saved.
+          </p>
+        </div>
+      ) : null}
+
       <div className="max-w-[560px]">
       {step.id === "guardian" ? (
         <GuardianStep
@@ -125,6 +151,15 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
           /* The last *step in the list*, not the last required one —
              this only decides whether the button says "finish". */
           isLast={visible[visible.length - 1]?.id === step.id}
+          /* The last thing anybody is waiting on. Saying "save and
+             continue" on the answer that finishes the profile is what
+             sent a tester hunting for a send button. */
+          completesProfile={
+            profile.status === "draft" &&
+            Boolean(session.user.emailVerifiedAt) &&
+            blockers.length > 0 &&
+            blockers.every((b) => b.step === step.id)
+          }
           draftKey={`onboarding.${step.id}.${session.user.id}`}
         />
       )}

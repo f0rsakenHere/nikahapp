@@ -173,6 +173,33 @@ export const STEP_FIELDS: Record<Exclude<StepId, "guardian">, FieldSpec[]> = {
 
 };
 
+/** The required fields on this step that are still empty.
+ *
+ *  Every field saves on its own, blank or not — a step is a draft, and
+ *  losing what somebody typed because they left a later box empty would
+ *  be the worse bug. The consequence is that an unfinished step looks
+ *  exactly like a finished one on the way out, and a tester told us so:
+ *  "there are certain fields under Your Background that must be
+ *  populated, otherwise it would not progress the user."
+ *
+ *  So the screen has to say which. Pure, and keyed by the same specs the
+ *  form renders from, so a new required field cannot be left out of the
+ *  list by accident. */
+export function missingRequired(
+  step: StepId,
+  gender: "brother" | "sister",
+  values: Record<string, unknown>
+): FieldSpec[] {
+  return fieldsForStep(step, gender).filter((spec) => {
+    if (!spec.required) return false;
+    const value = values[spec.path];
+    if (value === undefined || value === null) return true;
+    if (Array.isArray(value)) return value.length === 0;
+    if (typeof value === "string") return value.trim() === "";
+    return false;
+  });
+}
+
 export function fieldsForStep(step: StepId, gender: "brother" | "sister"): FieldSpec[] {
   /* The wali step is not a form — it creates a guardianship and emails
      an invitation, so it has no field specs at all. */

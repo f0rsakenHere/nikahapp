@@ -15,6 +15,7 @@ export function StepForm({
   fields,
   values,
   isLast,
+  completesProfile,
   draftKey,
 }: {
   step: StepId;
@@ -22,6 +23,9 @@ export function StepForm({
   /** Current answers, keyed by the same `section.key` path. */
   values: Record<string, unknown>;
   isLast: boolean;
+  /** True when answering this step finishes the profile, in which case
+   *  saving it also sends it in. */
+  completesProfile?: boolean;
   /** Scoped to this member, so a shared browser never restores one
    *  person's answers into another person's profile. */
   draftKey: string;
@@ -42,7 +46,13 @@ export function StepForm({
       ))}
 
       <div className="flex flex-col gap-3 border-t border-soft-green pt-6">
-        <SubmitButton>{isLast ? "Save and finish" : "Save and continue"}</SubmitButton>
+        <SubmitButton>
+          {completesProfile
+            ? "Save and send my profile"
+            : isLast
+              ? "Save and finish"
+              : "Save and continue"}
+        </SubmitButton>
         {/* Leaving is a normal thing to do here, not an escape hatch —
             everything filled in is already saved by the button above,
             and this link says so rather than implying loss. */}

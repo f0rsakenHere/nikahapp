@@ -385,13 +385,12 @@ const mongo = new MongoClient(uri, {
 
     await her.goto(BASE + "/onboarding", { waitUntil: "networkidle" });
     check("a finished profile reaches 100%", /100%/.test(await her.textContent("body")));
+    /* The answer that finished it also sent it. A tester expected
+       exactly that and was made to go and find a button instead. */
     check(
-      "and now offers the submit button",
-      (await her.locator('button:has-text("Send my profile for review")').count()) === 1
+      "and nothing is left to press",
+      (await her.locator('button:has-text("Send my profile for review")').count()) === 0
     );
-
-    await her.click('button:has-text("Send my profile for review")');
-    await her.waitForTimeout(2500);
 
     const submitted = await db.collection("profiles").findOne({ userId: sister._id });
     check("the profile moved to pendingReview", submitted.status === "pendingReview");

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { currentUser } from "@/lib/auth/current";
 import { parseStepForm } from "@/lib/domain/profile-form";
-import { stepsFor, submitBlockers, type StepId } from "@/lib/domain/profile";
+import { stepsFor, submitBlockers, type ProfileDraft, type StepId } from "@/lib/domain/profile";
 import {
   findProfileByUserId,
   saveProfileSection,
@@ -31,10 +31,36 @@ export async function saveStep(step: StepId, _prev: StepState, form: FormData): 
   const profile = await findProfileByUserId(session.user.id);
   if (!profile) redirect("/onboarding");
 
+  const ctxBefore = {
+    hasConfirmedWali: profile.gender === "sister" ? await hasConfirmedWali(session.user.id) : false,
+  };
+  const wasIncomplete = submitBlockers(profile, ctxBefore).length > 0;
+
   const patch = parseStepForm(step, profile.gender, form);
   const saved = await saveProfileSection(session.user.id, patch, new Date());
 
   if (!saved.ok) return { issues: saved.issues };
+
+  /* The answer that finishes the profile also sends it in.
+   *
+   * A tester: "the user must then return to home and hit the 'send it to
+   * us' button, which is something I expected to be done on its own."
+   * He was right — he had answered the last question anybody was waiting
+   * on, and the product made him go and find a button to say so.
+   *
+   * Only on the save that completes it, and only from a draft: editing
+   * one answer on a profile that was already finished must not quietly
+   * send it, and a profile already with us is not re-sent. */
+  if (
+    wasIncomplete &&
+    profile.status === "draft" &&
+    session.user.emailVerifiedAt &&
+    submitBlockers(saved.profile, ctxBefore).length === 0
+  ) {
+    await sendProfileIn(session.user.id, saved.profile, session.user.id);
+    revalidatePath("/onboarding");
+    redirect("/dashboard?submitted=1");
+  }
 
   revalidatePath("/onboarding");
 
@@ -44,6 +70,27 @@ export async function saveStep(step: StepId, _prev: StepState, form: FormData): 
   const here = steps.findIndex((s) => s.id === step);
   const next = steps[here + 1];
   redirect(next ? `/onboarding/${next.id}` : "/onboarding");
+}
+
+/** Sending it in: the status, the checks staff work from, the record.
+ *
+ *  Shared by the button and by the save that finishes the last step, so
+ *  the two cannot drift into doing different amounts of it. */
+async function sendProfileIn(userId: string, profile: ProfileDraft, actorUserId: string) {
+  const now = new Date();
+  await submitForReview(userId, now);
+
+  /* The checks staff will work from, opened at submission rather than
+   * when someone first opens the case. A queue that only fills when a
+   * reviewer looks at it is a queue that hides its own backlog. */
+  await openRequiredChecks(userId, profile.gender, now);
+
+  await record({
+    action: "profile.submitted",
+    subject: { type: "profile", id: profile.id },
+    actor: { userId: actorUserId, role: "member" },
+    meta: { gender: profile.gender },
+  });
 }
 
 /** Sends a finished profile to the review queue.
@@ -74,20 +121,7 @@ export async function submitProfile(): Promise<void> {
    * endpoint being shut. */
   if (!session.user.emailVerifiedAt) redirect("/onboarding");
 
-  const now = new Date();
-  await submitForReview(session.user.id, now);
-
-  /* The checks staff will work from, opened at submission rather than
-   * when someone first opens the case. A queue that only fills when a
-   * reviewer looks at it is a queue that hides its own backlog. */
-  await openRequiredChecks(session.user.id, profile.gender, now);
-
-  await record({
-    action: "profile.submitted",
-    subject: { type: "profile", id: profile.id },
-    actor: { userId: session.user.id, role: "member" },
-    meta: { gender: profile.gender },
-  });
+  await sendProfileIn(session.user.id, profile, session.user.id);
 
   revalidatePath("/onboarding");
   /* Not back to the checklist. The work is done and the answer to "what
