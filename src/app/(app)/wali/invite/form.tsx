@@ -93,16 +93,23 @@ export function InvitationForm({
           <input type="hidden" name="token" value={token} />
 
           {accept.error === "sign-in-required" ? (
+            /* The second daughter. One man is wali for all of them on one
+               address, and this used to read as though his existing
+               account were a problem to be sorted out — it is not, it is
+               the account this invitation joins. The link carries him
+               back here, so signing in finishes the job rather than
+               starting it again. */
             <div className="rounded-md border border-peach/40 bg-soft-peach/60 px-3.5 py-3">
               <p className="text-[18px] leading-[26px] text-text">
-                You already have a NikahCanada account on this address. Sign in first, then open
-                this link again, we will not ask you for a new password.
+                You already have an account on this address. Sign in and you will come straight
+                back here — one account can be wali for more than one person, and no new password
+                is needed.
               </p>
               <Link
-                href="/login"
+                href={`/login?next=${encodeURIComponent(`/wali/invite?token=${token}`)}`}
                 className="mt-2 inline-block text-[18px] font-semibold text-peach-deep underline-offset-2 hover:underline"
               >
-                Sign in
+                Sign in and come back
               </Link>
             </div>
           ) : (
@@ -111,7 +118,8 @@ export function InvitationForm({
 
           {hasAccount ? (
             <p className="text-[18px] leading-[26px] text-text">
-              Signed in as {waliName}? Confirming will add her to your account.
+              This address already has an account. Confirming adds her to it, alongside anybody
+              else you are wali for.
             </p>
           ) : (
             <TextField

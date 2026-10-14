@@ -305,7 +305,7 @@ const mongo = new MongoClient(uri, {
     await s.waitForTimeout(2500);
     check(
       "approving is still refused while her wali is unchecked",
-      /wali has not been identity-checked/i.test(await s.textContent("body"))
+      /wali has not been identity.?checked/i.test(await s.textContent("body"))
     );
 
     await s.goto(`${BASE}/admin/members/${profileId}`, { waitUntil: "networkidle" });

@@ -10,7 +10,12 @@ import { currentUser } from "@/lib/auth/current";
 import { hashPassword } from "@/lib/auth/password";
 import { hashToken } from "@/lib/auth/tokens";
 import { MIN_PASSWORD_LENGTH } from "@/lib/domain/user";
-import { WALI_RELATIONSHIPS, activeGuardianship } from "@/lib/domain/guardianship";
+import {
+  MAX_WALIS,
+  WALI_RELATIONSHIPS,
+  activeGuardianships,
+  waliSeatsTaken,
+} from "@/lib/domain/guardianship";
 import { mayRevealLinks, send } from "@/lib/notifications";
 import { record } from "@/lib/audit";
 import { readSettings } from "@/lib/repositories/connections";
@@ -23,6 +28,7 @@ import {
   createGuardianship,
   findGuardianshipByTokenHash,
   listGuardianshipsForMember,
+  reissueInvitationToken,
 } from "@/lib/repositories/guardianships";
 
 export type WaliState = {
@@ -108,22 +114,23 @@ export async function inviteWali(_prev: WaliState, form: FormData): Promise<Wali
     };
   }
 
+  /* Two at once, and an outstanding invitation holds a place: a name
+     that has been sent is a wali the moment he answers. */
   const existing = await listGuardianshipsForMember(session.user.id);
-  const active = activeGuardianship(existing);
-  if (!active.ok) {
-    return { error: "Something is wrong with your wali records. Please contact us.", values };
-  }
-  if (active.guardianship) {
+  if (waliSeatsTaken(existing) >= MAX_WALIS) {
     return {
-      error: "You already have a confirmed wali. Remove him before inviting someone else.",
+      error:
+        activeGuardianships(existing).length >= MAX_WALIS
+          ? `You already have ${MAX_WALIS} walis. Remove one before inviting somebody else.`
+          : "An invitation is already outstanding. Cancel it before sending another.",
       values,
     };
   }
-  if (existing.some((g) => g.status === "invited")) {
-    return {
-      error: "An invitation is already outstanding. Cancel it before sending another.",
-      values,
-    };
+  if (existing.some((g) => g.status === "invited" && g.invited.email === email)) {
+    return { error: "That invitation has already been sent to this address.", values };
+  }
+  if (activeGuardianships(existing).some((g) => g.invited.email === email)) {
+    return { error: "He is already your wali.", values };
   }
 
   const now = new Date();
@@ -205,15 +212,13 @@ export async function nominateModeratorAsWali(): Promise<WaliState> {
   }
 
   const existing = await listGuardianshipsForMember(session.user.id);
-  const active = activeGuardianship(existing);
-  if (!active.ok) {
-    return { error: "Something is wrong with your wali records. Please contact us." };
-  }
-  if (active.guardianship) {
-    return { error: "You already have a confirmed wali. Remove him before naming another." };
-  }
-  if (existing.some((g) => g.status === "invited")) {
-    return { error: "An invitation is already outstanding. Cancel it before naming a moderator." };
+  if (waliSeatsTaken(existing) >= MAX_WALIS) {
+    return {
+      error:
+        activeGuardianships(existing).length >= MAX_WALIS
+          ? `You already have ${MAX_WALIS} walis. Remove one before naming another.`
+          : "An invitation is already outstanding. Cancel it before naming a moderator.",
+    };
   }
 
   const now = new Date();
@@ -389,10 +394,19 @@ export async function resendInvitation(_prev: WaliState): Promise<WaliState> {
     };
   }
 
-  /* The original link, not a new one. Re-issuing would invalidate the
-   * copy already sitting in his inbox, which is the copy he is most
-   * likely to eventually open. */
-  const link = `${await origin()}/wali/invite?token=REISSUED`;
+  /* A fresh token, and the clock restarted with it. The copy already in
+   * his inbox stops working, which is the price of this one working at
+   * all: the token is stored as a digest, so the original cannot be put
+   * back into an email. It used to send the word REISSUED in its place,
+   * and that link opened on "this invitation is no longer open" — the
+   * one screen a wali who has been chased twice must not meet. */
+  const freshToken = randomBytes(32).toString("base64url");
+  await reissueInvitationToken(
+    pending.id,
+    hashToken(freshToken),
+    new Date(Date.now() + INVITATION_TTL_MS)
+  );
+  const link = `${await origin()}/wali/invite?token=${freshToken}`;
   await send({
     to: pending.invited.email,
     kind: "waliInvitation",
@@ -423,9 +437,16 @@ export async function replaceWali(_prev: WaliState, form: FormData): Promise<Wal
   const { session, profile } = await sisterNamingWali();
 
   const all = await listGuardianshipsForMember(session.user.id);
-  const active = activeGuardianship(all);
-  if (!active.ok) return { error: "Something is wrong with your wali records. Please contact us." };
-  if (!active.guardianship) return { error: "You do not have a confirmed wali to replace." };
+  /* Which one is being replaced is named by the form: she may have two,
+     and "replace my wali" is no longer an unambiguous instruction. */
+  const replacingId = String(form.get("guardianshipId") ?? "");
+  const confirmed = activeGuardianships(all);
+  const outgoing = replacingId
+    ? confirmed.find((g) => g.id === replacingId)
+    : confirmed.length === 1
+      ? confirmed[0]
+      : undefined;
+  if (!outgoing) return { error: "Choose which wali you are replacing." };
 
   const values = {
     name: String(form.get("name") ?? ""),
@@ -446,7 +467,7 @@ export async function replaceWali(_prev: WaliState, form: FormData): Promise<Wal
   if (email === session.user.email) {
     return { error: "You cannot be your own wali. Use his email address, not yours.", values };
   }
-  if (email === active.guardianship.invited.email) {
+  if (email === outgoing.invited.email) {
     return { error: "That is the same person. Name somebody else, or ask us to contact him.", values };
   }
 
@@ -477,11 +498,11 @@ export async function replaceWali(_prev: WaliState, form: FormData): Promise<Wal
     revokedBy: null,
     expiredAt: null,
     verification: { state: "unverified", verifiedAt: null, method: null },
-    replacesGuardianshipId: active.guardianship.id,
+    replacesGuardianshipId: outgoing.id,
     replacedByGuardianshipId: null,
   });
 
-  const replaced = await applyTransition(active.guardianship, {
+  const replaced = await applyTransition(outgoing, {
     type: "replace",
     at: now,
     replacedByGuardianshipId: created.id,

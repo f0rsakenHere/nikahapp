@@ -82,17 +82,32 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
     })
   );
 
-  const waliSeat = conversation.participants.find((p) => p.role === "wali");
-  /* From his side. Taking "the member" of a conversation and asking who
-   * her wali is picks whichever seat comes first — the brother, half the
-   * time — and then finds nothing, so the banner named nobody. */
-  const guardianship = waliSeat
-    ? await findGuardianshipForWali(
-        waliSeat.userId,
-        conversation.participants.filter((p) => p.role === "member").map((p) => p.userId)
-      )
-    : null;
-  const waliName = guardianship?.invited.name ?? "Her wali";
+  /* Every wali seat, not the first. She may have named two, and a banner
+   * that names one of the two men reading this is worse than one that
+   * names neither — it tells the pair something untrue about who is in
+   * the room.
+   *
+   * Each is resolved from his side. Taking "the member" of a conversation
+   * and asking who her wali is picks whichever seat comes first — the
+   * brother, half the time — and then finds nothing. */
+  const waliWards = conversation.participants
+    .filter((p) => p.role === "member")
+    .map((p) => p.userId);
+  const guardianships = (
+    await Promise.all(
+      conversation.participants
+        .filter((p) => p.role === "wali")
+        .map((p) => findGuardianshipForWali(p.userId, waliWards))
+    )
+  ).filter((g): g is NonNullable<typeof g> => Boolean(g));
+  const guardianship = guardianships[0] ?? null;
+  const waliName =
+    guardianships.length > 1
+      ? `${guardianships
+          .slice(0, -1)
+          .map((g) => g.invited.name)
+          .join(", ")} and ${guardianships[guardianships.length - 1].invited.name}`
+      : (guardianship?.invited.name ?? "Her wali");
   /* Whose guardian he is, by initials — the same label the rest of the
      app uses for a member. */
   const waliOf = guardianship ? (initials.get(guardianship.memberUserId) ?? null) : null;
@@ -148,7 +163,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
       {/* The banner. It cannot be dismissed or minimised by either side —
           /how-it-works promises exactly that, and a guardian nobody can
           see is not oversight, it is surveillance. */}
-      {waliSeat ? (
+      {guardianships.length > 0 ? (
         <div className="mt-4 flex items-start gap-3 rounded-lg border border-accent-deep/40 bg-accent/12 px-4 py-3">
           <span className="mt-0.5 shrink-0 text-[20px] text-accent-deep">
             <WaliIcon />
@@ -158,10 +173,13 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
                 banner used to open with a man's name and never say who
                 he was, which reads as a third person in the
                 conversation rather than the guardian of one side. */}
-            <span className="font-semibold">The wali</span>
+            <span className="font-semibold">
+              {guardianships.length > 1 ? "The walis" : "The wali"}
+            </span>
             {waliOf ? ` for ${described.get(guardianship?.memberUserId ?? "") ?? waliOf}` : ""},{" "}
-            <span className="font-semibold">{waliName}</span>,
-            reads every message here and can end the conversation at any point. He is not part of
+            <span className="font-semibold">{waliName}</span>,{" "}
+            {guardianships.length > 1 ? "read" : "reads"} every message here and can end the
+            conversation at any point. {guardianships.length > 1 ? "They are" : "He is"} not part of
             the introduction.
           </p>
         </div>
@@ -175,7 +193,8 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
 
       {conversation.state === "awaitingWali" ? (
         <p className="mt-4 rounded-md border border-soft-green bg-mist px-4 py-4 text-[18px] leading-[26px] text-text">
-          Nothing can be written yet. The wali, {waliName}, was told the moment this was accepted,
+          Nothing can be written yet. {guardianships.length > 1 ? "The walis" : "The wali"},{" "}
+          {waliName}, {guardianships.length > 1 ? "were" : "was"} told the moment this was accepted,
           and the conversation opens when he approves it.
         </p>
       ) : null}
@@ -218,7 +237,8 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
 
       {messages.length === 0 && conversation.state === "open" ? (
         <p className="mt-5 text-center text-[18px] text-text/70">
-          Nothing said yet. Whatever you write here, the wali {waliName} sees.
+          Nothing said yet. Whatever you write here, {guardianships.length > 1 ? "the walis" : "the wali"}{" "}
+          {waliName} {guardianships.length > 1 ? "see" : "sees"}.
         </p>
       ) : null}
 

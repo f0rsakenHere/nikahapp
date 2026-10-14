@@ -22,7 +22,7 @@ import {
 } from "@/lib/repositories/connections";
 import { browseProfile } from "@/lib/repositories/browse";
 import { createConversation } from "@/lib/repositories/conversations";
-import { listGuardianshipsForMember } from "@/lib/repositories/guardianships";
+import { listConfirmedGuardianships } from "@/lib/repositories/guardianships";
 
 export type ConnectState = { error?: string; done?: string };
 
@@ -208,16 +208,19 @@ export async function answerConnection(
    * visible, and one in `awaitingWali` cannot be written to at all. */
   if (event.type === "accept") {
     const sisterUserId = await sisterAmong([request.fromUserId, request.toUserId]);
-    const wali = sisterUserId
-      ? (await listGuardianshipsForMember(sisterUserId)).find((g) => g.status === "confirmed")
-      : undefined;
+    /* Every wali she has, not the first one found. She may name two, and
+       a wali who is seated in none of her conversations is a wali in
+       name only — which is the opposite of what naming him was for. */
+    const walis = sisterUserId ? await listConfirmedGuardianships(sisterUserId) : [];
+    const waliSeats = walis
+      .map((g) => g.waliUserId)
+      .filter((id): id is string => Boolean(id))
+      .map((userId) => ({ userId, role: "wali" as const, canWrite: settings.waliCanWrite }));
 
     const participants = [
       { userId: request.fromUserId, role: "member" as const, canWrite: true },
       { userId: request.toUserId, role: "member" as const, canWrite: true },
-      ...(wali?.waliUserId
-        ? [{ userId: wali.waliUserId, role: "wali" as const, canWrite: settings.waliCanWrite }]
-        : []),
+      ...waliSeats,
     ];
 
     const conversation = await createConversation(
@@ -226,10 +229,24 @@ export async function answerConnection(
         participants,
         /* No wali means no gate to wait on — a pair of brothers cannot
          * happen, but a sister whose gate is set to `observes` can. */
-        awaitingWali: settings.waliGate === "approves" && Boolean(wali?.waliUserId),
+        awaitingWali: settings.waliGate === "approves" && waliSeats.length > 0,
       },
       now
     );
+
+    /* Her walis, told the moment it opens. Both of them: a wali who
+       hears about a conversation from the other wali is not supervising
+       anything. */
+    if (waliSeats.length) {
+      await notifyAll(
+        waliSeats.map((seat) => seat.userId),
+        {
+          kind: "conversation.opened",
+          body: "A conversation has opened for someone you are wali for.",
+          href: "/wali",
+        }
+      );
+    }
 
     await record({
       action: "conversation.opened",
@@ -253,8 +270,8 @@ export async function answerConnection(
   if (event.type === "accept") {
     await notify(otherParty, {
       kind: "request.accepted",
-      body: "Your request was accepted. The conversation opens once the wali approves.",
-      href: "/requests",
+      body: "Your interest was accepted. The conversation is open.",
+      href: "/conversations",
     });
   } else if (event.type === "decline" || event.type === "block") {
     await notify(otherParty, {

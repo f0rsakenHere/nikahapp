@@ -31,7 +31,6 @@ const RELATIONSHIP_LABELS: Record<(typeof WALI_RELATIONSHIPS)[number], string> =
 const POWERS = [
   "See every introduction you receive, the moment you do",
   "Read every message you exchange",
-  "Approve or decline before any conversation opens",
   "End a conversation at any point",
 ];
 
@@ -42,7 +41,13 @@ const GHOST =
   "flex min-h-12 w-full items-center justify-center rounded-pill border-2 border-accent-deep px-4 py-2 text-center text-[18px] font-semibold leading-[26px] text-accent-deep";
 
 export type Pending = { name: string; email: string; invitedAt: string; reminders: number };
-export type Confirmed = { name: string; email: string; relationship: string; confirmedAt: string };
+export type Confirmed = {
+  id: string;
+  name: string;
+  email: string;
+  relationship: string;
+  confirmedAt: string;
+};
 
 /** The form itself, shared between naming a wali and replacing one. */
 function WaliFields({ v }: { v: NonNullable<WaliState["values"]> }) {
@@ -106,10 +111,15 @@ function WaliFields({ v }: { v: NonNullable<WaliState["values"]> }) {
 export function GuardianStep({
   pending,
   confirmed,
+  maxWalis,
   moderatorAvailable,
 }: {
   pending: Pending | null;
-  confirmed: Confirmed | null;
+  /** Everyone who has confirmed. Two of them, where the client asked for
+   *  it: a father and an uncle, say, so that one who is travelling or
+   *  unwell does not strand her. Both are walis in full. */
+  confirmed: Confirmed[];
+  maxWalis: number;
   /** Whether anybody is actually sitting in the moderator's seat. */
   moderatorAvailable: boolean;
 }) {
@@ -123,66 +133,31 @@ export function GuardianStep({
     EMPTY
   );
   const [replaceState, replaceAction] = useActionState(replaceWali, EMPTY);
-  const [replacing, setReplacing] = useState(false);
+  /* Which of them is being replaced. She may have two, so "replace my
+     wali" is no longer an unambiguous instruction. */
+  const [replacing, setReplacing] = useState<Confirmed | null>(null);
+  const [adding, setAdding] = useState(false);
 
-  /* ---------------------------------------------- he has confirmed -- */
-  if (confirmed && !replacing && !replaceState.done) {
-    return (
-      <div className="flex flex-col gap-5">
-        <div className="rounded-md border border-soft-green bg-mist px-4 py-4">
-          <p className="text-[18px] font-semibold text-black">{confirmed.name}</p>
-          <p className="mt-1 text-[18px] leading-[26px] text-text">
-            Confirmed {confirmed.confirmedAt}. He sees everything you do, and no conversation
-            opens without him.
-          </p>
-        </div>
+  const seatsTaken = confirmed.length + (pending || state.done ? 1 : 0);
+  const free = Math.max(0, maxWalis - seatsTaken);
 
-        {/* §6.2. A wali who confirmed and then stopped answering is the
-            failure that strands people: she cannot proceed and cannot
-            leave. This is the way out, and it is deliberately not hidden
-            behind a support email. */}
-        <div className="rounded-md border border-soft-green px-4 py-4">
-          <p className="text-[18px] font-semibold text-black">If he can no longer act for you</p>
-          <p className="mt-1 text-[18px] leading-[26px] text-text">
-            Someone else can take his place. He loses access immediately, and the person who
-            replaces him does not see anything from before he confirms.
-          </p>
-          <button type="button" className={`${GHOST} mt-3`} onClick={() => setReplacing(true)}>
-            Name somebody else
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* ------------------------------------------------- replacing him -- */
-  if (confirmed || replaceState.done) {
-    if (replaceState.done) {
-      return (
-        <div className="flex flex-col gap-5">
-          <div className="rounded-md border border-soft-green bg-mist px-4 py-4">
-            <p className="text-[18px] font-semibold text-black">Waiting on him</p>
-            <p className="mt-1 text-[18px] leading-[26px] text-text">{replaceState.done}</p>
-          </div>
-          <DevLink href={replaceState.devLink} />
-        </div>
-      );
-    }
-
+  /* ------------------------------------------------- replacing one -- */
+  if (replacing && !replaceState.done) {
     return (
       <form action={replaceAction} className="flex flex-col gap-6" noValidate>
         <FormError>{replaceState.error}</FormError>
+        <input type="hidden" name="guardianshipId" value={replacing.id} />
         <div className="rounded-md border border-peach/40 bg-soft-peach/60 px-4 py-4">
           <p className="text-[18px] leading-[26px] text-black/75">
-            {confirmed?.name} loses access the moment you send this. Your profile stops being
-            shown until the new wali confirms.
+            {replacing.name} loses access the moment you send this, and the person who takes his
+            place does not see anything from before he confirms.
           </p>
         </div>
         <WaliFields v={replaceState.values ?? {}} />
         <SubmitButton>Send the invitation</SubmitButton>
         <button
           type="button"
-          onClick={() => setReplacing(false)}
+          onClick={() => setReplacing(null)}
           className="text-center text-[18px] text-text underline-offset-2 hover:underline"
         >
           Never mind
@@ -191,26 +166,92 @@ export function GuardianStep({
     );
   }
 
-  /* ------------------------------------------- invited, no answer -- */
-  if (pending || state.done) {
+  /* ------------------------------------ one or both have said yes -- */
+  if (confirmed.length > 0 && !adding) {
+    return (
+      <div className="flex flex-col gap-5">
+        {replaceState.done ? (
+          <div className="rounded-md border border-soft-green bg-mist px-4 py-4">
+            <p className="text-[18px] font-semibold text-black">Waiting on him</p>
+            <p className="mt-1 text-[18px] leading-[26px] text-text">{replaceState.done}</p>
+            <DevLink href={replaceState.devLink} />
+          </div>
+        ) : null}
+
+        {confirmed.map((w) => (
+          <div key={w.id} className="rounded-md border border-soft-green bg-mist px-4 py-4">
+            <p className="text-[18px] font-semibold text-black">{w.name}</p>
+            <p className="mt-1 text-[18px] leading-[26px] text-text">
+              Confirmed {w.confirmedAt}. He reads every conversation you have, and can end one at
+              any point.
+            </p>
+            <button type="button" className={`${GHOST} mt-3`} onClick={() => setReplacing(w)}>
+              Somebody else should take his place
+            </button>
+          </div>
+        ))}
+
+        {pending ? (
+          <div className="rounded-md border border-soft-green px-4 py-4">
+            <p className="text-[18px] font-semibold text-black">Waiting on {pending.name}</p>
+            <p className="mt-1 text-[18px] leading-[26px] text-text">
+              We have written to {pending.email}. He becomes your second wali when he confirms, and
+              nothing of yours waits on him.
+            </p>
+            <form action={cancelInvitation} className="mt-3">
+              <button type="submit" className={GHOST}>
+                Cancel that invitation
+              </button>
+            </form>
+          </div>
+        ) : null}
+
+        {/* A second name, offered rather than demanded. */}
+        {free > 0 ? (
+          <div className="rounded-md border border-soft-green px-4 py-4">
+            <p className="text-[18px] font-semibold text-black">
+              {confirmed.length === 1 ? "A second wali, if you want one" : "Another wali"}
+            </p>
+            <p className="mt-1 text-[18px] leading-[26px] text-text">
+              You can name one more — an uncle or a brother, say — so somebody is always reachable.
+              He has the same access as the first, and nothing waits on him.
+            </p>
+            <button type="button" className={`${GHOST} mt-3`} onClick={() => setAdding(true)}>
+              Name another wali
+            </button>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  /* ------------------------------------------- invited, no answer --
+     `state.done` wins over `adding`: the second invitation has just gone
+     out, and leaving the form on screen under it reads as though the
+     send had failed. */
+  if ((pending || state.done) && (!adding || state.done)) {
     return (
       <div className="flex flex-col gap-5">
         <div className="rounded-md border border-soft-green bg-mist px-4 py-4">
           <p className="text-[18px] font-semibold text-black">Waiting on him</p>
           <p className="mt-1 text-[18px] leading-[26px] text-text">
             {pending
-              ? `We have written to ${pending.name} at ${pending.email}. Your profile goes to review once he confirms.`
+              ? `We have written to ${pending.name} at ${pending.email}. Your profile goes live once he confirms.`
               : state.done}
           </p>
           {pending ? (
             <p className="mt-2 text-[18px] text-text/70">
               Sent {pending.invitedAt}
-              {pending.reminders ? ` · reminded ${pending.reminders} time${pending.reminders === 1 ? "" : "s"}` : ""}
+              {pending.reminders
+                ? ` · reminded ${pending.reminders} time${pending.reminders === 1 ? "" : "s"}`
+                : ""}
             </p>
           ) : null}
         </div>
 
-        <DevLink href={state.devLink} />
+        {/* Either send could have produced it: a first invitation, or
+            the one that replaces a wali who stopped answering. */}
+        <DevLink href={state.devLink ?? replaceState.devLink} />
 
         {pending ? (
           <form action={resendAction}>
@@ -253,6 +294,16 @@ export function GuardianStep({
         <WaliFields v={state.values ?? {}} />
 
         <SubmitButton>Send his invitation</SubmitButton>
+
+        {adding ? (
+          <button
+            type="button"
+            onClick={() => setAdding(false)}
+            className="text-center text-[18px] text-text underline-offset-2 hover:underline"
+          >
+            Never mind
+          </button>
+        ) : null}
       </form>
 
       {/* The way through for a woman with nobody to ask. Offered second,

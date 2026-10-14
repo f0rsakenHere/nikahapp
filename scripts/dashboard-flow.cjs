@@ -99,7 +99,7 @@ const body = (p) => p.innerText("body");
     check("and a link into the next step", (await cont.count()) === 1);
     check(
       "which names that step rather than saying 'continue'",
-      /Continue — About you/.test(text),
+      /Continue[:—-] About you/.test(text),
       text.slice(0, 200)
     );
 
@@ -132,7 +132,7 @@ const body = (p) => p.innerText("body");
     );
     await p.goto(`${BASE}/dashboard?submitted=1`, { waitUntil: "networkidle" });
     const waitingText = await body(p);
-    check("a submitted profile is acknowledged", /Thank you — we have it/.test(waitingText));
+    check("a submitted profile is acknowledged", /Thank you[,—-] we have it/.test(waitingText));
     /* She has no confirmed wali, and under D1g he is now the gate on her
        profile rather than on each conversation. So a submitted sister
        waiting on him is a third state: her side is finished, and she is

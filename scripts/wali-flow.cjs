@@ -216,9 +216,9 @@ const mongo = new MongoClient(uri, {
       await her.goto(BASE + "/onboarding/guardian", { waitUntil: "networkidle" });
       const step = await her.textContent("body");
       check("her step shows him as confirmed", /Ahmed Al-Rashid/.test(step));
-      check("and offers a way out if he can no longer act", /Name somebody else/.test(step));
+      check("and offers a way out if he can no longer act", /take his place/i.test(step));
 
-      await her.click('button:has-text("Name somebody else")');
+      await her.click('button:has-text("take his place")');
       await her.waitForSelector('input[name="name"]', { timeout: 15000 });
       check(
         "replacing warns that he loses access immediately",

@@ -20,6 +20,7 @@ import { DecisionForm } from "./decision";
 import { ChecksPanel } from "./checks";
 import { listVerificationsFor } from "@/lib/repositories/verifications";
 import { verificationGaps } from "@/lib/domain/verification";
+import { activeGuardianships } from "@/lib/domain/guardianship";
 
 export const metadata: Metadata = { title: "Member | NikahCanada staff" };
 
@@ -62,7 +63,10 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
 
   const member = await findUserById(profile.userId);
   const guardianships = await listGuardianshipsForMember(profile.userId);
-  const confirmed = guardianships.find((g) => g.status === "confirmed") ?? null;
+  /* All of them. She may have two, and a console that shows one of her
+     two walis is the place that failure would go unnoticed longest. */
+  const allConfirmed = activeGuardianships(guardianships);
+  const confirmed = allConfirmed[0] ?? null;
   const outstanding = guardianships.find((g) => g.status === "invited") ?? null;
 
   const ctx = { hasConfirmedWali: Boolean(confirmed) };
@@ -129,11 +133,15 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
           {profile.gender === "sister" ? (
             confirmed ? (
               <>
-                <Row label="Name" value={confirmed.invited.name} />
-                <Row label="Relationship" value={confirmed.invited.relationship} />
-                <Row label="Email" value={confirmed.invited.email} />
-                <Row label="Confirmed" value={date(confirmed.confirmedAt)} />
-                <Row label="Identity checked" value={confirmed.verification.state} />
+                {allConfirmed.map((g, i) => (
+                  <div key={g.id} className={i ? "mt-3 border-t border-soft-green pt-3" : ""}>
+                    <Row label={allConfirmed.length > 1 ? `Wali ${i + 1}` : "Name"} value={g.invited.name} />
+                    <Row label="Relationship" value={g.invited.relationship} />
+                    <Row label="Email" value={g.invited.email} />
+                    <Row label="Confirmed" value={date(g.confirmedAt)} />
+                    <Row label="Identity checked" value={g.verification.state} />
+                  </div>
+                ))}
               </>
             ) : outstanding ? (
               <p className="text-[13px] leading-[20px] text-peach-deep">

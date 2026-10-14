@@ -8,6 +8,7 @@ import { AppFrame } from "../../frame";
 import { StepForm } from "./form";
 import { GuardianStep } from "./guardian";
 import { hasConfirmedWali, listGuardianshipsForMember } from "@/lib/repositories/guardianships";
+import { MAX_WALIS, activeGuardianships } from "@/lib/domain/guardianship";
 import { readSettings } from "@/lib/repositories/connections";
 
 export const metadata: Metadata = { title: "Your profile | NikahCanada" };
@@ -58,7 +59,9 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
     new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeZone: "UTC" }).format(d);
 
   const outstanding = guardianships.find((g) => g.status === "invited");
-  const active = guardianships.find((g) => g.status === "confirmed");
+  /* All of them. She may name two, and a screen that shows one of her
+     two walis is a screen that has quietly lost one. */
+  const active = activeGuardianships(guardianships);
 
   const pending = outstanding
     ? {
@@ -69,14 +72,13 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
       }
     : null;
 
-  const confirmed = active
-    ? {
-        name: active.invited.name,
-        email: active.invited.email,
-        relationship: active.invited.relationship,
-        confirmedAt: active.confirmedAt ? day(active.confirmedAt) : "",
-      }
-    : null;
+  const confirmed = active.map((g) => ({
+    id: g.id,
+    name: g.invited.name,
+    email: g.invited.email,
+    relationship: g.invited.relationship,
+    confirmedAt: g.confirmedAt ? day(g.confirmedAt) : "",
+  }));
 
   /* Framed like the rest of the app, but kept to a reading column: this
      is one form at a time, and a field set stretched across a monitor is
@@ -112,6 +114,7 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
         <GuardianStep
           pending={pending}
           confirmed={confirmed}
+          maxWalis={MAX_WALIS}
           moderatorAvailable={Boolean((await readSettings()).moderatorWaliUserId)}
         />
       ) : (

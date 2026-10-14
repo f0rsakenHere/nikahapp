@@ -14,7 +14,9 @@ import {
   GUARDIANSHIP_STATES,
   GuardianshipSchema,
   TERMINAL_STATES,
-  activeGuardianship,
+  MAX_WALIS,
+  activeGuardianships,
+  waliSeatsTaken,
   canWaliAct,
   canWaliReadConversation,
   isActive,
@@ -31,7 +33,7 @@ const EXPIRES_AT = new Date("2026-08-15T10:00:00Z");
 const NOW = new Date("2026-08-08T10:00:00Z");
 const AFTER_EXPIRY = new Date("2026-08-16T10:00:00Z");
 
-const CTX: TransitionContext = { memberHasOtherConfirmedWali: false, maxReminders: 3 };
+const CTX: TransitionContext = { memberConfirmedWaliCount: 0, maxReminders: 3 };
 
 function make(over: Partial<Guardianship> = {}): Guardianship {
   return {
@@ -191,8 +193,18 @@ describe("accept", () => {
     expect(!result.ok && result.error).toBe("wali-cannot-be-the-member");
   });
 
-  it("refuses a second wali while one is confirmed", () => {
-    const result = transition(make(), EVENTS.accept, { ...CTX, memberHasOtherConfirmedWali: true });
+  it("accepts a second wali — the client asked for two", () => {
+    /* A father and an uncle, so that one who is travelling does not
+       strand her. Both read everything. */
+    const result = transition(make(), EVENTS.accept, { ...CTX, memberConfirmedWaliCount: 1 });
+    expect(result.ok).toBe(true);
+  });
+
+  it("refuses the one after that", () => {
+    const result = transition(make(), EVENTS.accept, {
+      ...CTX,
+      memberConfirmedWaliCount: MAX_WALIS,
+    });
     expect(!result.ok && result.error).toBe("member-already-has-confirmed-wali");
   });
 
@@ -274,22 +286,42 @@ describe("replace", () => {
 
 /* ------------------------------------------------------ authorisation --- */
 
-describe("activeGuardianship", () => {
-  it("finds the confirmed one among the dead ones", () => {
+describe("activeGuardianships", () => {
+  it("finds the confirmed ones among the dead ones", () => {
     const all = [make({ status: "declined", id: "old" }), confirmed({ id: "current" })];
-    const result = activeGuardianship(all);
-    expect(result.ok && result.guardianship?.id).toBe("current");
+    expect(activeGuardianships(all).map((g) => g.id)).toEqual(["current"]);
   });
 
-  it("returns null when nobody has confirmed", () => {
-    const result = activeGuardianship([make()]);
-    expect(result.ok && result.guardianship).toBeNull();
+  it("is empty when nobody has confirmed", () => {
+    expect(activeGuardianships([make()])).toEqual([]);
   });
 
-  it("errors rather than picking one when two are confirmed", () => {
-    const result = activeGuardianship([confirmed({ id: "a" }), confirmed({ id: "b" })]);
-    expect(result.ok).toBe(false);
-    expect(!result.ok && result.error).toBe("multiple-confirmed-guardianships");
+  it("keeps both when two are confirmed, oldest first", () => {
+    /* Two is the point: one of them travelling must not strand her,
+       and both read every conversation she has. */
+    const all = [
+      confirmed({ id: "second", confirmedAt: new Date("2026-09-01T10:00:00Z") }),
+      confirmed({ id: "first", confirmedAt: new Date("2026-08-01T10:00:00Z") }),
+    ];
+    expect(activeGuardianships(all).map((g) => g.id)).toEqual(["first", "second"]);
+  });
+});
+
+describe("waliSeatsTaken", () => {
+  it("counts an outstanding invitation as a seat", () => {
+    /* It becomes a wali the moment he answers, so it cannot be
+       ignored when deciding whether there is room for another. */
+    expect(waliSeatsTaken([confirmed({ id: "a" }), make({ id: "b" })])).toBe(2);
+  });
+
+  it("does not count the ones that came to nothing", () => {
+    const all = [
+      make({ id: "a", status: "declined" }),
+      make({ id: "b", status: "expired" }),
+      make({ id: "c", status: "revoked" }),
+      make({ id: "d", status: "replaced" }),
+    ];
+    expect(waliSeatsTaken(all)).toBe(0);
   });
 });
 
@@ -393,11 +425,21 @@ describe("profileMayGoLive", () => {
     expect(profileMayGoLive("sister", [g], { requireVerifiedWali: false })).toEqual({ ok: true });
   });
 
-  it("blocks rather than choosing when the one-wali invariant is broken", () => {
+  it("lets her go live with two confirmed walis", () => {
+    /* Two is allowed now. It used to be the broken state and blocked
+       the profile outright. */
     expect(profileMayGoLive("sister", [confirmed({ id: "a" }), confirmed({ id: "b" })])).toEqual({
-      ok: false,
-      reason: "multiple-confirmed-guardianships",
+      ok: true,
     });
+  });
+
+  it("goes live on the first wali, without waiting for the second to be checked", () => {
+    const checked = confirmed({ id: "a" });
+    const fresh = confirmed({
+      id: "b",
+      verification: { state: "unverified", verifiedAt: null, method: null },
+    });
+    expect(profileMayGoLive("sister", [checked, fresh])).toEqual({ ok: true });
   });
 });
 

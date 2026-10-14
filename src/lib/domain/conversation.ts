@@ -53,7 +53,12 @@ export const ConversationSchema = z
   .object({
     id: z.string().min(1),
     requestId: z.string().min(1),
-    participants: z.array(ParticipantSchema).min(2).max(3),
+    /* Two members, and her walis. Four, because she may name two of
+       them — a father and an uncle — and both sit in every conversation
+       she has. It was three while one wali was the most she could have,
+       and a conversation written with two of them then failed to parse
+       on the way back out. */
+    participants: z.array(ParticipantSchema).min(2).max(4),
     state: z.enum(CONVERSATION_STATES),
     openedAt: z.date().nullable(),
     lastMessageAt: z.date().nullable(),

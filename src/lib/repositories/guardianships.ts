@@ -5,7 +5,7 @@ import { getDb, withTransaction } from "@/lib/db/client";
 import { stripUndefined } from "@/lib/db/strip";
 import {
   GuardianshipSchema,
-  activeGuardianship,
+  activeGuardianships,
   transition,
   type Guardianship,
   type GuardianshipEvent,
@@ -29,6 +29,26 @@ export async function createGuardianship(
   const _id = new ObjectId();
   await (await guardianships()).insertOne(stripUndefined({ _id, ...input }));
   return { ...input, id: _id.toHexString() };
+}
+
+/** Puts a fresh token on an outstanding invitation.
+ *
+ *  Re-sending used to post a link with the literal word REISSUED where
+ *  the token belongs, because the token is only ever stored as a digest
+ *  and the original cannot be recovered. That link opened on "this
+ *  invitation is no longer open" — the one screen a wali who has been
+ *  chased twice must not see.
+ *
+ *  So the new one replaces the old: the copy in his inbox stops working,
+ *  which is the cost of being able to send him a link that does. */
+export async function reissueInvitationToken(
+  guardianshipId: string,
+  tokenHash: string,
+  expiresAt: Date
+): Promise<void> {
+  await (await guardianships()).updateOne({ _id: new ObjectId(guardianshipId) }, {
+    $set: { "invited.tokenHash": tokenHash, "invited.expiresAt": expiresAt },
+  } as never);
 }
 
 export async function listGuardianshipsForMember(memberUserId: string): Promise<Guardianship[]> {
@@ -58,8 +78,13 @@ export async function listWardsForWali(waliUserId: string): Promise<Guardianship
  *  The one fact `profileMayGoLive` and `submitBlockers` need, and the
  *  reason the onboarding screen was reporting `false` for everybody. */
 export async function hasConfirmedWali(memberUserId: string): Promise<boolean> {
-  const active = activeGuardianship(await listGuardianshipsForMember(memberUserId));
-  return active.ok && active.guardianship !== null;
+  return (await listConfirmedGuardianships(memberUserId)).length > 0;
+}
+
+/** Her confirmed walis, in the order they confirmed. Up to `MAX_WALIS`
+ *  of them, and every one of them reads her conversations. */
+export async function listConfirmedGuardianships(memberUserId: string): Promise<Guardianship[]> {
+  return activeGuardianships(await listGuardianshipsForMember(memberUserId));
 }
 
 /** Which of these members have a confirmed wali, in one query.
@@ -84,8 +109,8 @@ export async function membersWithConfirmedWali(
 
 /** Applies a domain transition and persists the result.
  *
- *  The machine decides; this only writes. `memberHasOtherConfirmedWali`
- *  is looked up here because it is the one rule that spans documents,
+ *  The machine decides; this only writes. The confirmed-wali count is
+ *  looked up here because it is the one rule that spans documents,
  *  and the pure function must not go looking for it itself. */
 export async function applyTransition(
   guardianship: Guardianship,
@@ -97,7 +122,7 @@ export async function applyTransition(
   );
 
   const result = transition(guardianship, event, {
-    memberHasOtherConfirmedWali: others.some((g) => g.status === "confirmed"),
+    memberConfirmedWaliCount: others.filter((g) => g.status === "confirmed").length,
     maxReminders: options.maxReminders ?? 3,
   });
 
@@ -128,7 +153,10 @@ export async function confirmWithNewAccount(
   const result = transition(
     guardianship,
     { type: "accept", at: now, waliUserId: waliUserId.toHexString() },
-    { memberHasOtherConfirmedWali: await hasConfirmedWali(guardianship.memberUserId), maxReminders: 3 }
+    {
+      memberConfirmedWaliCount: (await listConfirmedGuardianships(guardianship.memberUserId)).length,
+      maxReminders: 3,
+    }
   );
   if (!result.ok) return { ok: false, error: result.error };
 

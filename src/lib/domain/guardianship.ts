@@ -152,11 +152,11 @@ export type TransitionResult =
 
 /** Everything the machine needs that is not on the document itself.
  *
- *  `memberHasOtherConfirmedWali` is the one cross-document rule: §5.3
- *  requires at most one confirmed guardianship per member. The repository
+ *  `memberConfirmedWaliCount` is the one cross-document rule: a member
+ *  may hold at most `MAX_WALIS` confirmed guardianships. The repository
  *  answers it; the machine only enforces it. */
 export type TransitionContext = {
-  memberHasOtherConfirmedWali: boolean;
+  memberConfirmedWaliCount: number;
   /** D14 is undecided, so the cadence is injected rather than assumed. */
   maxReminders: number;
 };
@@ -199,7 +199,7 @@ export function transition(
       if (event.at >= g.invited.expiresAt) {
         return { ok: false, error: "invitation-expired" };
       }
-      if (ctx.memberHasOtherConfirmedWali) {
+      if (ctx.memberConfirmedWaliCount >= MAX_WALIS) {
         return { ok: false, error: "member-already-has-confirmed-wali" };
       }
       return {
@@ -270,19 +270,31 @@ export function isActive(g: Guardianship): boolean {
   return g.status === "confirmed";
 }
 
-export type ActiveLookup =
-  | { ok: true; guardianship: Guardianship | null }
-  | { ok: false; error: "multiple-confirmed-guardianships" };
-
-/** The member's current wali link, if any.
+/** How many walis a member may have confirmed at once.
  *
- *  Returns an error rather than picking one when the invariant is broken.
- *  Two confirmed guardianships means two men can read her correspondence,
- *  and quietly choosing the newer would hide that from everyone. */
-export function activeGuardianship(all: readonly Guardianship[]): ActiveLookup {
-  const confirmed = all.filter(isActive);
-  if (confirmed.length > 1) return { ok: false, error: "multiple-confirmed-guardianships" };
-  return { ok: true, guardianship: confirmed[0] ?? null };
+ *  One until the client asked for two: a father and an uncle, say, so
+ *  that a wali who is travelling or unwell does not strand her. Both are
+ *  walis in full — both read every conversation and either can end one.
+ *  It is a cap rather than a requirement; one is enough to go live.
+ *
+ *  It is deliberately a small number. Every name here is another man
+ *  reading her correspondence, and "add as many as you like" is not a
+ *  thing to discover you have agreed to. */
+export const MAX_WALIS = 2;
+
+/** The member's confirmed wali links, in the order they confirmed. */
+export function activeGuardianships(all: readonly Guardianship[]): Guardianship[] {
+  return all
+    .filter(isActive)
+    .slice()
+    .sort((a, b) => (a.confirmedAt?.getTime() ?? 0) - (b.confirmedAt?.getTime() ?? 0));
+}
+
+/** Whether another name may be added — confirmed and outstanding
+ *  invitations both count, because an invitation becomes a wali the
+ *  moment it is answered. */
+export function waliSeatsTaken(all: readonly Guardianship[]): number {
+  return all.filter((g) => isActive(g) || g.status === "invited").length;
 }
 
 /** May this account act as wali for this ward, right now?
@@ -342,10 +354,11 @@ export function profileMayGoLive(
 ): GoLiveResult {
   if (gender === "brother") return { ok: true };
 
-  const active = activeGuardianship(guardianships);
-  if (!active.ok) return { ok: false, reason: "multiple-confirmed-guardianships" };
-
-  const g = active.guardianship;
+  /* One confirmed wali is enough to go live. A second is allowed and
+     welcome, but waiting on him would leave her stranded by somebody
+     else's inbox for the second time. */
+  const confirmed = activeGuardianships(guardianships);
+  const g = confirmed[0];
   if (!g) {
     /* Distinguish "never invited anyone" from "invited someone who has
      * not answered" — the two need different words on screen and a
@@ -356,8 +369,11 @@ export function profileMayGoLive(
     };
   }
 
+  /* Verified, for at least one of them. A second wali who has not been
+     checked yet does not hold up a profile the first one already
+     cleared. */
   const requireVerified = options.requireVerifiedWali ?? true;
-  if (requireVerified && g.verification.state !== "verified") {
+  if (requireVerified && !confirmed.some((c) => c.verification.state === "verified")) {
     return { ok: false, reason: "wali-not-verified" };
   }
 
