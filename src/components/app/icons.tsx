@@ -228,6 +228,15 @@ export function PassIcon(p: P) {
   );
 }
 
+export function SignOutIcon(p: P) {
+  return (
+    <Stroke {...p}>
+      <path d="M15 4.5H18.5A1.5 1.5 0 0 1 20 6v12a1.5 1.5 0 0 1-1.5 1.5H15" />
+      <path d="M10.5 15.5 6 12l4.5-3.5M6 12h9" />
+    </Stroke>
+  );
+}
+
 export function BellIcon(p: P) {
   return (
     <Stroke {...p}>

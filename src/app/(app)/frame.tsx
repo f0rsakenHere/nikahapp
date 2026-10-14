@@ -4,7 +4,8 @@ import { currentUser } from "@/lib/auth/current";
 import { countUnread } from "@/lib/repositories/notifications";
 import { touchActivity } from "@/lib/repositories/profiles";
 import { Logo } from "@/components/brand/Logo";
-import { AccountIcon, BellIcon } from "@/components/app/icons";
+import { AccountIcon, BellIcon, SignOutIcon } from "@/components/app/icons";
+import { logout } from "@/lib/auth/actions";
 import { SideNav, TabBar, type TabId } from "./nav";
 import { PageTransition } from "./transition";
 
@@ -146,6 +147,18 @@ export async function AppFrame({
               <AccountIcon className="text-[20px]" />
               Account
             </Link>
+            {/* Signing out was two screens deep, inside Account, under
+                everything else on it. A member asked where it was, which
+                is the only evidence this kind of thing needs. */}
+            <form action={logout}>
+              <button
+                type="submit"
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[18px] font-semibold text-text transition-colors hover:bg-white/70 hover:text-black"
+              >
+                <SignOutIcon className="text-[20px]" />
+                Sign out
+              </button>
+            </form>
           </div>
         </aside>
 
