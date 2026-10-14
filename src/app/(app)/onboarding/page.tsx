@@ -196,14 +196,18 @@ export default async function OnboardingPage({
           const waitingOnWali = step.id === "guardian" && !done;
 
           return (
-            <li key={step.id}>
+            /* `h-full` on both: a grid row is as tall as its tallest
+               card, and without it the shorter one — the wali step,
+               which has a line fewer — sat in a box of its own size
+               with a gap under it. */
+            <li key={step.id} className="h-full">
               <Link
                 href={`/onboarding/${step.id}`}
                 /* The one that still wants something is the one that
                    looks different. Four rows in the same grey, one of
                    them carrying a dashed circle instead of a tick, is a
                    difference nobody reads as "this one is for you". */
-                className={`flex items-center gap-3.5 rounded-md border px-3.5 py-3 transition-colors ${
+                className={`flex h-full items-center gap-3.5 rounded-md border px-3.5 py-3 transition-colors ${
                   done
                     ? "border-soft-green hover:border-accent-deep"
                     : waitingOnWali
