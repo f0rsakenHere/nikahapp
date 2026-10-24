@@ -12,6 +12,7 @@ import {
   CITIZENSHIP,
   DRESS,
   EDUCATION,
+  MADHHAB,
   MARITAL_STATUS,
   PROVINCES,
   QURAN,
@@ -25,6 +26,7 @@ import {
   CITIZENSHIP_LABELS,
   DRESS_LABELS,
   EDUCATION_LABELS,
+  MADHHAB_LABELS,
   HEIGHT_OPTIONS,
   MARITAL_STATUS_LABELS,
   PROVINCE_LABELS,
@@ -146,6 +148,13 @@ export const STEP_FIELDS: Record<Exclude<StepId, "guardian">, FieldSpec[]> = {
       options: toOptions(SALAH, SALAH_LABELS),
     },
     {
+      path: "deen.madhhab",
+      kind: "radio",
+      label: "Madhhab",
+      required: true,
+      options: toOptions(MADHHAB, MADHHAB_LABELS),
+    },
+    {
       path: "deen.dress",
       kind: "radio",
       label: "Dress",
@@ -167,7 +176,15 @@ export const STEP_FIELDS: Record<Exclude<StepId, "guardian">, FieldSpec[]> = {
       kind: "textarea",
       label: "About you",
       max: 4000,
-      hint: "In your own words. This is what a match reads first, take your time with it.",
+      /* The list is a tester's, almost word for word: "let them mention
+         the dealbreakers, what they're expecting, what they are looking
+         for, what madhhab are they looking for... someone that is a
+         hijabi... someone with kids or without kids." The product asks
+         none of that as a field, so the prompt has to. */
+      hint:
+        "In your own words, and the first thing a match reads. Worth saying here: what you are "
+        + "looking for and what would not work for you — the madhhab you would want, how they "
+        + "dress, children, where you would live, and anything else you would not compromise on.",
     },
   ],
 

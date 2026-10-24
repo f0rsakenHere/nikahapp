@@ -255,8 +255,27 @@ export default async function DashboardPage({
     poolCounts(now, settings),
   ]);
   const asksLeft = Math.max(0, settings.asksPerWeek - asksThisWeek);
-  const paying = planNote(me.gender, settings);
+
+  /* The feed says what happened; the counters say what is true now, and
+     a tester found them disagreeing: "it shows somebody has asked to
+     talk to you, somebody has asked to talk to you... but when you press
+     on it, it doesn't show anything."
+
+     He was right. A request that was answered, withdrawn or that simply
+     expired leaves its notification behind, and the dashboard was
+     offering him three of them above a row of zeroes. The whole history
+     stays on /notifications, where history belongs; the dashboard shows
+     only the lines that still have something behind them. */
   const open = conversations.filter((c) => !CLOSED_STATES.has(c.state));
+  const stillTrue = (kind: string) => {
+    if (kind === "request.received") return waiting > 0;
+    if (kind === "conversation.opened" || kind === "conversation.message") {
+      return open.length > 0;
+    }
+    return true;
+  };
+  const liveFeed = feed.filter((n) => stillTrue(n.kind));
+  const paying = planNote(me.gender, settings);
   const pendingSent = sent.filter((r) => r.state === "pending");
 
   const isDraft = me.status === "draft";
@@ -635,11 +654,11 @@ export default async function DashboardPage({
           a wali confirms in his own portal, a request is answered
           elsewhere. Without this the dashboard could only ever show the
           state, never the events that got it there. */}
-      {feed.length ? (
+      {liveFeed.length ? (
         <section className="mt-8">
           <SectionHead Icon={BellIcon} title="Latest" href="/notifications" more="All notifications" />
           <ul className="mt-4 grid grid-cols-1 gap-2 xl:grid-cols-2">
-            {feed.map((n) => {
+            {liveFeed.map((n) => {
               const Icon = FEED_ICONS[n.kind] ?? BellIcon;
               const isNew = n.readAt === null;
               return (

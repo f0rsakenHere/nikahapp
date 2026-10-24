@@ -38,7 +38,7 @@ async function signIn(page, password) {
   await page.goto(BASE + "/login", { waitUntil: "networkidle" });
   await page.fill('input[name="email"]', EMAIL);
   await page.fill('input[name="password"]', password);
-  await page.click('button[type="submit"]');
+  await page.click('main button[type="submit"]');
   /* Waited on, not slept through. A correct password lands on the
      dashboard, and on a cold dev server that route can take longer to
      compile than any fixed pause — which then reads as "the password
@@ -83,7 +83,7 @@ const mongo = new MongoClient(uri, {
     await p.fill('input[name="password"]', PASSWORD);
     await p.check('input[name="marriageIntention"]');
     await p.check('input[name="terms"]');
-    await p.click('button[type="submit"]');
+    await p.click('main button[type="submit"]');
     await p.waitForURL("**/onboarding", { timeout: 20_000 });
 
     const user = await db.collection("users").findOne({ email: EMAIL });
@@ -121,7 +121,7 @@ const mongo = new MongoClient(uri, {
     const q = await ctx.newPage();
     await q.goto(asReset, { waitUntil: "networkidle" });
     await q.fill('input[name="password"]', "some-other-password");
-    await q.click('button[type="submit"]');
+    await q.click('main button[type="submit"]');
     await q.waitForTimeout(2500);
     check(
       "a verification token cannot be used to reset a password",
@@ -154,7 +154,7 @@ const mongo = new MongoClient(uri, {
 
     await r.goto(BASE + "/forgot-password", { waitUntil: "networkidle" });
     await r.fill('input[name="email"]', `nobody+${STAMP}@example.invalid`);
-    await r.click('button[type="submit"]');
+    await r.click('main button[type="submit"]');
     await r.waitForTimeout(2000);
     const unknownAnswer = (await r.textContent("body")).includes("If that address has an account");
     check("an unknown address gets the non-committal answer", unknownAnswer);
@@ -162,7 +162,7 @@ const mongo = new MongoClient(uri, {
 
     await r.goto(BASE + "/forgot-password", { waitUntil: "networkidle" });
     await r.fill('input[name="email"]', EMAIL);
-    await r.click('button[type="submit"]');
+    await r.click('main button[type="submit"]');
     await r.waitForTimeout(2500);
     check(
       "a known address gets the identical answer",
@@ -173,7 +173,7 @@ const mongo = new MongoClient(uri, {
 
     await r.goto(resetLink, { waitUntil: "networkidle" });
     await r.fill('input[name="password"]', "short");
-    await r.click('button[type="submit"]');
+    await r.click('main button[type="submit"]');
     await r.waitForTimeout(2000);
     check("a too-short password is refused", /at least 10/i.test(await r.textContent("body")));
     /* The length check runs before the token is consumed, on purpose:
@@ -187,7 +187,7 @@ const mongo = new MongoClient(uri, {
 
     await r.goto(resetLink, { waitUntil: "networkidle" });
     await r.fill('input[name="password"]', NEW_PASSWORD);
-    await r.click('button[type="submit"]');
+    await r.click('main button[type="submit"]');
     await r.waitForURL("**/login**", { timeout: 20_000 });
     check("resetting lands back on sign in", new URL(r.url()).pathname === "/login", r.url());
     check("with a message saying so", /has been reset/i.test(await r.textContent("body")));
@@ -199,7 +199,7 @@ const mongo = new MongoClient(uri, {
 
     await r.goto(resetLink, { waitUntil: "networkidle" });
     await r.fill('input[name="password"]', "yet-another-password");
-    await r.click('button[type="submit"]');
+    await r.click('main button[type="submit"]');
     await r.waitForTimeout(2000);
     check(
       "the reset link cannot be used twice",

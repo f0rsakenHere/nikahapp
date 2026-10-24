@@ -160,7 +160,7 @@ let bad = 0;
     await s.goto(`${BASE}/login`, { waitUntil: "networkidle" });
     await s.fill('input[name="email"]', MEMBER);
     await s.fill('input[name="password"]', PASSWORD);
-    await s.click('button[type="submit"]');
+    await s.click('main button[type="submit"]');
     await s.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 60_000 }).catch(() => {});
     await s.close();
 

@@ -68,7 +68,7 @@ async function makeMember(browser, db, gender, name, over = {}) {
   await page.fill('input[name="password"]', PASSWORD);
   await page.check('input[name="marriageIntention"]');
   await page.check('input[name="terms"]');
-  await page.click('button[type="submit"]');
+  await page.click('main button[type="submit"]');
   await page.waitForURL("**/onboarding", { timeout: 20_000 });
 
   const user = await db.collection("users").findOne({ email });

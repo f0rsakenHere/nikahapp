@@ -86,7 +86,7 @@ async function fill(page) {
     /* ---- 2. a rejected submission ---- */
     await fillDob(page, "2015-04-11");
     await page.fill('[name="password"]', PASSWORD);
-    await page.locator('button[type="submit"]').click();
+    await page.locator('main button[type="submit"]').click();
     /* The error element, not the words. The hint under this field also
        says "18 or older", so a text match here passes before the server
        has answered — and then everything below it measures the form as
@@ -108,7 +108,7 @@ async function fill(page) {
     await page.fill('[name="password"]', PASSWORD);
     await Promise.all([
       page.waitForURL("**/onboarding**", { timeout: 30_000 }),
-      page.locator('button[type="submit"]').click(),
+      page.locator('main button[type="submit"]').click(),
     ]);
 
     console.log("\nafter the account is created");

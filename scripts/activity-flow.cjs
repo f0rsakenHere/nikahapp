@@ -107,7 +107,7 @@ const text = (p) => p.innerText("body");
     await page.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 90_000 });
     await page.fill('input[name="email"]', VIEWER);
     await page.fill('input[name="password"]', PASSWORD);
-    await page.click('button[type="submit"]');
+    await page.click('main button[type="submit"]');
     await page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 60_000 });
     await page.waitForLoadState("networkidle").catch(() => {});
     await assertOurApp(page);

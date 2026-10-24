@@ -46,7 +46,7 @@ async function register(page, email, gender) {
   await page.fill('input[name="password"]', PASSWORD);
   await page.check('input[name="marriageIntention"]');
   await page.check('input[name="terms"]');
-  await page.click('button[type="submit"]');
+  await page.click('main button[type="submit"]');
   await page.waitForURL("**/onboarding", { timeout: 20_000 });
 }
 
@@ -82,7 +82,7 @@ const mongo = new MongoClient(uri, {
     await her.fill('input[name="name"]', "Ahmed Al-Rashid");
     await her.selectOption('select[name="relationship"]', "father");
     await her.fill('input[name="email"]', SISTER);
-    await her.click('button[type="submit"]');
+    await her.click('main button[type="submit"]');
     await her.waitForTimeout(2500);
     check(
       "she cannot name herself as her own wali",
@@ -105,7 +105,7 @@ const mongo = new MongoClient(uri, {
 
     /* ---------- inviting him ---------------------------------------- */
     await her.fill('input[name="email"]', WALI);
-    await her.click('button[type="submit"]');
+    await her.click('main button[type="submit"]');
     await her.waitForTimeout(3000);
     const link = await devLink(her);
     check("an invitation link was issued", !!link, her.url());
@@ -155,14 +155,14 @@ const mongo = new MongoClient(uri, {
 
     /* ---------- he accepts ------------------------------------------ */
     await him.fill('input[name="password"]', "short");
-    await him.click('button[type="submit"]');
+    await him.click('main button[type="submit"]');
     await him.waitForTimeout(2500);
     check("a short password is refused", /at least 10/i.test(await him.textContent("body")));
     const stillInvited = await db.collection("guardianships").findOne({ _id: g._id });
     check("and the invitation survives the failed attempt", stillInvited.status === "invited");
 
     await him.fill('input[name="password"]', PASSWORD);
-    await him.click('button[type="submit"]');
+    await him.click('main button[type="submit"]');
     await him.waitForURL("**/login**", { timeout: 20_000 });
     check("accepting sends him to sign in", /confirmed as her wali/i.test(await him.textContent("body")));
 
@@ -191,7 +191,7 @@ const mongo = new MongoClient(uri, {
     await him.goto(BASE + "/login", { waitUntil: "networkidle" });
     await him.fill('input[name="email"]', WALI);
     await him.fill('input[name="password"]', PASSWORD);
-    await him.click('button[type="submit"]');
+    await him.click('main button[type="submit"]');
     await him.waitForTimeout(3000);
 
     await him.goto(BASE + "/wali", { waitUntil: "networkidle" });
@@ -345,12 +345,13 @@ const mongo = new MongoClient(uri, {
       }],
       ["deen", async () => {
         await her.click('label:has(input[name="deen.salah"][value="fiveDaily"])');
+        await her.click('label:has(input[name="deen.madhhab"][value="hanafi"])');
         await her.click('label:has(input[name="deen.dress"][value="hijab"])');
       }],
     ]) {
       await her.goto(`${BASE}/onboarding/${step}`, { waitUntil: "networkidle" });
       await fill();
-      await her.click('button[type="submit"]');
+      await her.click('main button[type="submit"]');
       await her.waitForTimeout(2000);
     }
 
@@ -376,7 +377,7 @@ const mongo = new MongoClient(uri, {
     await back.goto(BASE + "/login", { waitUntil: "networkidle" });
     await back.fill('input[name="email"]', WALI);
     await back.fill('input[name="password"]', PASSWORD);
-    await back.click('button[type="submit"]');
+    await back.click('main button[type="submit"]');
     await back.waitForTimeout(2500);
     await back.goto(String(finalLink), { waitUntil: "networkidle" });
     await back.click('button:has-text("I accept")');

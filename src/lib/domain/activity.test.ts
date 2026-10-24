@@ -23,11 +23,17 @@ describe("activityBand", () => {
     expect(activityBand(ago(20 * DAY), NOW)).toBe("month");
   });
 
-  it("falls silent rather than saying how long somebody has been gone", () => {
-    /* "Active 4 months ago" is a reason not to write to somebody, and
-       the pool is small enough that discouraging contact is the more
-       expensive mistake. */
-    expect(activityBand(ago(120 * DAY), NOW)).toBe(null);
+  it("says so when somebody has been gone a long time", () => {
+    /* It used to fall silent, on the grounds that "active 4 months ago"
+       discourages contact. A tester read the silence as the service
+       hiding it, and he is the one spending one of five asks a week:
+       "some people don't really like wasting their time." */
+    expect(activityBand(ago(120 * DAY), NOW)).toBe("quiet");
+  });
+
+  it("says nothing at all only when nobody has ever visited", () => {
+    expect(activityBand(null, NOW)).toBe(null);
+    expect(activityBand(undefined, NOW)).toBe(null);
   });
 
   it("puts each boundary in the wider band, not the narrower one", () => {
@@ -35,7 +41,7 @@ describe("activityBand", () => {
     expect(activityBand(ago(DAY), NOW)).toBe("week");
     expect(activityBand(ago(7 * DAY - 1), NOW)).toBe("week");
     expect(activityBand(ago(7 * DAY), NOW)).toBe("month");
-    expect(activityBand(ago(30 * DAY), NOW)).toBe(null);
+    expect(activityBand(ago(30 * DAY), NOW)).toBe("quiet");
   });
 
   it("reads a clock that runs fast as here now", () => {
@@ -45,6 +51,10 @@ describe("activityBand", () => {
   it("has a label for every band it can return", () => {
     for (const band of ["today", "week", "month"] as const) {
       expect(ACTIVITY_LABELS[band]).toMatch(/^Active /);
+    }
+    {
+      /* The quiet one deliberately does not start with "Active". */
+      expect(ACTIVITY_LABELS.quiet).toMatch(/last month/);
     }
   });
 });

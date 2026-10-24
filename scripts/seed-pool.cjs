@@ -96,6 +96,7 @@ const VOCAB = {
     "islamicStudies",
     "other",
   ],
+  madhhab: ["hanafi", "maliki", "shafii", "hanbali", "none", "preferNotToSay"],
   salah: ["fiveDaily", "mostPrayers", "somePrayers", "rarely", "preferNotToSay"],
   maritalStatus: ["neverMarried", "divorced", "widowed", "separated"],
   citizenship: [
@@ -117,6 +118,7 @@ function assertVocabulary(people) {
   for (const p of people) {
     for (const [field, key] of [
       ["education", "education"],
+      ["madhhab", "madhhab"],
       ["salah", "salah"],
       ["maritalStatus", "maritalStatus"],
       ["citizenship", "citizenship"],
@@ -142,10 +144,27 @@ FAIL  ${wrong.length} seeded value(s) the profile schema will reject:
 
 const slug = (first, last) => `${first}.${last}`.toLowerCase().replace(/[^a-z.]/g, "");
 
+/* Fixture heritage, read off the languages the fixture already speaks.
+ *
+ * Every seeded profile had an empty ethnicity, so the card's ethnicity
+ * row was invisible across the entire pool and a tester reported the
+ * field as missing from the product. These are stand-ins for test data,
+ * not claims about anybody: the seeded profiles say so in their own
+ * about text. */
+function heritageFrom(languages) {
+  const spoken = String(languages ?? "");
+  if (/Bengali/i.test(spoken)) return "Bangladeshi";
+  if (/Urdu|Punjabi/i.test(spoken)) return "Pakistani";
+  if (/Arabic/i.test(spoken)) return "Arab";
+  if (/Somali/i.test(spoken)) return "Somali";
+  if (/Turkish/i.test(spoken)) return "Turkish";
+  if (/Malay|Indonesian/i.test(spoken)) return "Malay";
+  if (/Hindi|Gujarati/i.test(spoken)) return "Indian";
+  return "Canadian";
+}
+
 function personFrom(row, gender) {
-  /* The sixth column was the madhhab, which the product no longer asks
-     anybody for. The rows keep their shape; the value is dropped. */
-  const [first, last, birthYear, city, province, , salah, look, maritalStatus, citizenship, occupation, education, languages] = row;
+  const [first, last, birthYear, city, province, madhhab, salah, look, maritalStatus, citizenship, occupation, education, languages] = row;
   return {
     first,
     last,
@@ -154,6 +173,7 @@ function personFrom(row, gender) {
     birthYear,
     city,
     province,
+    madhhab,
     salah,
     look,
     maritalStatus,
@@ -221,12 +241,16 @@ function profileDoc(p, userId, now) {
       maritalStatus: p.maritalStatus,
       children: p.maritalStatus === "neverMarried" ? "none" : "yesLivingWithMe",
       languages: p.languages,
-      ethnicity: "",
+      /* Left empty on every seeded profile, which made the card's
+         ethnicity row invisible across the whole pool — a tester
+         reported it as the field having been removed. */
+      ethnicity: heritageFrom(p.languages),
     },
     education: { level: p.education, field: "" },
     work: { occupation: p.occupation },
     deen: {
       salah: p.salah,
+      madhhab: p.madhhab,
       quran: "reads",
       ...(p.gender === "sister" ? { dress: p.look } : { beard: p.look }),
     },

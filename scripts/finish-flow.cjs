@@ -57,7 +57,7 @@ const text = (p) => p.evaluate(() => document.body.innerText);
     await page.fill('input[name="password"]', PASSWORD);
     await page.check('input[name="marriageIntention"]');
     await page.check('input[name="terms"]');
-    await page.click('button[type="submit"]');
+    await page.click('main button[type="submit"]');
     await page.waitForURL("**/onboarding", { timeout: 60_000 });
 
     /* Confirmed the short way; verify-email-flow walks the link itself,
@@ -71,7 +71,7 @@ const text = (p) => p.evaluate(() => document.body.innerText);
     await page.fill('input[name="background.languages"]', "English");
     /* Education deliberately skipped — the field the tester could not
        work out was wanted. */
-    await page.click('button[type="submit"]');
+    await page.click('main button[type="submit"]');
     await page.waitForTimeout(2500);
 
     await page.goto(`${BASE}/onboarding/background`, { waitUntil: "networkidle" });
@@ -99,14 +99,14 @@ const text = (p) => p.evaluate(() => document.body.innerText);
     /* ---------- the answer that finishes it, sends it -------------- */
     await page.goto(`${BASE}/onboarding/background`, { waitUntil: "networkidle" });
     await page.selectOption('select[name="education.level"]', "bachelor");
-    await page.click('button[type="submit"]');
+    await page.click('main button[type="submit"]');
     await page.waitForTimeout(2500);
 
     await page.goto(`${BASE}/onboarding/basics`, { waitUntil: "networkidle" });
     await page.fill('input[name="basics.city"]', "Montreal");
     await page.selectOption('select[name="basics.province"]', "QC");
     await page.click('label:has(input[name="basics.citizenship"][value="citizen"])');
-    await page.click('button[type="submit"]');
+    await page.click('main button[type="submit"]');
     await page.waitForTimeout(2500);
 
     await page.goto(`${BASE}/onboarding/deen`, { waitUntil: "networkidle" });
@@ -118,8 +118,9 @@ const text = (p) => p.evaluate(() => document.body.innerText);
     );
 
     await page.click('label:has(input[name="deen.salah"][value="fiveDaily"])');
+    await page.click('label:has(input[name="deen.madhhab"][value="hanafi"])');
     await page.click('label:has(input[name="deen.beard"][value="yes"])');
-    await page.click('button[type="submit"]');
+    await page.click('main button[type="submit"]');
     await page.waitForTimeout(4000);
 
     const user = await db.collection("users").findOne({ email: EMAIL });
@@ -145,7 +146,7 @@ const text = (p) => p.evaluate(() => document.body.innerText);
     /* ---------- editing a sent profile does not re-send ------------- */
     await page.goto(`${BASE}/onboarding/basics`, { waitUntil: "networkidle" });
     await page.fill('input[name="basics.city"]', "Laval");
-    await page.click('button[type="submit"]');
+    await page.click('main button[type="submit"]');
     await page.waitForTimeout(2500);
     check(
       "editing it afterwards changes the answer, not the status",

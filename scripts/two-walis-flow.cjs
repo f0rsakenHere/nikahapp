@@ -58,7 +58,7 @@ async function register(browser, gender, first, email) {
   await page.fill('input[name="password"]', PASSWORD);
   await page.check('input[name="marriageIntention"]');
   await page.check('input[name="terms"]');
-  await page.click('button[type="submit"]');
+  await page.click('main button[type="submit"]');
   await page.waitForURL("**/onboarding", { timeout: 45_000 });
   return { context, page, email };
 }
@@ -76,7 +76,7 @@ async function nameWali(page, { name, relationship, email }) {
   await page.fill('input[name="name"]', name);
   await page.selectOption('select[name="relationship"]', relationship);
   await page.fill('input[name="email"]', email);
-  await page.click('button[type="submit"]');
+  await page.click('main button[type="submit"]');
   await page.waitForTimeout(2500);
   return devLink(page);
 }
@@ -88,7 +88,7 @@ async function signIn(page, email) {
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', PASSWORD);
-  await page.click('button[type="submit"]');
+  await page.click('main button[type="submit"]');
   await page.waitForTimeout(2500);
 }
 
@@ -147,7 +147,7 @@ async function accept(browser, link, { page } = {}) {
     await her.page.fill('input[name="name"]', "Yusuf Karim");
     await her.page.selectOption('select[name="relationship"]', "uncle");
     await her.page.fill('input[name="email"]', UNCLE);
-    await her.page.click('button[type="submit"]');
+    await her.page.click('main button[type="submit"]');
     await her.page.waitForTimeout(2500);
     const secondLink = await devLink(her.page);
     check("a second invitation goes out", Boolean(secondLink));

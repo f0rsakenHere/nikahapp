@@ -14,6 +14,7 @@ import {
   CHILDREN,
   CITIZENSHIP,
   DRESS,
+  MADHHAB,
   EDUCATION,
   MARITAL_STATUS,
   PROVINCES,
@@ -29,6 +30,15 @@ export const SALAH_LABELS: Labels<typeof SALAH> = {
   mostPrayers: "Most prayers",
   somePrayers: "Some prayers",
   rarely: "Rarely",
+  preferNotToSay: "Prefer not to say",
+};
+
+export const MADHHAB_LABELS: Labels<typeof MADHHAB> = {
+  hanafi: "Hanafi",
+  maliki: "Maliki",
+  shafii: "Shafi'i",
+  hanbali: "Hanbali",
+  none: "No specific madhhab",
   preferNotToSay: "Prefer not to say",
 };
 
@@ -80,7 +90,8 @@ export const CITIZENSHIP_LABELS: Labels<typeof CITIZENSHIP> = {
 
 export const EDUCATION_LABELS: Labels<typeof EDUCATION> = {
   highSchool: "High school",
-  collegeDiploma: "College or diploma",
+  /* "College or diploma" read as two different answers in one line. */
+  collegeDiploma: "College diploma",
   bachelor: "Bachelor's degree",
   master: "Master's degree",
   doctorate: "Doctorate",

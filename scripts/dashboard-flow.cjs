@@ -47,7 +47,7 @@ async function register(page) {
   await page.fill('input[name="password"]', PASSWORD);
   await page.check('input[name="marriageIntention"]');
   await page.check('input[name="terms"]');
-  await page.click('button[type="submit"]');
+  await page.click('main button[type="submit"]');
   await page.waitForURL("**/onboarding", { timeout: 20_000 });
 }
 
@@ -238,7 +238,7 @@ const body = (p) => p.innerText("body");
     await fresh.goto(`${BASE}/login`, { waitUntil: "networkidle" });
     await fresh.fill('input[name="email"]', EMAIL);
     await fresh.fill('input[name="password"]', PASSWORD);
-    await fresh.click('button[type="submit"]');
+    await fresh.click('main button[type="submit"]');
     await fresh.waitForURL("**/dashboard", { timeout: 20_000 }).catch(() => {});
     check("signing in lands on the dashboard", new URL(fresh.url()).pathname === "/dashboard", fresh.url());
 
@@ -289,7 +289,7 @@ const body = (p) => p.innerText("body");
     );
     await aimed.fill('input[name="email"]', EMAIL);
     await aimed.fill('input[name="password"]', PASSWORD);
-    await aimed.click('button[type="submit"]');
+    await aimed.click('main button[type="submit"]');
     await aimed.waitForURL("**/settings", { timeout: 45_000 }).catch(() => {});
     check(
       "an explicit ?next still wins",

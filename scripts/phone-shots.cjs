@@ -48,7 +48,7 @@ const client = new MongoClient(requireEnv("MONGODB_URI"), {
   await p.screenshot({ path: `${OUT}/00-login.png` });
   await p.fill('input[name="email"]', MEMBER);
   await p.fill('input[name="password"]', PASSWORD);
-  await p.click('button[type="submit"]');
+  await p.click('main button[type="submit"]');
   await p.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 90_000 }).catch(() => {});
   await p.waitForLoadState("networkidle").catch(() => {});
 

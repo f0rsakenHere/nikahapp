@@ -59,14 +59,14 @@ const mongo = new MongoClient(uri, {
     await p.fill('input[name="password"]', PASSWORD);
     await p.check('input[name="marriageIntention"]');
     await p.check('input[name="terms"]');
-    await p.click('button[type="submit"]');
+    await p.click('main button[type="submit"]');
     await p.waitForURL("**/onboarding", { timeout: 20_000 });
 
     await p.goto(BASE + "/onboarding/basics", { waitUntil: "networkidle" });
     await p.fill('input[name="basics.city"]', "Montreal");
     await p.selectOption('select[name="basics.province"]', "QC");
     await p.click('label:has(input[name="basics.citizenship"][value="citizen"])');
-    await p.click('button[type="submit"]');
+    await p.click('main button[type="submit"]');
     await p.waitForTimeout(2000);
 
     /* A wali, so erasure has a guardianship to remove. */
@@ -74,13 +74,13 @@ const mongo = new MongoClient(uri, {
     await p.fill('input[name="name"]', "Ahmed Al-Rashid");
     await p.selectOption('select[name="relationship"]', "father");
     await p.fill('input[name="email"]', WALI);
-    await p.click('button[type="submit"]');
+    await p.click('main button[type="submit"]');
     await p.waitForTimeout(2500);
     const invite = await devLink(p);
     const him = await (await browser.newContext()).newPage();
     await him.goto(String(invite), { waitUntil: "networkidle" });
     await him.fill('input[name="password"]', PASSWORD);
-    await him.click('button[type="submit"]');
+    await him.click('main button[type="submit"]');
     await him.waitForURL("**/login**", { timeout: 20_000 });
     await him.close();
 

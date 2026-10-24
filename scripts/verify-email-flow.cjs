@@ -79,7 +79,7 @@ function linkFromLog(sinceByte) {
     await p.fill('input[name="password"]', PASSWORD);
     await p.check('input[name="marriageIntention"]');
     await p.check('input[name="terms"]');
-    await p.click('button[type="submit"]');
+    await p.click('main button[type="submit"]');
     await p.waitForURL("**/onboarding", { timeout: 30_000 });
 
     const user = await db.collection("users").findOne({ email: EMAIL });
@@ -161,7 +161,7 @@ function linkFromLog(sinceByte) {
       await q.fill('input[name="password"]', PASSWORD);
       await q.check('input[name="marriageIntention"]');
       await q.check('input[name="terms"]');
-      await q.click('button[type="submit"]');
+      await q.click('main button[type="submit"]');
       await q.waitForURL("**/onboarding", { timeout: 30_000 });
 
       let second = null;

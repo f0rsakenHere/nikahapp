@@ -8,6 +8,7 @@ import {
   CHILDREN_LABELS,
   CITIZENSHIP_LABELS,
   EDUCATION_LABELS,
+  MADHHAB_LABELS,
   MARITAL_STATUS_LABELS,
   PROVINCE_LABELS,
   SALAH_LABELS,
@@ -124,6 +125,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
 
         <Section title="Deen">
           <Row label="Salah" value={profile.deen.salah ? SALAH_LABELS[profile.deen.salah] : undefined} />
+          <Row label="Madhhab" value={profile.deen.madhhab ? MADHHAB_LABELS[profile.deen.madhhab] : undefined} />
           <Row label={profile.gender === "sister" ? "Dress" : "Beard"} value={profile.deen.dress ?? profile.deen.beard} />
         </Section>
 

@@ -48,7 +48,7 @@ function check(label, ok, detail) {
     await p.fill('input[name="password"]', PASSWORD);
     await p.check('input[name="marriageIntention"]');
     await p.check('input[name="terms"]');
-    await p.click('button[type="submit"]');
+    await p.click('main button[type="submit"]');
     await p.waitForURL("**/onboarding", { timeout: 30_000 });
 
     check("registration completes and lands on onboarding", true);

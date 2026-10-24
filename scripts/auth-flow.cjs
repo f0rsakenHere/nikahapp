@@ -111,7 +111,7 @@ const mongo = new MongoClient(uri, {
     {
       const p = await browser.newPage();
       await fillSignup(p, { dateOfBirth: "2015-01-01", terms: false });
-      await p.click('button[type="submit"]');
+      await p.click('main button[type="submit"]');
       await p.waitForTimeout(1200);
       const body = await p.textContent("body");
       check("under 18 is refused", /18 or older/.test(body));
@@ -126,7 +126,7 @@ const mongo = new MongoClient(uri, {
     {
       const p = await browser.newPage();
       await fillSignup(p);
-      await p.click('button[type="submit"]');
+      await p.click('main button[type="submit"]');
       await p.waitForURL("**/onboarding", { timeout: 15_000 }).catch(() => {});
       check("register lands on /onboarding", new URL(p.url()).pathname === "/onboarding", p.url());
       /* Registration drops them straight into the work, so the landing
@@ -172,7 +172,7 @@ const mongo = new MongoClient(uri, {
     {
       const p = await browser.newPage();
       await fillSignup(p);
-      await p.click('button[type="submit"]');
+      await p.click('main button[type="submit"]');
       await p.waitForTimeout(1500);
       check(
         "a duplicate email is refused",
@@ -192,7 +192,7 @@ const mongo = new MongoClient(uri, {
       await p.goto(BASE + "/login", { waitUntil: "networkidle" });
       await p.fill('input[name="email"]', EMAIL);
       await p.fill('input[name="password"]', "definitely-the-wrong-one");
-      await p.click('button[type="submit"]');
+      await p.click('main button[type="submit"]');
       await p.waitForTimeout(1200);
       /* Read the alert, not the whole page. The body also contains the
          footer's "No account yet? Register", which a body-wide scan
@@ -211,7 +211,7 @@ const mongo = new MongoClient(uri, {
       /* An address with no account must be refused identically. */
       await p.fill('input[name="email"]', `nobody+${STAMP}@example.invalid`);
       await p.fill('input[name="password"]', PASSWORD);
-      await p.click('button[type="submit"]');
+      await p.click('main button[type="submit"]');
       await p.waitForTimeout(1200);
       check(
         "an unknown address gets the byte-identical message",
@@ -223,7 +223,7 @@ const mongo = new MongoClient(uri, {
       await p.goto(BASE + "/login?next=https://example.com/phish", { waitUntil: "networkidle" });
       await p.fill('input[name="email"]', EMAIL);
       await p.fill('input[name="password"]', PASSWORD);
-      await p.click('button[type="submit"]');
+      await p.click('main button[type="submit"]');
       await p.waitForTimeout(2000);
       check(
         "an off-site ?next is refused, not followed",
@@ -244,7 +244,7 @@ const mongo = new MongoClient(uri, {
           await q.goto(BASE + "/login", { waitUntil: "networkidle" });
           await q.fill('input[name="email"]', EMAIL);
           await q.fill('input[name="password"]', PASSWORD);
-          await q.click('button[type="submit"]');
+          await q.click('main button[type="submit"]');
           await q.waitForURL("**/dashboard", { timeout: 20_000 }).catch(() => {});
           await q.goto(BASE + "/login", { waitUntil: "networkidle" });
           const where = new URL(q.url()).pathname;
@@ -257,7 +257,7 @@ const mongo = new MongoClient(uri, {
       await p.goto(BASE + "/login", { waitUntil: "networkidle" });
       await p.fill('input[name="email"]', EMAIL.toUpperCase());
       await p.fill('input[name="password"]', PASSWORD);
-      await p.click('button[type="submit"]');
+      await p.click('main button[type="submit"]');
       await p.waitForURL("**/dashboard", { timeout: 15_000 }).catch(() => {});
       /* The dashboard, not the profile builder: signing in answers "what
          is happening with my account", and for most members the builder

@@ -31,6 +31,14 @@ import { z } from "zod";
 /* ------------------------------------------------------------ options -- */
 
 export const SALAH = ["fiveDaily", "mostPrayers", "somePrayers", "rarely", "preferNotToSay"] as const;
+/* Back, at the client's word, after a tester went looking for it: "you
+ * guys took out the madhhab... you need to add again the height, the
+ * ethnicity, and the madhhab as well."
+ *
+ * It was taken out because it was being read twice on one card. It is
+ * asked once now and shown once, beside the salah.
+ */
+export const MADHHAB = ["hanafi", "maliki", "shafii", "hanbali", "none", "preferNotToSay"] as const;
 /* Sisters only. */
 export const DRESS = ["niqab", "hijab", "hijabSometimes", "noHijab", "preferNotToSay"] as const;
 /* Brothers only. */
@@ -216,6 +224,7 @@ export const ProfileDraftSchema = z.object({
   deen: z
     .object({
       salah: z.enum(SALAH).optional(),
+      madhhab: z.enum(MADHHAB).optional(),
       dress: z.enum(DRESS).optional(),
       beard: z.enum(BEARD).optional(),
       quran: z.enum(QURAN).optional(),
@@ -314,6 +323,7 @@ export const STEPS: readonly Step[] = [
     blurb: "The section a match reads before anything else.",
     required: (p) =>
       p.deen.salah !== undefined &&
+      p.deen.madhhab !== undefined &&
       /* Gendered: a sister is asked about hijab, a brother about his
        * beard. Neither question is asked of the other. */
       (p.gender === "sister" ? p.deen.dress !== undefined : p.deen.beard !== undefined),

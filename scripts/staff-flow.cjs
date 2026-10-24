@@ -128,7 +128,7 @@ const mongo = new MongoClient(uri, {
       check("the setup link opens the password screen", /Choose a new password/.test(await boot.textContent("body")));
 
       await boot.fill('input[name="password"]', PASSWORD);
-      await boot.click('button[type="submit"]');
+      await boot.click('main button[type="submit"]');
       await boot.waitForURL("**/login**", { timeout: 20_000 });
       check("setting the first password lands on sign in", /has been reset/i.test(await boot.textContent("body")));
       await boot.close();
@@ -137,7 +137,7 @@ const mongo = new MongoClient(uri, {
     /* ---------- first sign-in goes to enrolment, not a code prompt ---- */
     await p.fill('input[name="email"]', STAFF);
     await p.fill('input[name="password"]', PASSWORD);
-    await p.click('button[type="submit"]');
+    await p.click('main button[type="submit"]');
     /* Wait for the destination, not for a stopwatch. Landing on /mfa and
        having /mfa rendered are different moments, and in dev the second
        one waits on a compile — which made this fail only when other
@@ -167,7 +167,7 @@ const mongo = new MongoClient(uri, {
     check("a base32 secret is offered", /^[A-Z2-7]{32}$/.test(secret), secret.slice(0, 12));
 
     await p.fill('input[name="code"]', "000000");
-    await p.click('button[type="submit"]');
+    await p.click('main button[type="submit"]');
     await p.waitForTimeout(2500);
     check("a wrong code is refused", /not right/i.test(await p.textContent("body")));
     const notYet = await db.collection("users").findOne({ _id: staffId });
@@ -176,7 +176,7 @@ const mongo = new MongoClient(uri, {
     /* The secret changes on each render of the page, so re-read it. */
     const secret2 = (await p.inputValue('input[name="secret"]')) || secret;
     await p.fill('input[name="code"]', totp(secret2));
-    await p.click('button[type="submit"]');
+    await p.click('main button[type="submit"]');
     /* Waited for, not slept through. Enrolment lands on the console via
        the dashboard, and on a cold dev server compiling two routes takes
        longer than any fixed pause you would care to write — which then
@@ -209,18 +209,18 @@ const mongo = new MongoClient(uri, {
     await q.goto(BASE + "/login", { waitUntil: "networkidle" });
     await q.fill('input[name="email"]', STAFF);
     await q.fill('input[name="password"]', PASSWORD);
-    await q.click('button[type="submit"]');
+    await q.click('main button[type="submit"]');
     await q.waitForURL("**/mfa**", { timeout: 30000 });
     await q.waitForSelector('input[name="code"]', { timeout: 30000 });
     check("a second sign-in asks for the code", /Enter your code/.test(await q.textContent("body")));
 
     await q.fill('input[name="code"]', "111111");
-    await q.click('button[type="submit"]');
+    await q.click('main button[type="submit"]');
     await q.waitForTimeout(2500);
     check("a wrong code is refused there too", /not right/i.test(await q.textContent("body")));
 
     await q.fill('input[name="code"]', totp(enrolled.mfa.secret));
-    await q.click('button[type="submit"]');
+    await q.click('main button[type="submit"]');
     await q.waitForTimeout(3000);
     check("the right code gets in", new URL(q.url()).pathname !== "/mfa", q.url());
 
@@ -234,7 +234,7 @@ const mongo = new MongoClient(uri, {
     await m.fill('input[name="password"]', PASSWORD);
     await m.check('input[name="marriageIntention"]');
     await m.check('input[name="terms"]');
-    await m.click('button[type="submit"]');
+    await m.click('main button[type="submit"]');
     await m.waitForURL("**/onboarding", { timeout: 20_000 });
     check("a member is not forced through a second factor", new URL(m.url()).pathname === "/onboarding");
 

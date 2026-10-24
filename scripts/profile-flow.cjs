@@ -46,7 +46,7 @@ async function register(page, gender) {
   await page.fill('input[name="password"]', PASSWORD);
   await page.check('input[name="marriageIntention"]');
   await page.check('input[name="terms"]');
-  await page.click('button[type="submit"]');
+  await page.click('main button[type="submit"]');
   await page.waitForURL("**/onboarding", { timeout: 20_000 });
   return email;
 }
@@ -70,6 +70,10 @@ const mongo = new MongoClient(uri, {
 
       const email = await register(p, "sister");
 
+      /* The checklist streams now: its route has a loading skeleton, so
+         the first thing to arrive is a page with no steps in it.
+         Counting right away counted the skeleton. */
+      await p.locator("ol li a").first().waitFor({ timeout: 20_000 });
       const steps = await p.locator("ol li a").count();
       check("a sister sees four steps", steps === 4, `saw ${steps}`);
       /* Numbered 1-4 with nothing skipped. They used to be numbered by
@@ -96,7 +100,7 @@ const mongo = new MongoClient(uri, {
       await p.selectOption('select[name="basics.province"]', "QC");
       await p.click('label:has(input[name="basics.citizenship"][value="refugee"])');
       await p.selectOption('select[name="basics.heightCm"]', "163");
-      await p.click('button[type="submit"]');
+      await p.click('main button[type="submit"]');
       await p.waitForURL("**/onboarding/background", { timeout: 20_000 });
       check("saving step one moves to step two", p.url().endsWith("/onboarding/background"));
 
@@ -134,7 +138,7 @@ const mongo = new MongoClient(uri, {
       /* --- a half-filled step must still save ----------------------- */
       await p.goto(BASE + "/onboarding/background", { waitUntil: "networkidle" });
       await p.fill('input[name="background.languages"]', "English, Arabic");
-      await p.click('button[type="submit"]');
+      await p.click('main button[type="submit"]');
       await p.waitForURL("**/onboarding/deen", { timeout: 20_000 });
       profile = await db.collection("profiles").findOne({ userId: user._id });
       check(
@@ -148,6 +152,8 @@ const mongo = new MongoClient(uri, {
       );
 
       /* --- the deen step is gendered -------------------------------- */
+      /* Wait for the form, not the skeleton the route streams first. */
+      await p.locator('input[name="deen.salah"]').first().waitFor({ timeout: 20_000 });
       const deen = await p.textContent("body");
       check("a sister is asked about hijab", /Hijab/.test(deen));
       check("a sister is not asked about a beard", !/Beard/.test(deen));
@@ -155,6 +161,7 @@ const mongo = new MongoClient(uri, {
 
       /* --- a finished step returns to the overview ------------------- */
       await p.click('label:has(input[name="deen.salah"][value="fiveDaily"])');
+      await p.click('label:has(input[name="deen.madhhab"][value="hanafi"])');
       await p.click('label:has(input[name="deen.dress"][value="hijab"])');
       /* Submitted from the foot of a long form, which is where the
          button is. The next screen must start at its own top rather than
@@ -162,7 +169,7 @@ const mongo = new MongoClient(uri, {
       await p.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
       const leftAt = await p.evaluate(() => Math.round(window.scrollY));
       check("the step is long enough for this to matter", leftAt > 100, `scrolled to ${leftAt}`);
-      await p.click('button[type="submit"]');
+      await p.click('main button[type="submit"]');
       /* Compared exactly rather than by glob, which would also match the
          step we are standing on and return before the save had run. */
       await p.waitForURL((u) => new URL(u).pathname !== "/onboarding/deen", { timeout: 20_000 });
@@ -185,6 +192,7 @@ const mongo = new MongoClient(uri, {
       const p = await browser.newPage({ viewport: { width: 500, height: 900 } });
       const email = await register(p, "brother");
 
+      await p.locator("ol li a").first().waitFor({ timeout: 20_000 });
       const steps = await p.locator("ol li a").count();
       /* Three: hers without the wali. He used to have a fourth, naming
          somebody who could vouch for him, and nobody is telephoned. */
@@ -202,11 +210,13 @@ const mongo = new MongoClient(uri, {
 
       /* The step is gone, and the URL with it. A bookmark or an open tab
          still points at it, so this is walked rather than assumed. */
-      const gone = await p.goto(BASE + "/onboarding/reference", { waitUntil: "networkidle" });
+      await p.goto(BASE + "/onboarding/reference", { waitUntil: "networkidle" });
+      /* On what renders rather than the status: the checklist has a
+         loading skeleton, so the shell flushes before the step decides
+         and a streamed `notFound()` arrives inside a 200. */
       check(
         "the reference step's URL leads nowhere now",
-        gone.status() === 404,
-        String(gone.status())
+        /could not be found|not found/i.test(await p.evaluate(() => document.body.innerText))
       );
 
       const brother = await db.collection("users").findOne({ email });
@@ -243,8 +253,11 @@ const mongo = new MongoClient(uri, {
       );
 
       /* And a step that does not exist is a 404, not a blank form. */
-      const res = await p.goto(BASE + "/onboarding/nonsense", { waitUntil: "networkidle" });
-      check("an unknown step is a 404", res.status() === 404, String(res.status()));
+      await p.goto(BASE + "/onboarding/nonsense", { waitUntil: "networkidle" });
+      check(
+        "an unknown step is not a step",
+        /could not be found|not found/i.test(await p.evaluate(() => document.body.innerText))
+      );
 
       await p.close();
     }

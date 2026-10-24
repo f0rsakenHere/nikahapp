@@ -45,7 +45,7 @@ function complete(over: Partial<ProfileDraft> = {}): ProfileDraft {
       languages: ["English", "Arabic"],
     },
     education: { level: "bachelor" },
-    deen: { salah: "fiveDaily", dress: "hijab" },
+    deen: { salah: "fiveDaily", madhhab: "hanafi", dress: "hijab" },
     ...over,
   } as Partial<ProfileDraft>);
 }
@@ -79,7 +79,7 @@ describe("ProfileDraftSchema", () => {
   it("offers a way out of every sensitive question", () => {
     /* A required radio group with no escape gets answered dishonestly,
        and a dishonest answer is worse than a missing one here. */
-    for (const field of ["salah", "dress", "beard", "quran"] as const) {
+    for (const field of ["salah", "madhhab", "dress", "beard", "quran"] as const) {
       const parsed = ProfileDraftSchema.safeParse({
         ...draft(),
         deen: { [field]: "preferNotToSay" },
@@ -145,7 +145,7 @@ describe("stepsFor", () => {
       basics: { birthYear: 1995, city: "Montreal", province: "QC", citizenship: "citizen" },
       background: { maritalStatus: "neverMarried", children: "none", languages: ["English"] },
       education: { level: "bachelor" },
-      deen: { salah: "fiveDaily", beard: "yes" },
+      deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "yes" },
     } as Partial<ProfileDraft>);
 
     expect(completeness(full, { hasConfirmedWali: false }).percent).toBe(100);
@@ -195,7 +195,7 @@ describe("completeness", () => {
        — no wali to confirm and no reference to be telephoned. */
     const brother = complete({
       gender: "brother",
-      deen: { salah: "fiveDaily", beard: "yes" },
+      deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "yes" },
     } as Partial<ProfileDraft>);
     expect(completeness(brother)).toEqual({ step: 3, of: 3, percent: 100 });
   });
@@ -203,7 +203,7 @@ describe("completeness", () => {
 
 describe("the deen step is gendered", () => {
   it("asks a sister about hijab, and will not accept a beard instead", () => {
-    const sister = complete({ deen: { salah: "fiveDaily", beard: "yes" } } as Partial<ProfileDraft>);
+    const sister = complete({ deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "yes" } } as Partial<ProfileDraft>);
     expect(submitBlockers(sister, { hasConfirmedWali: true })).toContainEqual({
       step: "deen",
       reason: "incomplete",
@@ -213,7 +213,7 @@ describe("the deen step is gendered", () => {
   it("asks a brother about his beard, and will not accept hijab instead", () => {
     const brother = complete({
       gender: "brother",
-      deen: { salah: "fiveDaily", dress: "hijab" },
+      deen: { salah: "fiveDaily", madhhab: "hanafi", dress: "hijab" },
     } as Partial<ProfileDraft>);
     expect(submitBlockers(brother, { hasConfirmedWali: false })).toContainEqual({
       step: "deen",
@@ -260,7 +260,7 @@ describe("submitBlockers", () => {
   it("never asks a brother for a wali, or for anybody else", () => {
     const brother = complete({
       gender: "brother",
-      deen: { salah: "fiveDaily", beard: "trimmed" },
+      deen: { salah: "fiveDaily", madhhab: "hanafi", beard: "trimmed" },
     } as Partial<ProfileDraft>);
     expect(submitBlockers(brother, { hasConfirmedWali: false })).toEqual([]);
   });

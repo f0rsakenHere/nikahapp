@@ -1,9 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { BrowseCard } from "@/lib/repositories/browse";
+import { feetAndInches } from "@/lib/domain/format";
 import { ACTIVITY_LABELS } from "@/lib/domain/activity";
 import {
   EDUCATION_LABELS,
+  MADHHAB_LABELS,
   MARITAL_STATUS_LABELS,
   PROVINCE_LABELS,
   SALAH_LABELS,
@@ -29,13 +31,6 @@ import {
  * off the bottom — and none of it changes the shape.
  */
 
-/* Stored in centimetres, read in feet and inches by most of this
-   audience — the same reasoning as the height dropdown. */
-function feetAndInches(cm: number): string {
-  const inches = Math.round(cm / 2.54);
-  return `${Math.floor(inches / 12)}′${inches % 12}″ · ${cm} cm`;
-}
-
 export function ProfileCard({
   card: c,
   /** Buttons for the foot of the card. Anything here must opt back into
@@ -55,6 +50,7 @@ export function ProfileCard({
       label: "Practice",
       text: [
         c.salah ? SALAH_LABELS[c.salah as never] : null,
+        c.madhhab ? MADHHAB_LABELS[c.madhhab as never] : null,
       ]
         .filter(Boolean)
         .join(" · "),
@@ -64,9 +60,11 @@ export function ProfileCard({
       label: "Marital status",
       text: [
         c.maritalStatus ? MARITAL_STATUS_LABELS[c.maritalStatus as never] : null,
-        /* Only when there are any. "No children" on every never-married
-           card is noise. */
-        c.children && c.children !== "none" ? "has children" : null,
+        /* Both ways now. "No children" was left off every card on the
+           grounds that it is the common case and therefore noise — but a
+           tester went looking for it and could not tell the difference
+           between a profile that said nothing and one that meant no. */
+        c.children ? (c.children === "none" ? "no children" : "has children") : null,
       ]
         .filter(Boolean)
         .join(" · "),
@@ -162,7 +160,11 @@ export function ProfileCard({
               band — today, this week, this month — never a time: wide
               enough to be useless for learning somebody's routine. */}
           {c.activity ? (
-            <span className="mt-1 text-[18px] leading-[24px] font-medium text-peach-deep">
+            <span
+              className={`mt-1 text-[18px] leading-[24px] font-medium ${
+                c.activity === "quiet" ? "text-text/60" : "text-peach-deep"
+              }`}
+            >
               {ACTIVITY_LABELS[c.activity]}
             </span>
           ) : null}

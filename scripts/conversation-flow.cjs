@@ -56,7 +56,7 @@ async function member(browser, db, gender, name) {
   await page.fill('input[name="password"]', PASSWORD);
   await page.check('input[name="marriageIntention"]');
   await page.check('input[name="terms"]');
-  await page.click('button[type="submit"]');
+  await page.click('main button[type="submit"]');
   await page.waitForURL("**/onboarding", { timeout: 20_000 });
 
   const user = await db.collection("users").findOne({ email });
@@ -99,11 +99,11 @@ async function member(browser, db, gender, name) {
     const link = await her.page.locator('a[href*="token="]').first().getAttribute("href");
     await waliPage.goto(String(link), { waitUntil: "networkidle" });
     await waliPage.fill('input[name="password"]', PASSWORD);
-    await waliPage.click('button[type="submit"]');
+    await waliPage.click('main button[type="submit"]');
     await waliPage.waitForURL("**/login**", { timeout: 20_000 });
     await waliPage.fill('input[name="email"]', waliEmail);
     await waliPage.fill('input[name="password"]', PASSWORD);
-    await waliPage.click('button[type="submit"]');
+    await waliPage.click('main button[type="submit"]');
     await waliPage.waitForTimeout(2500);
 
     /* ---------- he asks, she accepts --------------------------------- */
@@ -299,10 +299,10 @@ async function member(browser, db, gender, name) {
       await st.goto(BASE + "/login", { waitUntil: "networkidle" });
       await st.fill('input[name="email"]', staffEmail);
       await st.fill('input[name="password"]', PASSWORD);
-      await st.click('button[type="submit"]');
+      await st.click('main button[type="submit"]');
       await st.waitForURL("**/mfa**", { timeout: 30_000 });
       await st.fill('input[name="code"]', code);
-      await st.click('button[type="submit"]');
+      await st.click('main button[type="submit"]');
       await st.waitForTimeout(3000);
 
       await st.goto(`${BASE}/conversations/${cid}`, { waitUntil: "networkidle" });

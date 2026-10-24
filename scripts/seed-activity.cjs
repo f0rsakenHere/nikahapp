@@ -79,7 +79,7 @@ async function signIn(browser, email) {
   await p.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 90_000 });
   await p.fill('input[name="email"]', email);
   await p.fill('input[name="password"]', PASSWORD);
-  await p.click('button[type="submit"]');
+  await p.click('main button[type="submit"]');
   await p.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 60_000 }).catch(() => {});
   await p.waitForLoadState("networkidle").catch(() => {});
   if (new URL(p.url()).pathname.startsWith("/login")) {

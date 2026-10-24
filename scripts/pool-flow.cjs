@@ -45,7 +45,7 @@ async function signIn(browser, email) {
   await p.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 90_000 });
   await p.fill('input[name="email"]', email);
   await p.fill('input[name="password"]', PASSWORD);
-  await p.click('button[type="submit"]');
+  await p.click('main button[type="submit"]');
   /* Waited on properly rather than slept through: the landing route may
      still be compiling on a dev server, and navigating again while the
      sign-in redirect is in flight aborts it. */
@@ -250,14 +250,14 @@ const text = (p) => p.innerText("body");
     /* ---------- they talk ------------------------------------------- */
     await her.goto(`${BASE}/conversations/${ids.conversationId}`, { waitUntil: "networkidle" });
     await her.fill("textarea", "Assalamu alaikum. Seeded test message.");
-    await her.locator('button[type="submit"]').first().click();
+    await her.locator('main button[type="submit"]').first().click();
     await her.waitForTimeout(3000);
     check("her message is in the thread", /Seeded test message/.test(await text(her)));
 
     await him.goto(`${BASE}/conversations/${ids.conversationId}`, { waitUntil: "networkidle" });
     check("and he can read it", /Seeded test message/.test(await text(him)));
     await him.fill("textarea", "Wa alaikum assalam. Seeded reply.");
-    await him.locator('button[type="submit"]').first().click();
+    await him.locator('main button[type="submit"]').first().click();
     await him.waitForTimeout(3000);
 
     await wali.goto(`${BASE}/conversations/${ids.conversationId}`, { waitUntil: "networkidle" });

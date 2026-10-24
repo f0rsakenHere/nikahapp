@@ -49,6 +49,7 @@ export type BrowseCard = {
   province?: string;
   occupation?: string;
   salah?: string;
+  madhhab?: string;
   maritalStatus?: string;
   children?: string;
   education?: string;
@@ -222,6 +223,7 @@ export async function browseFor(
       province: doc.basics?.province,
       occupation: doc.work?.occupation,
       salah: doc.deen?.salah,
+      madhhab: doc.deen?.madhhab,
       maritalStatus: doc.background?.maritalStatus,
       children: doc.background?.children,
       education: doc.education?.level,
@@ -232,7 +234,16 @@ export async function browseFor(
       about: excerpt(doc.freeText?.aboutMe),
       alreadyAsked: asked.has(userId),
       marked: saved.has(profileId) ? "saved" : passed.has(profileId) ? "passed" : "none",
-      activity: activityBand(doc.lastActiveAt as Date | undefined, now),
+      /* Falling back to when they came into the pool. Most profiles
+         have never recorded a visit — joining is the only time we know
+         they were here — and reading that as "no information" printed
+         nothing at all on almost every card, which is what a tester
+         reported: "for the person who hasn't been active it doesn't
+         show anything." */
+      activity: activityBand(
+        (doc.lastActiveAt as Date | undefined) ?? enteredPoolAt(doc),
+        now
+      ),
       isNew: isNewToPool(enteredPoolAt(doc), now),
     });
 

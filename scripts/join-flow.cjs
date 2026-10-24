@@ -64,7 +64,7 @@ async function step(p, id, fill) {
   await fill(p);
   await Promise.all([
     p.waitForURL((u) => !u.pathname.endsWith(`/onboarding/${id}`), { timeout: 30_000 }),
-    p.click('button[type="submit"]'),
+    p.click('main button[type="submit"]'),
   ]);
   await p.waitForLoadState("networkidle").catch(() => {});
 }
@@ -85,6 +85,7 @@ async function fillSteps(p) {
 
   await step(p, "deen", async (p) => {
     await p.click('label:has(input[name="deen.salah"][value="fiveDaily"])');
+    await p.click('label:has(input[name="deen.madhhab"][value="hanafi"])');
     await p.click('label:has(input[name="deen.beard"][value="yes"])');
   });
 
@@ -125,7 +126,7 @@ async function cardCount(p) {
     await p.fill('input[name="password"]', PASSWORD);
     await p.check('input[name="marriageIntention"]');
     await p.check('input[name="terms"]');
-    await p.click('button[type="submit"]');
+    await p.click('main button[type="submit"]');
     await p.waitForURL("**/onboarding", { timeout: 45_000 });
     check("registering lands on the profile, not the dashboard", true);
 
@@ -205,6 +206,12 @@ async function cardCount(p) {
       profile?.liveAt ? String(profile.liveAt) : "no liveAt"
     );
 
+    /* The dashboard streams: its route has a loading skeleton, so the
+       first thing to arrive is the chrome with grey boxes in it. */
+    await p.waitForFunction(
+      () => /In the pool|With our team|Not finished/.test(document.body.innerText),
+      { timeout: 20_000 }
+    );
     const dash = await p.textContent("body");
     check("the dashboard says they are in", /In the pool/.test(dash));
     check(
@@ -228,7 +235,7 @@ async function cardCount(p) {
     await q.goto(`${BASE}/login`, { waitUntil: "networkidle" });
     await q.fill('input[name="email"]', LOOKER);
     await q.fill('input[name="password"]', LOOKER_PASSWORD);
-    await q.click('button[type="submit"]');
+    await q.click('main button[type="submit"]');
     await q.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 45_000 });
     /* The status code, not the words on the page: `notFound()` renders
        a 404 whose copy is Next's and could say anything. */

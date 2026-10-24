@@ -25,14 +25,22 @@
 export const HOUR = 60 * 60 * 1000;
 export const DAY = 24 * HOUR;
 
-/** How recently somebody was here, in bands. `null` means "long enough
- *  ago that saying so would be discouraging rather than informative". */
-export type ActivityBand = "today" | "week" | "month" | null;
+/** How recently somebody was here, in bands. `null` only when nobody
+ *  has ever recorded a visit; a long absence is `quiet`, which is said
+ *  out loud — see the note on the labels. */
+export type ActivityBand = "today" | "week" | "month" | "quiet" | null;
 
 export const ACTIVITY_LABELS: Record<Exclude<ActivityBand, null>, string> = {
   today: "Active today",
   week: "Active this week",
   month: "Active this month",
+  /* Said rather than left blank. It used to resolve to nothing on the
+     grounds that it was discouraging, which a tester read as the
+     opposite of helpful: "if you go down for the person who hasn't been
+     active it doesn't show anything... some people don't really like
+     wasting their time." Somebody deciding whether to spend one of five
+     asks a week is entitled to know. */
+  quiet: "Not here in the last month",
 };
 
 export function activityBand(lastActiveAt: Date | null | undefined, now: Date): ActivityBand {
@@ -45,7 +53,7 @@ export function activityBand(lastActiveAt: Date | null | undefined, now: Date): 
   if (since < DAY) return "today";
   if (since < 7 * DAY) return "week";
   if (since < 30 * DAY) return "month";
-  return null;
+  return "quiet";
 }
 
 /** New enough to the pool to be worth pointing out.

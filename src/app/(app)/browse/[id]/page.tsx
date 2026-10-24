@@ -6,9 +6,12 @@ import { browseProfile } from "@/lib/repositories/browse";
 import { asksSince, findBetween, readSettings, weekAgo } from "@/lib/repositories/connections";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
 import { planNote } from "@/lib/domain/plan";
+import { feetAndInches } from "@/lib/domain/format";
+import { ACTIVITY_LABELS, activityBand } from "@/lib/domain/activity";
 import {
   CHILDREN_LABELS,
   EDUCATION_LABELS,
+  MADHHAB_LABELS,
   MARITAL_STATUS_LABELS,
   PROVINCE_LABELS,
   QURAN_LABELS,
@@ -44,6 +47,17 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
   const p = await browseProfile(session.user.id, id, settings);
   if (!p) notFound();
 
+  /* When they were last here. On the card and not on this page, which a
+     tester read as the service hiding it: "some people don't really like
+     wasting their time." */
+  const band = activityBand(
+    (p.lastActiveAt as Date | undefined) ??
+      (p.liveAt as Date | undefined) ??
+      (p.submittedAt as Date | undefined),
+    new Date()
+  );
+  const activityLabel = band ? ACTIVITY_LABELS[band] : "Not here in the last month";
+
   const existing = await findBetween(session.user.id, String(p.userId));
   const asksLeft = Math.max(0, settings.asksPerWeek - (await asksSince(session.user.id, weekAgo(new Date()))));
 
@@ -72,9 +86,23 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
         </span>
         <span className="text-[18px] font-semibold text-black">Photograph locked</span>
         <span className="max-w-[240px] text-[18px] leading-[26px] text-text">
-          Shared once a connection is accepted, and only after the wali approves.
+          Photographs are exchanged privately, on consent, once you are both talking.
         </span>
       </div>
+
+      {/* Their own words first. A tester: "maybe keep the introduction at
+          the top" — it was under nine rows of structured facts, which is
+          the part a reader skims and the part a member actually wrote. */}
+      {typeof freeText.aboutMe === "string" && freeText.aboutMe.trim() ? (
+        <div className="mt-5 rounded-md border border-soft-green bg-mist px-4 py-4">
+          <p className="text-[18px] font-semibold uppercase tracking-[0.6px] text-text/70">
+            In their own words
+          </p>
+          <p className="mt-2 whitespace-pre-wrap text-[18px] leading-[26px] text-black">
+            {freeText.aboutMe}
+          </p>
+        </div>
+      ) : null}
 
       <div className="mt-5">
         <Row
@@ -84,6 +112,7 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
             .join(", ")}
         />
         <Row label="Salah" value={deen.salah ? SALAH_LABELS[deen.salah as never] : null} />
+        <Row label="Madhhab" value={deen.madhhab ? MADHHAB_LABELS[deen.madhhab as never] : null} />
         <Row label="Qur'an" value={deen.quran ? QURAN_LABELS[deen.quran as never] : null} />
         <Row
           label="Marital status"
@@ -107,7 +136,26 @@ export default async function BrowseProfilePage({ params }: { params: Promise<{ 
           value={education.level ? EDUCATION_LABELS[education.level as never] : null}
         />
         <Row label="Work" value={work.occupation} />
-        <Row label="In their own words" value={freeText.aboutMe} />
+        {/* These three were on the card and missing from the page it
+            opens, which a tester noticed and read as the service having
+            dropped them. */}
+        <Row
+          label="Height"
+          value={typeof basics.heightCm === "number" ? feetAndInches(basics.heightCm) : null}
+        />
+        <Row
+          label="Would relocate"
+          value={
+            basics.willingToRelocate === "yes"
+              ? "Yes"
+              : basics.willingToRelocate === "maybe"
+                ? "Maybe"
+                : basics.willingToRelocate === "no"
+                  ? "No"
+                  : null
+          }
+        />
+        <Row label="Last here" value={activityLabel} />
       </div>
 
       <div className="mt-6">
