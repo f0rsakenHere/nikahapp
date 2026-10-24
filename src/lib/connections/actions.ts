@@ -127,7 +127,15 @@ export async function sendConnection(
     href: "/requests",
   });
 
+  /* The profile he asked from, as well as the list.
+   *
+   * Only "/browse" was revalidated, and the sentence confirming the
+   * request lives on "/browse/[id]" — so the page he was looking at
+   * re-rendered from cache, put the button back, and told him he still
+   * had five asks left. The request had been sent. Nothing on screen
+   * said so, and pressing again earned him a refusal. */
   revalidatePath("/browse");
+  revalidatePath(`/browse/${profileId}`);
   revalidatePath("/requests");
   return { done: "sent" };
 }

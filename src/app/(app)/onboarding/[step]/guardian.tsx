@@ -24,7 +24,7 @@ const RELATIONSHIP_LABELS: Record<(typeof WALI_RELATIONSHIPS)[number], string> =
   other: "Someone else",
 };
 
-/* His four powers, in the order they happen. Spelled out before a single
+/* His powers, in the order they happen. Spelled out before a single
  * detail is asked for — the /how-it-works page promises exactly that,
  * and it is the honest thing to do: she is handing someone read access
  * to her private correspondence. */
@@ -316,8 +316,7 @@ export function GuardianStep({
           <p className="text-[18px] font-semibold text-black">If there is nobody you can ask</p>
           <p className="mt-1 text-[18px] leading-[26px] text-text">
             A NikahCanada moderator can act as your wali. He has exactly the powers listed above,
-            he reads everything and approves before any conversation opens, and you can replace him
-            with a relative at any time.
+            he reads everything, and you can replace him with a relative at any time.
           </p>
           <form action={moderatorAction} className="mt-3">
             <FormError>{moderatorState.error}</FormError>

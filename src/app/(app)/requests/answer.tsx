@@ -26,7 +26,7 @@ export function AnswerForm({ requestId, side }: { requestId: string; side: "in" 
       <p className="flex w-full items-start gap-2.5 rounded-lg bg-mist px-3.5 py-3 text-[18px] leading-[26px] text-text">
         <CheckIcon className="mt-1 shrink-0 text-[19px] text-accent-deep" />
         {state.done === "accepted"
-          ? "Accepted. The conversation opens once the wali approves."
+          ? "Accepted. Your conversation is open under Messages, and the wali is reading it."
           : state.done === "withdrawn"
             ? "Withdrawn. Your connection has been returned."
             : "Answered. They are told only that it is closed."}

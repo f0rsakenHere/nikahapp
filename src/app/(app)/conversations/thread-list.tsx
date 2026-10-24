@@ -109,7 +109,7 @@ export function ThreadList({
         <div className="flex flex-col items-center gap-3 px-5 py-8 text-center">
           <AppIllustration kind="conversations" compact />
           <p className="text-[18px] leading-[26px] text-text">
-            No conversations yet. One opens when a request is accepted and the wali approves it.
+            No conversations yet. One opens as soon as a request is accepted, with the wali in it.
           </p>
         </div>
       ) : (

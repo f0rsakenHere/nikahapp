@@ -31,7 +31,7 @@ export default async function ConversationsPage() {
       <AppEmptyState kind="conversations" className="py-12">
         {threads.length
           ? "Pick a conversation to read it."
-          : "Nothing here yet. A conversation opens when a request is accepted and the wali approves it."}
+          : "Nothing here yet. A conversation opens as soon as a request is accepted, with the wali in it."}
       </AppEmptyState>
     </AppFrame>
   );

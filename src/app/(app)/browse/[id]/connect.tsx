@@ -40,7 +40,11 @@ export function ConnectButton({
   if (existing === "accepted") {
     return (
       <p className="rounded-md border border-soft-green bg-mist px-4 py-4 text-[18px] leading-[26px] text-black">
-        They accepted. The conversation opens once the wali approves.
+        {/* It used to wait on her wali. It does not any more — he is
+            seated in the thread from the first message instead — and
+            this was still telling him to wait for an approval nobody
+            is asked for. */}
+        They accepted. Your conversation is open under Messages, with her wali reading it.
       </p>
     );
   }

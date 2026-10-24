@@ -42,7 +42,8 @@ function check(label, ok, detail) {
 async function signIn(browser, email) {
   const p = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   p.setDefaultTimeout(30_000);
-  await p.goto(`${BASE}/login`, { waitUntil: "networkidle", timeout: 90_000 });
+  await p.goto(`${BASE}/login`, { waitUntil: "domcontentloaded", timeout: 90_000 });
+  await p.waitForSelector('input[name="password"]', { timeout: 30_000 });
   await p.fill('input[name="email"]', email);
   await p.fill('input[name="password"]', PASSWORD);
   await p.click('main button[type="submit"]');
@@ -50,11 +51,55 @@ async function signIn(browser, email) {
      still be compiling on a dev server, and navigating again while the
      sign-in redirect is in flight aborts it. */
   await p.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 60_000 }).catch(() => {});
-  await p.waitForLoadState("networkidle").catch(() => {});
+  await p
+    .waitForFunction(() => document.body.innerText.trim().length > 40, null, { timeout: 30_000 })
+    .catch(() => {});
   return p;
 }
 
 const text = (p) => p.innerText("body");
+
+/* Waited on by what the page shows, never by the network going quiet.
+ *
+ * `networkidle` cost a morning: a signed-in page carries images the
+ * browser is free to leave queued indefinitely, and one queued request
+ * keeps a page "busy" for the whole run. The checker reported a broken
+ * product three times over something no member would ever see. */
+async function open(page, path, shows) {
+  await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  if (shows) {
+    await page.waitForFunction(
+      (src) => new RegExp(src, "i").test(document.body.innerText),
+      shows.source,
+      { timeout: 30_000 }
+    );
+  }
+  return page;
+}
+
+/* Only what the thread itself says. Read from the whole page, a message
+   still sitting unsent in the box counts as delivered — Chrome renders a
+   textarea's value into innerText, so the assertion passed while nothing
+   had been sent at all. */
+/* A send is waited on by the message arriving, not by a count of
+   seconds. Three seconds was enough on a warm page and not enough on a
+   cold one, which is how a working product came to be reported broken. */
+async function sendAndWait(page, body) {
+  await page.fill("textarea", body);
+  await page.locator('main button[type="submit"]').first().click();
+  await page
+    .waitForFunction(
+      (needle) =>
+        [...document.querySelectorAll("main ol li")].some((li) => li.innerText.includes(needle)),
+      body,
+      { timeout: 30_000 }
+    )
+    .catch(() => {});
+}
+
+const thread = (p) =>
+  p.evaluate(() => [...document.querySelectorAll("main ol li")].map((li) => li.innerText).join(" / "));
+
 
 (async () => {
   await client.connect();
@@ -75,7 +120,7 @@ const text = (p) => p.innerText("body");
     await assertOurApp(him);
     check("signing in lands on the dashboard", new URL(him.url()).pathname === "/dashboard", him.url());
 
-    await him.goto(`${BASE}/browse`, { waitUntil: "networkidle" });
+    await open(him, "/browse", /Sister|Brother|nobody/);
     const cards = him.locator('a[href^="/browse/"]');
     const count = await cards.count();
     check("the pool has people in it", count > 0, `${count} cards`);
@@ -124,7 +169,7 @@ const text = (p) => p.innerText("body");
         .findOne({ _id: new ObjectId(profileId) }, { projection: { userId: 1 } });
       if (!profile || !seeded.has(String(profile.userId))) continue;
 
-      await him.goto(BASE + candidate, { waitUntil: "networkidle" });
+      await open(him, candidate, /Ask to talk|already|Your request|In their own words/);
       const button = him.locator('button:has-text("Ask to talk")').first();
       if ((await button.count()) === 1) {
         href = candidate;
@@ -142,7 +187,14 @@ const text = (p) => p.innerText("body");
     }
     check("there is something to press", (await ask.count()) === 1);
     await ask.click();
-    await him.waitForTimeout(4000);
+    /* Waited on by the sentence that should replace the button. When it
+       never came, the request had still been sent — so this waits, then
+       checks, rather than checking a page that has not caught up. */
+    await him
+      .waitForFunction(() => /Your request is with them/i.test(document.body.innerText), null, {
+        timeout: 20_000,
+      })
+      .catch(() => {});
     check(
       "the request is acknowledged in words, not silence",
       /Your request is with them/i.test(await text(him)),
@@ -177,7 +229,7 @@ const text = (p) => p.innerText("body");
 
     /* ---------- she answers ----------------------------------------- */
     const her = await signIn(browser, recipient?.email ?? SISTER);
-    await her.goto(`${BASE}/requests`, { waitUntil: "networkidle" });
+    await open(her, "/requests", /Waiting on you|Nothing|No requests|asked/);
     const hers = await text(her);
     check(
       "she sees it waiting on her",
@@ -214,7 +266,7 @@ const text = (p) => p.innerText("body");
     /* What did not change, and must not: his presence is visible. A wali
        reading a conversation the couple believe is private would be a
        worse arrangement than the one this replaced, not a lighter one. */
-    await her.goto(`${BASE}/conversations/${ids.conversationId}`, { waitUntil: "networkidle" });
+    await open(her, `/conversations/${ids.conversationId}`, /Write a message|Send/);
     const inThread = await text(her);
     check(
       "she is told he is reading it, by name and role",
@@ -247,22 +299,50 @@ const text = (p) => p.innerText("body");
       portal.replace(/\s+/g, " ").slice(0, 220)
     );
 
+    /* The card he asked from, now that she has said yes. It told him
+       for weeks that his conversation would open "once the wali
+       approves" — nobody approves one any more. */
+    await open(him, href, /They accepted|Your request|Ask to talk/);
+    const afterAccept = await text(him);
+    check(
+      "he is told she accepted",
+      /They accepted/i.test(afterAccept),
+      afterAccept.replace(/\s+/g, " ").slice(-200)
+    );
+    check(
+      "and not told to wait on an approval nobody is asked for",
+      !/once the wali approves/i.test(afterAccept),
+      afterAccept.replace(/\s+/g, " ").slice(-200)
+    );
+
     /* ---------- they talk ------------------------------------------- */
-    await her.goto(`${BASE}/conversations/${ids.conversationId}`, { waitUntil: "networkidle" });
-    await her.fill("textarea", "Assalamu alaikum. Seeded test message.");
-    await her.locator('main button[type="submit"]').first().click();
-    await her.waitForTimeout(3000);
-    check("her message is in the thread", /Seeded test message/.test(await text(her)));
+    await open(her, `/conversations/${ids.conversationId}`, /Write a message|Send/);
+    await sendAndWait(her, "Assalamu alaikum. Seeded test message.");
+    const herThread = await thread(her);
+    check(
+      "her message is in the thread",
+      /Seeded test message/.test(herThread),
+      `thread: ${herThread.replace(/\s+/g, " ").slice(0, 200)} | page: ${(await text(her))
+        .replace(/\s+/g, " ")
+        .slice(0, 200)}`
+    );
 
-    await him.goto(`${BASE}/conversations/${ids.conversationId}`, { waitUntil: "networkidle" });
-    check("and he can read it", /Seeded test message/.test(await text(him)));
-    await him.fill("textarea", "Wa alaikum assalam. Seeded reply.");
-    await him.locator('main button[type="submit"]').first().click();
-    await him.waitForTimeout(3000);
+    await open(him, `/conversations/${ids.conversationId}`, /Write a message|Send/);
+    const hisThread = await thread(him);
+    check(
+      "and he can read it",
+      /Seeded test message/.test(hisThread),
+      hisThread.replace(/\s+/g, " ").slice(0, 200)
+    );
+    await sendAndWait(him, "Wa alaikum assalam. Seeded reply.");
 
-    await wali.goto(`${BASE}/conversations/${ids.conversationId}`, { waitUntil: "networkidle" });
-    const waliSees = await text(wali);
-    check("the wali reads both sides", /Seeded test message/.test(waliSees) && /Seeded reply/.test(waliSees));
+    await open(wali, `/conversations/${ids.conversationId}`, /conversation|Send|wali/);
+    const waliSees = await thread(wali);
+    check(
+      "the wali reads both sides",
+      /Seeded test message/.test(waliSees) && /Seeded reply/.test(waliSees),
+      waliSees.replace(/\s+/g, " ").slice(0, 240)
+    );
 
     /* Counted by kind. There is no system line any more: it recorded the
        wali approving and joining, and he no longer approves. If one
