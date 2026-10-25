@@ -19,7 +19,7 @@ const fs = require("fs");
 const { chromium } = require("playwright");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
-const { BASE, assertOurApp, fillDob } = require("./lib/base.cjs");
+const { BASE, assertOurApp, fillDob, requireRevealedLinks } = require("./lib/base.cjs");
 
 loadEnv();
 
@@ -59,6 +59,8 @@ function linkFromLog(sinceByte) {
   const matches = [...text.matchAll(/https?:\/\/\S*\/verify-email\?token=[A-Za-z0-9_-]+/g)];
   return matches.length ? matches[matches.length - 1][0] : null;
 }
+
+requireRevealedLinks("The email-confirmation flow");
 
 (async () => {
   await client.connect();

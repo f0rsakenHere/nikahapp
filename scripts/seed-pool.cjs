@@ -157,6 +157,9 @@ function heritageFrom(languages) {
   if (/Urdu|Punjabi/i.test(spoken)) return "Pakistani";
   if (/Arabic/i.test(spoken)) return "Arab";
   if (/Somali/i.test(spoken)) return "Somali";
+  if (/Hausa|Yoruba|Igbo/i.test(spoken)) return "Nigerian";
+  if (/Wolof/i.test(spoken)) return "Senegalese";
+  if (/Swahili/i.test(spoken)) return "East African";
   if (/Turkish/i.test(spoken)) return "Turkish";
   if (/Malay|Indonesian/i.test(spoken)) return "Malay";
   if (/Hindi|Gujarati/i.test(spoken)) return "Indian";

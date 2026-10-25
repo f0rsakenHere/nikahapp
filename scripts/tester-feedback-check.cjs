@@ -80,12 +80,30 @@ const seen = (p) => p.evaluate(() => document.body.innerText);
       () => /In the pool|With our team|Not finished|Waiting on you/.test(document.body.innerText),
       { timeout: 20_000 }
     );
+    /* Measured against the database rather than assumed to be zero.
+     *
+     * This read "nobody is waiting on her", which held on a local pool
+     * and not on the live one, where the fixture sister has a real
+     * request from August sitting unanswered. The tester's complaint was
+     * never that the number is zero — it was that the number and the
+     * sentence above it disagreed. So that is what is checked. */
+    const waiting = await db
+      .collection("connectionRequests")
+      .countDocuments({ toUserId: String(me._id), state: "pending" });
+
     const dash = await seen(p);
-    const waitingZero = /0\s*\n?\s*Waiting on you/.test(dash) || /Nobody is waiting/.test(dash);
-    check("nobody is waiting on her", waitingZero, dash.replace(/\s+/g, " ").slice(0, 160));
+    const shown = /(\d+)\s*\n?\s*Waiting on you/.exec(dash);
+    const counted = shown ? Number(shown[1]) : /Nobody is waiting/.test(dash) ? 0 : null;
     check(
-      "so the dashboard does not claim somebody has asked",
-      !/asked to talk to you/i.test(dash),
+      "the counter matches the requests that are really waiting",
+      counted === waiting,
+      `screen says ${shown ? shown[1] : "(no counter)"}, database says ${waiting}`
+    );
+    check(
+      waiting === 0
+        ? "so the dashboard does not claim somebody has asked"
+        : "and the line above it agrees that somebody has",
+      /asked to talk to you/i.test(dash) === waiting > 0,
       dash.replace(/\s+/g, " ").slice(0, 200)
     );
 

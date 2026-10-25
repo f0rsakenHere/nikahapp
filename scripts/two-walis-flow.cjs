@@ -21,7 +21,7 @@
 const { chromium } = require("playwright");
 const { MongoClient, ObjectId, ServerApiVersion } = require("mongodb");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
-const { BASE, assertOurApp, fillDob } = require("./lib/base.cjs");
+const { BASE, assertOurApp, fillDob, requireRevealedLinks } = require("./lib/base.cjs");
 
 loadEnv();
 const dbName = process.env.MONGODB_DB || "nikahcanada";
@@ -103,6 +103,8 @@ async function accept(browser, link, { page } = {}) {
   await ctx.waitForTimeout(3000);
   return ctx;
 }
+
+requireRevealedLinks("The two-walis flow");
 
 (async () => {
   await mongo.connect();

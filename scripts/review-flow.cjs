@@ -12,7 +12,7 @@ const { chromium } = require("playwright");
 const { MongoClient, ObjectId, ServerApiVersion } = require("mongodb");
 const { createHmac, createHash, randomBytes } = require("node:crypto");
 const argon2 = require("@node-rs/argon2");
-const { BASE, assertOurApp, fillDob } = require("./lib/base.cjs");
+const { BASE, assertOurApp, fillDob, requireRevealedLinks } = require("./lib/base.cjs");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
 
 loadEnv();
@@ -63,6 +63,8 @@ const mongo = new MongoClient(uri, {
   serverApi: { version: ServerApiVersion.v1, strict: false, deprecationErrors: true },
   serverSelectionTimeoutMS: 10_000,
 });
+
+requireRevealedLinks("The review flow");
 
 (async () => {
   await mongo.connect();

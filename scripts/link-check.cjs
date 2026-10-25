@@ -21,6 +21,7 @@ const PAGES = ["/", "/how-it-works", "/legal/privacy", "/legal/terms"];
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   let bad = 0;
+let limited = 0;
   let checked = false;
 
   for (const path of PAGES) {
@@ -67,6 +68,19 @@ const PAGES = ["/", "/how-it-works", "/legal/privacy", "/legal/terms"];
       }
 
       const status = (await page.request.get(BASE + target, { maxRedirects: 0 })).status();
+
+      /* nginx rate-limits /login, /register, /forgot-password,
+         /reset-password and /mfa at 10 a minute. This checker asks for
+         every link it finds, and the "Register Now" button is on every
+         marketing page — so against the live site the limit trips and
+         four perfectly good buttons are reported broken. Named, because
+         it read as a fault in the product twice. */
+      if (status === 503 && /^\/(login|register|forgot-password|reset-password|mfa)\b/.test(target)) {
+        limited++;
+        console.log(`  LIMIT   "${text}" -> ${href}  (nginx, 10 a minute — not a broken link)`);
+        continue;
+      }
+
       const okish = status < 400;
       console.log(`  ${okish ? String(status).padEnd(7) : `FAIL ${status}`} "${text}" -> ${href}`);
       if (!okish) bad++;
@@ -74,8 +88,14 @@ const PAGES = ["/", "/how-it-works", "/legal/privacy", "/legal/terms"];
   }
 
   await browser.close();
+  if (limited) {
+    console.log("");
+    console.log(`${limited} link(s) were rate-limited rather than checked. Run against a local`);
+    console.log("server to cover them: BASE=http://127.0.0.1:3000 node scripts/link-check.cjs");
+  }
   console.log(bad ? `\nFAIL  ${bad} broken link(s)\n` : "\nno broken links\n");
-  process.exitCode = bad ? 1 : 0;
+  /* A run that could not check everything does not pass. */
+  process.exitCode = bad || limited ? 1 : 0;
 })().catch((err) => {
   console.error(`\nFAIL  ${err && err.message}\n`);
   process.exitCode = 1;

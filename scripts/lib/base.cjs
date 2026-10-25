@@ -62,4 +62,31 @@ async function fillDob(page, iso) {
   await page.fill('input[name="dobYear"]', year);
 }
 
-module.exports = { BASE, assertOurApp, fillDob };
+/** Whether this run can read the links the app would otherwise email.
+ *
+ *  `mayRevealLinks()` prints an invitation, a confirmation or a reset
+ *  link on screen only when there is no mail provider AND NODE_ENV is
+ *  not "production" — which `next start` sets even on this machine. So
+ *  these checkers want `next dev`, and pointed anywhere else they find
+ *  no link and report the product broken. That is how a perfectly good
+ *  wali invitation came to be read as a failure, twice over.
+ *
+ *  Called before the first link is looked for, so the run says what it
+ *  cannot do instead of inventing a fault. */
+function requireRevealedLinks(what) {
+  if (/^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/.test(BASE)) return;
+
+  console.error("");
+  console.error(`FAIL: ${what} needs a link the app only prints on screen in development.`);
+  console.error(`      ${BASE} emails it instead — see mayRevealLinks().`);
+  console.error("");
+  console.error("Run this one against a dev server. `next start` will not do: it sets");
+  console.error("NODE_ENV=production, and that alone is enough to hide the link.");
+  console.error("");
+  console.error("  npx next dev -p 3000");
+  console.error("  BASE=http://127.0.0.1:3000 node scripts/<checker>.cjs");
+  console.error("");
+  process.exit(1);
+}
+
+module.exports = { BASE, assertOurApp, fillDob, requireRevealedLinks };

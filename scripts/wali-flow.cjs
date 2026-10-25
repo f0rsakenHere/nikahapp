@@ -12,7 +12,7 @@
  */
 const { chromium } = require("playwright");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const { BASE, assertOurApp, fillDob } = require("./lib/base.cjs");
+const { BASE, assertOurApp, fillDob, requireRevealedLinks } = require("./lib/base.cjs");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
 
 loadEnv();
@@ -60,6 +60,8 @@ const mongo = new MongoClient(uri, {
   serverApi: { version: ServerApiVersion.v1, strict: false, deprecationErrors: true },
   serverSelectionTimeoutMS: 10_000,
 });
+
+requireRevealedLinks("The wali flow");
 
 (async () => {
   await mongo.connect();

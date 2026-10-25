@@ -59,7 +59,24 @@ async function makeMember(browser, db, gender, name, over = {}) {
      still compiling routes, and Playwright's 30s default expires on a
      cold /register — which then reads as "the gender control is missing"
      rather than "the page was not ready". */
-  await page.waitForSelector('label:has(input[name="gender"])', { timeout: 90000 });
+  /* nginx rate-limits /register at 10 a minute, and a checker that
+     registers three members in a row trips it against the live site —
+     which arrives as "the gender control is missing" rather than
+     "503 from the proxy". Named here, because it cost an hour once. */
+  await page.waitForSelector('label:has(input[name="gender"])', { timeout: 90000 }).catch(async (err) => {
+    const body = await page.evaluate(() => document.body?.innerText ?? "").catch(() => "");
+    if (/503|Service Temporarily Unavailable|Too many/i.test(body)) {
+      console.error("");
+      console.error(`FAIL: ${BASE} is rate-limiting /register (nginx, 10 a minute).`);
+      console.error("      This checker registers several members, so it needs a local server:");
+      console.error("");
+      console.error("  npx next dev -p 3000");
+      console.error("  BASE=http://127.0.0.1:3000 node scripts/browse-flow.cjs");
+      console.error("");
+      process.exit(1);
+    }
+    throw err;
+  });
   await page.click(`label:has(input[name="gender"][value="${gender}"])`);
   await page.fill('input[name="firstName"]', name);
   await page.fill('input[name="lastName"]', "Fixture");
