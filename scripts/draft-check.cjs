@@ -125,8 +125,14 @@ async function fill(page) {
 
     /* ---- 4. the same thing, one step into the profile ---- */
     await page.locator('a[href^="/onboarding/"]').first().click();
-    await page.waitForSelector("form");
-    const field = page.locator('form textarea, form input[type="text"]').first();
+    /* Scoped to the page's own content.
+     *
+     * A bare "form" now resolves to three: React's hidden action form,
+     * the sidebar's Sign out, and the one being tested. The first is
+     * never visible, so waiting for it timed out and read as "the step
+     * has no form". */
+    await page.waitForSelector("main form");
+    const field = page.locator('main form textarea, main form input[type="text"]').first();
     const answer = "Something typed and not yet saved.";
     await field.fill(answer);
     const fieldName = await field.getAttribute("name");

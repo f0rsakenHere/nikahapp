@@ -49,6 +49,13 @@ const text = (p) => p.innerText("body");
   }
   const mine = await db.collection("profiles").findOne({ userId: viewer._id });
 
+  /* Whichever statuses count as "in the pool" here, from the one
+     setting that decides it — the same branch as poolStatuses(). */
+  const settings = (await db.collection("settings").findOne({})) ?? {};
+  const POOL = settings.requireVerifiedToBrowse
+    ? ["live"]
+    : ["pendingCall", "pendingReview", "verifying", "live"];
+
   /* One sister, watched through every state. Chosen by id so the run is
      repeatable rather than "whoever browse happens to list first". */
   const subject = await db
@@ -161,11 +168,21 @@ const text = (p) => p.innerText("body");
     card1 = await card().innerText();
     check("a recent arrival is marked new", /\bNew\b/.test(card1), card1.replace(/\s+/g, " ").slice(0, 160));
 
-    /* The tab, and its count, against the database rather than itself. */
-    const liveNow = await db.collection("profiles").countDocuments({ status: "live" });
-    const newNow = await db
-      .collection("profiles")
-      .countDocuments({ status: "live", liveAt: { $gte: new Date(Date.now() - 7 * DAY) } });
+    /* The tab, and its count, against the database rather than itself.
+     *
+     * Counted over the statuses that are actually in the pool, not over
+     * `status: "live"`. Under deferred approval the pool is everyone who
+     * has sent their profile in, so the live site holds 24 live and 4
+     * waiting — and a checker that counted only the live ones called a
+     * correct "28 in the pool" a miscount. See poolStatuses(). */
+    const liveNow = await db.collection("profiles").countDocuments({ status: { $in: POOL } });
+    const newNow = await db.collection("profiles").countDocuments({
+      status: { $in: POOL },
+      $or: [
+        { liveAt: { $gte: new Date(Date.now() - 7 * DAY) } },
+        { liveAt: { $exists: false }, submittedAt: { $gte: new Date(Date.now() - 7 * DAY) } },
+      ],
+    });
     const browseText = await text(page);
     check(
       "browse counts the whole pool, and counts it correctly",
@@ -194,8 +211,11 @@ const text = (p) => p.innerText("body");
       .collection("profiles")
       .find({ _id: { $in: shownIds.map((id) => new ObjectId(id)) } })
       .toArray();
+    /* Approved on one branch, submitted on the other — a profile that
+       is in the pool before staff touch it has no `liveAt` at all. */
+    const arrived = (d) => d.liveAt ?? d.submittedAt;
     const stale = shownDocs.filter(
-      (d) => !d.liveAt || Date.now() - new Date(d.liveAt).getTime() >= 7 * DAY
+      (d) => !arrived(d) || Date.now() - new Date(arrived(d)).getTime() >= 7 * DAY
     );
     check(
       "every profile on it really did go live this week",
@@ -212,7 +232,7 @@ const text = (p) => p.innerText("body");
     /* ---------- the dashboard says the same thing ------------------- */
     await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
     const dash = await text(page);
-    const liveAtEnd = await db.collection("profiles").countDocuments({ status: "live" });
+    const liveAtEnd = await db.collection("profiles").countDocuments({ status: { $in: POOL } });
     check(
       "the dashboard reports the same pool as the database",
       new RegExp(`${liveAtEnd} in the pool`).test(dash),
