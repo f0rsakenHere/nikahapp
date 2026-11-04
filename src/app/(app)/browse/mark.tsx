@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { setMark, type MarkState } from "@/lib/shortlist/actions";
 import { HeartIcon, PassIcon } from "@/components/app/icons";
 
@@ -8,11 +9,69 @@ const EMPTY: MarkState = {};
 
 /* Save, or pass.
  *
- * Two small forms rather than one control with a mode: each is a single
- * submit with a fixed meaning, which keeps them working before hydration
- * and without JavaScript. Pressing the one that is already on removes
- * the mark — the second press of a heart is always "actually, no".
+ * One form with two submit buttons, not two forms. Each button carries
+ * the mark it means in its own value, so the press is still a single
+ * submit with a fixed meaning and still works before hydration and
+ * without JavaScript — but there is now one piece of state behind both
+ * of them rather than two that took it in turns to be believed.
+ *
+ * Pressing the one that is already on removes the mark; the second
+ * press of a heart is always "actually, no". The server decides that
+ * against what is stored, so a card left open for a while cannot talk
+ * it into removing a mark that was never there.
+ *
+ * The buttons answer the finger rather than the network. A mark is a
+ * write to Montreal and back, which on a phone is two or three seconds
+ * — and for all of that time the old pair of buttons sat there looking
+ * exactly as they had before the tap. That is what a dead button looks
+ * like, and it is why both of these were reported as not working. They
+ * now light up on the press and stay lit while the write is in the air.
  */
+
+function MarkButton({
+  value,
+  on,
+  onLabel,
+  offLabel,
+  onClassName,
+  offClassName,
+  children,
+}: {
+  value: "saved" | "passed";
+  on: boolean;
+  onLabel: string;
+  offLabel: string;
+  onClassName: string;
+  offClassName: string;
+  children: React.ReactNode;
+}) {
+  /* `data` is the form being submitted right now, so a button can tell
+     whether it is the one that was pressed. Without it, pressing the
+     heart would light the pass button too. */
+  const { pending, data } = useFormStatus();
+  const mine = pending && data?.get("mark") === value;
+
+  /* Mid-flight it shows the state it is asking for, not the one it has.
+     If the write fails the next render puts it back. */
+  const lit = mine ? !on : on;
+
+  return (
+    <button
+      type="submit"
+      name="mark"
+      value={value}
+      aria-pressed={lit}
+      title={lit ? onLabel : offLabel}
+      className={`flex h-11 w-11 items-center justify-center rounded-full border-2 text-[19px] transition-colors ${
+        lit ? onClassName : offClassName
+      }`}
+    >
+      {children}
+      <span className="sr-only">{lit ? onLabel : offLabel}</span>
+    </button>
+  );
+}
+
 export function MarkButtons({
   profileId,
   current,
@@ -20,55 +79,46 @@ export function MarkButtons({
   profileId: string;
   current: "saved" | "passed" | "none";
 }) {
-  const [savedState, save] = useActionState(
-    setMark.bind(null, profileId, current === "saved" ? "none" : "saved"),
-    EMPTY
-  );
-  const [passedState, pass] = useActionState(
-    setMark.bind(null, profileId, current === "passed" ? "none" : "passed"),
-    EMPTY
-  );
+  const [state, submit] = useActionState(setMark.bind(null, profileId), EMPTY);
 
   /* The action's answer wins over the server's prop for the rest of this
      render — the list revalidates behind it, and until it does the
      button should already look pressed. */
-  const kind = savedState.kind ?? passedState.kind ?? current;
-  const saved = kind === "saved";
-  const passed = kind === "passed";
+  const kind = state.kind ?? current;
 
   return (
-    <div className="pointer-events-auto flex gap-2">
-      <form action={save}>
-        <button
-          type="submit"
-          aria-pressed={saved}
-          title={saved ? "Saved. Press to remove" : "Save to think about"}
-          className={`flex h-11 w-11 items-center justify-center rounded-full border-2 text-[19px] transition-colors ${
-            saved
-              ? "border-peach bg-peach text-black"
-              : "border-soft-green text-text hover:border-peach hover:text-peach-deep"
-          }`}
+    <form action={submit} className="pointer-events-auto flex flex-col items-end gap-1">
+      <div className="flex gap-2">
+        <MarkButton
+          value="saved"
+          on={kind === "saved"}
+          onLabel="Saved. Press to remove"
+          offLabel="Save to think about"
+          onClassName="border-peach bg-peach text-black"
+          offClassName="border-soft-green text-text hover:border-peach hover:text-peach-deep"
         >
           <HeartIcon />
-          <span className="sr-only">{saved ? "Remove from saved" : "Save"}</span>
-        </button>
-      </form>
+        </MarkButton>
 
-      <form action={pass}>
-        <button
-          type="submit"
-          aria-pressed={passed}
-          title={passed ? "Passed. Press to undo" : "Not for me"}
-          className={`flex h-11 w-11 items-center justify-center rounded-full border-2 text-[19px] transition-colors ${
-            passed
-              ? "border-text/40 bg-mist text-text"
-              : "border-soft-green text-text hover:border-text/40"
-          }`}
+        <MarkButton
+          value="passed"
+          on={kind === "passed"}
+          onLabel="Passed. Press to undo"
+          offLabel="Not for me"
+          onClassName="border-text/40 bg-mist text-text"
+          offClassName="border-soft-green text-text hover:border-text/40"
         >
           <PassIcon />
-          <span className="sr-only">{passed ? "Undo pass" : "Not for me"}</span>
-        </button>
-      </form>
-    </div>
+        </MarkButton>
+      </div>
+
+      {/* It used to return a refusal that nothing rendered, so a mark the
+          server would not make was indistinguishable from one it had. */}
+      {state.error ? (
+        <p role="alert" className="text-[18px] leading-[26px] text-peach-deep">
+          {state.error}
+        </p>
+      ) : null}
+    </form>
   );
 }

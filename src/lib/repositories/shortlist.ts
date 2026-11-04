@@ -47,6 +47,19 @@ export async function mark(
   );
 }
 
+/** What this member has already marked this one profile, if anything.
+ *
+ *  One document, read so that the toggle can be decided against what is
+ *  stored rather than against what the page was rendered with. A card
+ *  that has been sitting on screen for a minute may be describing a
+ *  mark that is no longer there, and deciding "press means remove" from
+ *  that stale prop is how a heart comes to un-save somebody who was
+ *  never saved. */
+export async function markOn(userId: string, profileId: string): Promise<MarkKind | "none"> {
+  const doc = await (await marks()).findOne({ userId, profileId }, { projection: { kind: 1 } });
+  return doc?.kind ?? "none";
+}
+
 /** Removes it entirely — un-saving is not the same as passing. */
 export async function unmark(userId: string, profileId: string): Promise<void> {
   await (await marks()).deleteOne({ userId, profileId });
