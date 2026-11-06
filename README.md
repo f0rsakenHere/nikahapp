@@ -16,6 +16,10 @@ npm run typecheck
 npm run build
 ```
 
+Setting up a new machine, the environment file, the Playwright checkers,
+deploying, and the traps worth knowing about:
+[`docs/WORKING-ON-THIS.md`](docs/WORKING-ON-THIS.md).
+
 > **Do not run `npm run build` while the dev server is up.** They share `.next`
 > and clobber each other; afterwards dev serves 404s for every chunk including
 > `layout.css`, and the page renders completely unstyled. Stop the server,
