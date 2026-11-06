@@ -9,10 +9,13 @@ import { LandingFooter } from "@/components/marketing/sections";
 import { ArrowIcon, HeartIcon, LeafIcon, PeopleIcon, ProfileIcon, ShieldIcon } from "@/components/marketing/icons";
 import "@/components/marketing/pricing.css";
 
+const DESCRIPTION =
+  "Membership is $9.99 a month for sisters and $19.99 for brothers. Registering, browsing and asking to talk are free.";
+
 export const metadata: Metadata = {
   title: "Simple, transparent pricing | NikahCanada",
-  description: "Explore 1, 3, or 5 connection packages. Browse for free and connect when the interest is mutual.",
-  ...socialMetadata("Simple, transparent pricing | NikahCanada", "Explore 1, 3, or 5 connection packages. Browse for free and connect when the interest is mutual.", "/pricing", socialImages.pricing),
+  description: DESCRIPTION,
+  ...socialMetadata("Simple, transparent pricing | NikahCanada", DESCRIPTION, "/pricing", socialImages.pricing),
 };
 
 function PricingBackdrop() {
@@ -32,10 +35,6 @@ function PricingBackdrop() {
       </svg>
     </div>
   );
-}
-
-function CrownIcon() {
-  return <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="m3 6 5 4 4-7 4 7 5-4-3 12H6ZM6 20h12v2H6Z" /></svg>;
 }
 
 export default async function PricingPage() {
@@ -65,38 +64,52 @@ export default async function PricingPage() {
             </ul>
           </section>
 
-          <section id="pricing-plans" className="pricing-plans" aria-label="Connection packages">
-            {pricing.packages.map((plan) => {
-              const featured = "featured" in plan && plan.featured;
-              const Icon = plan.connections === 1 ? ProfileIcon : PeopleIcon;
-              return (
-                <article key={plan.connections} className={`pricing-card${featured ? " is-featured" : ""}`}>
-                  {featured && <span className="pricing-popular"><CrownIcon />Most Popular</span>}
-                  <span className="pricing-plan-icon" aria-hidden="true"><Icon /></span>
-                  <h2>{plan.connections} {plan.connections === 1 ? "Connection" : "Connections"}</h2>
-                  <p className="pricing-price"><span className="pricing-currency">CAD</span><span>${plan.price}</span></p>
-                  <p className="pricing-plan-description">{plan.description}</p>
-                  <Link href={startHref} className={`landing-button pricing-plan-button${featured ? "" : " is-secondary"}`} aria-label={`Get started with ${plan.connections} ${plan.connections === 1 ? "connection" : "connections"}`}>Get started<span className="landing-button-arrow" aria-hidden="true"><ArrowIcon /></span></Link>
-                </article>
-              );
-            })}
+          {/* Two plans, and neither is "most popular" — there is no choice
+              to make here, only the one that applies to you. */}
+          <section id="pricing-plans" className="pricing-plans" aria-label="Membership">
+            {pricing.plans.map((plan, i) => (
+              <article key={plan.who} className="pricing-card">
+                <span className="pricing-plan-icon" aria-hidden="true">
+                  {i === 0 ? <ProfileIcon /> : <PeopleIcon />}
+                </span>
+                <h2>{plan.who}</h2>
+                <p className="pricing-price">
+                  <span className="pricing-currency">CAD</span>
+                  <span>${plan.price}</span>
+                  <span className="pricing-period">/ month</span>
+                </p>
+                <p className="pricing-plan-description">{plan.description}</p>
+                <Link
+                  href={startHref}
+                  className="landing-button pricing-plan-button"
+                  aria-label={`Get started, ${plan.who.toLowerCase()} membership at $${plan.price} a month`}
+                >
+                  Get started
+                  <span className="landing-button-arrow" aria-hidden="true"><ArrowIcon /></span>
+                </Link>
+              </article>
+            ))}
           </section>
 
           <section className="pricing-connection" aria-labelledby="connection-title">
             <span className="pricing-question-icon" aria-hidden="true">?</span>
             <div className="pricing-connection-copy">
-              <h2 id="connection-title">What is a connection?</h2>
-              <p>A connection opens when both people agree to converse and are ready to connect for potential Nikah.</p>
-              <span className="pricing-unlimited"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 3a9 9 0 0 0-7.6 13.8L3 21l4.4-1.3A9 9 0 1 0 12 3Z" /><circle cx="8" cy="12" r="1" fill="#edf4ee" /><circle cx="12" cy="12" r="1" fill="#edf4ee" /><circle cx="16" cy="12" r="1" fill="#edf4ee" /></svg>Unlimited conversation once a connection is opened.</span>
+              <h2 id="connection-title">What are you paying for?</h2>
+              <p>The messages, and only the messages. Your profile, the pool, asking to talk and answering somebody who asks are all free, and stay free.</p>
+              <span className="pricing-unlimited"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 3a9 9 0 0 0-7.6 13.8L3 21l4.4-1.3A9 9 0 1 0 12 3Z" /><circle cx="8" cy="12" r="1" fill="#edf4ee" /><circle cx="12" cy="12" r="1" fill="#edf4ee" /><circle cx="16" cy="12" r="1" fill="#edf4ee" /></svg>Unlimited messages while your membership is active.</span>
             </div>
             <ul className="pricing-connection-examples">
-              {pricing.packages.map((plan) => <li key={plan.connections}><strong>{plan.connections} {plan.connections === 1 ? "connection" : "connections"}</strong> = {plan.connections} {plan.connections === 1 ? "mutual match" : "different mutual matches"}</li>)}
+              {pricing.included.map((row) => (
+                <li key={row.what}>
+                  <strong>{row.cost}</strong> {row.what}
+                </li>
+              ))}
             </ul>
           </section>
 
           <section className="pricing-ready" aria-labelledby="pricing-ready-title">
             <h2 id="pricing-ready-title">Ready to find your future spouse?</h2>
-            <p>Begin with a free profile. Connect when the interest is mutual.</p>
+            <p>Begin with a free profile. Membership only matters once a conversation is under way.</p>
             <Link href={startHref} className="landing-button">{signedIn ? "Go to your account" : "Choose Your Plan"}<span className="landing-button-arrow" aria-hidden="true"><ArrowIcon /></span></Link>
           </section>
 

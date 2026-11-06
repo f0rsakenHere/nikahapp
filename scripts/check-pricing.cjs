@@ -5,7 +5,7 @@ const path = require('node:path');
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const failures = [];
-  const base = 'http://localhost:3000';
+  const base = (process.env.BASE || 'http://localhost:3000').replace(/\/$/, '');
   const out = path.join(process.cwd(), '.next-qa', 'screenshots');
   fs.mkdirSync(out, { recursive: true });
   try {
@@ -16,10 +16,14 @@ async function main() {
       await page.evaluate(() => document.fonts.ready);
       if (!response.ok() || new URL(page.url()).pathname !== '/pricing') failures.push(`${width}: pricing is not publicly accessible`);
       if (await page.locator('#pricing-title').count() !== 1) failures.push(`${width}: pricing title is missing`);
-      if (await page.locator('.pricing-card').count() !== 3) failures.push(`${width}: three packages should be visible`);
+      if (await page.locator('.pricing-card').count() !== 2) failures.push(`${width}: both memberships should be visible`);
       const prices = await page.locator('.pricing-price').allTextContents();
-      if (!['$29.99', '$69.99', '$99.99'].every((price, index) => prices[index]?.includes(price))) failures.push(`${width}: package prices do not match the reference`);
-      if (await page.locator('.pricing-card.is-featured').count() !== 1 || !(await page.locator('.pricing-card').nth(1).getAttribute('class')).includes('is-featured')) failures.push(`${width}: middle package should be featured`);
+      // Sisters first, brothers second, and both per month. A price that
+      // slips here is a false commercial claim on a live business's site,
+      // so it is checked literally rather than by pattern.
+      if (!['$9.99', '$19.99'].every((price, index) => prices[index]?.includes(price))) failures.push(`${width}: membership prices do not match the reference`);
+      if (!prices.every(price => price.includes('/ month'))) failures.push(`${width}: prices should say they are monthly`);
+      if (/no monthly subscription/i.test(await page.locator('body').innerText())) failures.push(`${width}: the page still denies there is a subscription`);
       const layout = await page.evaluate(() => {
         const logo = document.querySelector('.landing-brand-link img');
         const bounds = logo.getBoundingClientRect();
@@ -37,9 +41,9 @@ async function main() {
       if (!layout.logoSrc.includes('nikahcanada-reference.webp') || Math.abs(layout.logoRatio - 1200 / 303) > .02) failures.push(`${width}: reference logo is missing or distorted`);
       if (layout.dashes.length) failures.push(`${width}: visible copy contains dash characters`);
       if (width > 767 && (new Set(layout.cardTops).size !== 1 || new Set(layout.cardHeights).size !== 1)) failures.push(`${width}: desktop package cards are uneven`);
-      if (width <= 767 && new Set(layout.cardTops).size !== 3) failures.push(`${width}: mobile package cards should stack`);
+      if (width <= 767 && new Set(layout.cardTops).size !== 2) failures.push(`${width}: mobile membership cards should stack`);
       const destinations = await page.locator('.pricing-plan-button').evaluateAll(elements => elements.map(element => element.getAttribute('href')));
-      if (destinations.some(destination => destination !== '/register')) failures.push(`${width}: package actions should lead to registration`);
+      if (destinations.some(destination => destination !== '/register')) failures.push(`${width}: membership actions should lead to registration`);
       if (width === 390) {
         await page.getByRole('button', { name: 'Open menu' }).click();
         const pricingLink = page.locator('#landing-nav').getByRole('link', { name: 'Pricing', exact: true });
@@ -59,14 +63,14 @@ async function main() {
     await page.locator('.landing-desktop-nav').getByRole('link', { name: 'Pricing', exact: true }).click();
     await page.waitForURL('**/pricing');
     if (await page.locator('.landing-desktop-nav').getByRole('link', { name: 'Pricing', exact: true }).getAttribute('aria-current') !== 'page') failures.push('Desktop navigation does not identify the pricing page');
-    await page.getByRole('link', { name: 'Get started with 3 connections', exact: true }).click();
+    await page.getByRole('link', { name: 'Get started, sisters membership at $9.99 a month', exact: true }).click();
     await page.waitForURL('**/register');
-    if (await page.getByRole('heading', { name: 'Create your account' }).count() !== 1) failures.push('Package action did not reach registration');
+    if (await page.getByRole('heading', { name: 'Create your account' }).count() !== 1) failures.push('Membership action did not reach registration');
     await page.goto(base + '/dashboard', { waitUntil: 'networkidle' });
     if (new URL(page.url()).pathname !== '/login') failures.push('Member routes should still require sign in');
     await page.close();
     if (failures.length) throw new Error(failures.join('\n'));
-    console.log('PASS: public pricing route, reference logo, prices, responsive cards, navigation, registration actions, and member route protection.');
+    console.log('PASS: public pricing route, reference logo, monthly prices, responsive cards, navigation, registration actions, and member route protection.');
   } finally {
     await browser.close();
   }

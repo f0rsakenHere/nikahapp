@@ -12,7 +12,8 @@
 .pricing-benefits li { display: flex; align-items: center; gap: 12px; color: #354453; font-size: 15px; line-height: 1.5; }
 .pricing-check { display: grid; place-items: center; flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; color: #386d60; background: #e1ece3; }
 .pricing-check svg { width: 19px; height: 19px; }
-.pricing-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding-top: 16px; }
+.pricing-plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; padding-top: 16px; max-width: 720px; margin-inline: auto; }
+.pricing-period { margin-left: 6px; font-size: 15px; font-weight: 500; color: #4b5767; }
 .pricing-card { position: relative; display: flex; flex-direction: column; align-items: center; padding: 28px 24px 24px; border: 1px solid #eee9df; border-radius: 20px; background: #fffefb; text-align: center; box-shadow: 0 6px 24px #6c674b05; }
 .pricing-card.is-featured { border-color: #ef9388; background: #fff4ef; box-shadow: 0 8px 28px #cf817b12; }
 .pricing-popular { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 6px 16px; border-radius: 999px; background: #b9564c; color: #fff; font-size: 12px; font-weight: 500; white-space: nowrap; }
