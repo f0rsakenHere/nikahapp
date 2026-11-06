@@ -25,8 +25,14 @@
  * whole period the buttons were unusable.
  *
  *   BASE=https://nikahcanada.ca node scripts/mark-check.cjs
+ *   BASE=https://nikahcanada.ca BROWSER=webkit node scripts/mark-check.cjs
+ *
+ * WebKit is worth the second run here. Everything this checks is touch
+ * and timing, and an iPhone is not a Chromium with a phone-shaped
+ * window: it has its own idea of what a tap is and of when a form may
+ * submit. `npx playwright install webkit` if it is missing.
  */
-const { chromium, devices } = require("playwright");
+const { chromium, webkit, devices } = require("playwright");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const { loadEnv, requireEnv } = require("./lib/env.cjs");
 const { BASE, assertOurApp } = require("./lib/base.cjs");
@@ -55,7 +61,11 @@ function check(label, ok, detail) {
 (async () => {
   await mongo.connect();
   const db = mongo.db(process.env.MONGODB_DB || "nikahcanada");
-  const browser = await chromium.launch();
+  /* Chromium by default, because it is what is installed everywhere and
+     the fault was reported on an Android phone. */
+  const engine = process.env.BROWSER === "webkit" ? webkit : chromium;
+  const browser = await engine.launch();
+  console.log(`using ${process.env.BROWSER === "webkit" ? "WebKit" : "Chromium"} against ${BASE}`);
   let page;
 
   try {
@@ -130,6 +140,25 @@ function check(label, ok, detail) {
       return null;
     }
 
+    /** Waits for something to become true, and says how long it took.
+     *
+     *  Everything after the press is a round trip to Montreal and a
+     *  re-render behind it, and how long that takes is not the same on
+     *  every engine: WebKit took seven seconds where Chromium took
+     *  three. A fixed sleep tuned on one of them reports the other as
+     *  broken, which is exactly what this checker did on its first
+     *  WebKit run — it called a working pass button a dead one. So the
+     *  waits poll, and the budget is generous enough to be about
+     *  whether it happens rather than how quickly. */
+    async function until(fn, budgetMs = 25_000) {
+      const at = Date.now();
+      while (Date.now() - at < budgetMs) {
+        if (await fn()) return Date.now() - at;
+        await page.waitForTimeout(250);
+      }
+      return null;
+    }
+
     /* ---------- the heart ------------------------------------------- */
     const card = await who();
     let lit = await lightsUp(0, await thumb(0));
@@ -139,18 +168,23 @@ function check(label, ok, detail) {
       lit === null ? "it never lit at all" : `${lit}ms`
     );
 
-    await page.waitForTimeout(4500);
-    check("and it is still lit when the write lands", (await pressed(0)) === "true");
-    check("the save is really stored", (await stored()) === "saved", await stored());
+    const saveTook = await until(async () => (await stored()) === "saved");
+    check("the save is really stored", saveTook !== null, `still ${await stored()} after 25s`);
+    check(
+      "and the heart is still lit when the write lands",
+      (await pressed(0)) === "true",
+      `stored after ${saveTook}ms, but the heart went out again`
+    );
     check("saving keeps them in the list, which is the point of saving", (await who()) === card);
 
     /* ---------- and again, which removes it -------------------------- */
     await thumb(0);
-    await page.waitForTimeout(4500);
+    const goneTook = await until(async () => (await stored()) === "none");
+    check("pressing the lit heart un-saves", goneTook !== null, `still ${await stored()} after 25s`);
     check(
-      "pressing the lit heart un-saves",
-      (await stored()) === "none" && (await pressed(0)) === "false",
-      `stored=${await stored()} pressed=${await pressed(0)}`
+      "and the heart goes out with it",
+      (await until(async () => (await pressed(0)) === "false", 10_000)) !== null,
+      "the mark was removed but the heart stayed lit"
     );
 
     /* ---------- the pass, on a card whose heart has been used --------
@@ -164,13 +198,16 @@ function check(label, ok, detail) {
       lit === null ? "it never lit at all" : `${lit}ms`
     );
 
-    await page.waitForTimeout(6000);
-    check("passing is really stored", (await stored()) === "passed", await stored());
+    const passTook = await until(async () => (await stored()) === "passed");
+    check("passing is really stored", passTook !== null, `still ${await stored()} after 25s`);
+
+    const leftTook = await until(async () => (await who()) !== card);
     check(
       "and they leave the list, which is the only thing a pass has to show",
-      (await who()) !== card,
-      `still showing ${await who()} — the page never refreshed`
+      leftTook !== null,
+      `still showing ${card} after 25s — the page never refreshed`
     );
+    if (leftTook !== null) console.log(`note  the list refreshed ${leftTook}ms after the press`);
 
     /* ---------- passed is not gone, only out of the way -------------- */
     await page.goto(`${BASE}/browse?saved=1`, { waitUntil: "domcontentloaded" });
