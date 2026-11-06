@@ -31,8 +31,11 @@ export function ConnectButton({
   if (state.done || existing === "open") {
     return (
       <p className="rounded-md border border-soft-green bg-mist px-4 py-4 text-[18px] leading-[26px] text-black">
-        Your request is with them. You will hear when they answer, and nothing is shared until
-        they do.
+        {/* The client's words. "Request sent!" first, because the one
+            thing somebody wants from this panel is confirmation that
+            the press worked. */}
+        <strong className="font-semibold">Request sent!</strong> We’ve let this member know you’d
+        like to talk. We’ll notify you when they respond.
       </p>
     );
   }

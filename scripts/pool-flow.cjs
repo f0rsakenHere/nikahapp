@@ -191,13 +191,13 @@ const thread = (p) =>
        never came, the request had still been sent — so this waits, then
        checks, rather than checking a page that has not caught up. */
     await him
-      .waitForFunction(() => /Your request is with them/i.test(document.body.innerText), null, {
+      .waitForFunction(() => /Request sent/i.test(document.body.innerText), null, {
         timeout: 20_000,
       })
       .catch(() => {});
     check(
       "the request is acknowledged in words, not silence",
-      /Your request is with them/i.test(await text(him)),
+      /Request sent/i.test(await text(him)),
       (await text(him)).replace(/\s+/g, " ").slice(0, 220)
     );
 

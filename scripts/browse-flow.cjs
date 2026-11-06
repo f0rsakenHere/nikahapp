@@ -200,7 +200,7 @@ async function makeMember(browser, db, gender, name, over = {}) {
 
     await b.click('button:has-text("Ask to talk")');
     await b.waitForTimeout(3000);
-    check("asking succeeds", /request is with them/i.test(await b.textContent("body")));
+    check("asking succeeds", /Request sent/i.test(await b.textContent("body")));
 
     const request = await db
       .collection("connectionRequests")
