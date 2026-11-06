@@ -277,6 +277,10 @@ function check(label, ok, detail) {
       opened !== null,
       `stayed on ${page.url()}`
     );
+    /* Let that navigation finish before steering somewhere else, or
+       Playwright aborts the next goto as an interrupted navigation. */
+    await page.waitForLoadState("domcontentloaded").catch(() => {});
+    await page.waitForTimeout(1000);
 
     /* ---------- and the Saved tab is where a save goes ---------------
        This read `count() >= 0` when it was first written, which is true
