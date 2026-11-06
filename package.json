@@ -36,6 +36,7 @@
     "check:finish": "node scripts/finish-flow.cjs",
     "check:feedback": "node scripts/tester-feedback-check.cjs",
     "check:mark": "node scripts/mark-check.cjs",
+    "check:mark:safari": "node scripts/mark-check.cjs --webkit",
     "brand:crop": "node scripts/brand-crop.cjs",
     "shot": "node scripts/screenshot.cjs .",
     "shot:phone": "node scripts/phone-shots.cjs"

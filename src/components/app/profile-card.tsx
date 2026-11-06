@@ -33,8 +33,8 @@ import {
 
 export function ProfileCard({
   card: c,
-  /** Buttons for the foot of the card. Anything here must opt back into
-   *  pointer events — the whole card is covered by a stretched link. */
+  /** Buttons for the foot of the card. They sit outside the link that
+   *  makes the rest of it clickable, so they need nothing special. */
   actions,
 }: {
   card: BrowseCard;
@@ -111,14 +111,29 @@ export function ProfileCard({
   return (
     /* The card is a container, not a link — there is a form in it on
        browse, and a form inside an anchor is invalid and fights the
-       click. The whole surface is still clickable: a stretched link
-       covers it, and only the buttons take pointer events above it. */
+       click.
+     *
+     * What used to make the whole surface clickable was a link stretched
+     * across all of it, with every block above declaring
+     * `pointer-events: none` and the buttons opting back in with
+     * `pointer-events: auto`. It worked, and it was reported twice as
+     * buttons that do not respond on an iPhone. That pattern asks a
+     * touch engine to do two awkward things at once — hit-test through
+     * a transparent overlay, and honour a child that re-enables pointer
+     * events inside a parent that switched them off — and Safari is
+     * where it goes wrong.
+     *
+     * So the link no longer covers anything. It wraps the part of the
+     * card that is only there to be read, and the buttons are its
+     * sibling, outside it. Nothing is layered over anything, no element
+     * has to opt back into being touchable, and a tap on the heart is
+     * just a tap on the heart. */
     <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-soft-green bg-white shadow-app transition-all hover:-translate-y-0.5 hover:border-accent-deep hover:shadow-[0_12px_32px_-20px_rgba(20,18,18,0.45)]">
       <Link
         href={`/browse/${c.profileId}`}
-        className="absolute inset-0 z-0"
+        className="flex flex-1 flex-col focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent-deep"
         aria-label={`${who}${c.city ? `, ${c.city}` : ""}`}
-      />
+      >
 
       {/* A tinted head, so the identity block is not competing with the
           facts below it for the same white ground — with a fixed floor
@@ -132,7 +147,7 @@ export function ProfileCard({
           four cards across that was the difference between "Mississauga,
           Ontario" on one line and "Mississaug / a, Ontario" on two. */}
       <div
-        className={`pointer-events-none relative flex min-h-[108px] items-center gap-3.5 border-b border-soft-green bg-mist/50 px-4 py-3.5 ${
+        className={`relative flex min-h-[108px] items-center gap-3.5 border-b border-soft-green bg-mist/50 px-4 py-3.5 ${
           badge ? "pr-[86px]" : ""
         }`}
       >
@@ -180,45 +195,47 @@ export function ProfileCard({
         ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col px-4 py-3.5">
-        {c.occupation ? (
-          <p className="pointer-events-none relative flex items-center gap-1.5 text-[18px] font-semibold text-black">
-            <WorkIcon className="shrink-0 text-[17px] text-accent-deep" />
-            <span className="truncate">{c.occupation}</span>
-          </p>
-        ) : null}
+        <div className={`flex flex-1 flex-col px-4 pt-3.5 ${actions ? "" : "pb-3.5"}`}>
+          {c.occupation ? (
+            <p className="flex items-center gap-1.5 text-[18px] font-semibold text-black">
+              <WorkIcon className="shrink-0 text-[17px] text-accent-deep" />
+              <span className="truncate">{c.occupation}</span>
+            </p>
+          ) : null}
 
-        {/* Their own words. The one thing here that is not a category — a
-            list of attributes says what somebody is, a sentence says who.
-            Two lines; the rest is on their profile. */}
-        {c.about ? (
-          <p className="pointer-events-none relative mt-2 line-clamp-2 text-[18px] leading-[26px] text-text">
-            {c.about}
-          </p>
-        ) : null}
+          {/* Their own words. The one thing here that is not a category — a
+              list of attributes says what somebody is, a sentence says who.
+              Two lines; the rest is on their profile. */}
+          {c.about ? (
+            <p className="mt-2 line-clamp-2 text-[18px] leading-[26px] text-text">{c.about}</p>
+          ) : null}
 
-        {/* One column, not two. Two fitted more on screen and cut every
-            value in half — "Never marr…", "Bachelor's …" — which is not
-            information, it is the shape of information. Related facts
-            share a row instead. */}
-        <dl className="pointer-events-none relative mt-3.5 flex flex-col gap-2">
-          {facts.map(({ Icon, label, text }) => (
-            <div key={label} className="flex min-w-0 items-start gap-2">
-              <Icon className="mt-1 shrink-0 text-[18px] text-accent-deep" />
-              <dt className="sr-only">{label}</dt>
-              <dd className="text-[18px] leading-[26px] text-text">{text}</dd>
-            </div>
-          ))}
-        </dl>
+          {/* One column, not two. Two fitted more on screen and cut every
+              value in half — "Never marr…", "Bachelor's …" — which is not
+              information, it is the shape of information. Related facts
+              share a row instead. */}
+          <dl className="mt-3.5 flex flex-col gap-2">
+            {facts.map(({ Icon, label, text }) => (
+              <div key={label} className="flex min-w-0 items-start gap-2">
+                <Icon className="mt-1 shrink-0 text-[18px] text-accent-deep" />
+                <dt className="sr-only">{label}</dt>
+                <dd className="text-[18px] leading-[26px] text-text">{text}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </Link>
 
-        {/* Pinned to the bottom, so every button in a row sits on the
-            same line however much its card had to say. */}
-        {actions ? (
-          <div className="pointer-events-none relative z-10 mt-auto flex items-center gap-2 pt-4">
-            {actions}
-          </div>
-        ) : null}
-      </div>
+      {/* Outside the link, not over it. Pinned to the bottom, so every
+          button in a row sits on the same line however much its card had
+          to say. `touch-manipulation` so a tap is a tap: without it
+          Safari holds every one back in case it turns into a
+          double-tap-to-zoom. */}
+      {actions ? (
+        <div className="mt-auto flex touch-manipulation items-center gap-2 px-4 pb-3.5 pt-4">
+          {actions}
+        </div>
+      ) : null}
     </div>
   );
 }

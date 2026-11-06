@@ -20,6 +20,12 @@ const EMPTY: MarkState = {};
  * against what is stored, so a card left open for a while cannot talk
  * it into removing a mark that was never there.
  *
+ * Nothing opts back into pointer events any more. The card used to be
+ * covered by a stretched link, which meant every button on it had to
+ * declare itself touchable inside a parent that had switched touching
+ * off — and on an iPhone that is where these two stopped responding.
+ * The link wraps the card's reading matter now and these sit beside it.
+ *
  * The buttons answer the finger rather than the network. A mark is a
  * write to Montreal and back, which on a phone is two or three seconds
  * — and for all of that time the old pair of buttons sat there looking
@@ -87,7 +93,7 @@ export function MarkButtons({
   const kind = state.kind ?? current;
 
   return (
-    <form action={submit} className="pointer-events-auto flex flex-col items-end gap-1">
+    <form action={submit} className="flex flex-col items-end gap-1">
       <div className="flex gap-2">
         <MarkButton
           value="saved"

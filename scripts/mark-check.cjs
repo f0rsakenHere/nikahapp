@@ -25,7 +25,7 @@
  * whole period the buttons were unusable.
  *
  *   BASE=https://nikahcanada.ca node scripts/mark-check.cjs
- *   BASE=https://nikahcanada.ca BROWSER=webkit node scripts/mark-check.cjs
+ *   BASE=https://nikahcanada.ca npm run check:mark:safari
  *
  * WebKit is worth the second run here. Everything this checks is touch
  * and timing, and an iPhone is not a Chromium with a phone-shaped
@@ -63,9 +63,12 @@ function check(label, ok, detail) {
   const db = mongo.db(process.env.MONGODB_DB || "nikahcanada");
   /* Chromium by default, because it is what is installed everywhere and
      the fault was reported on an Android phone. */
-  const engine = process.env.BROWSER === "webkit" ? webkit : chromium;
+  /* A flag as well as the variable, because `BROWSER=x cmd` is not a
+     thing on Windows and the npm script has to run there. */
+  const wantsWebkit = process.env.BROWSER === "webkit" || process.argv.includes("--webkit");
+  const engine = wantsWebkit ? webkit : chromium;
   const browser = await engine.launch();
-  console.log(`using ${process.env.BROWSER === "webkit" ? "WebKit" : "Chromium"} against ${BASE}`);
+  console.log(`using ${wantsWebkit ? "WebKit" : "Chromium"} against ${BASE}`);
   let page;
 
   try {
@@ -209,12 +212,112 @@ function check(label, ok, detail) {
     );
     if (leftTook !== null) console.log(`note  the list refreshed ${leftTook}ms after the press`);
 
-    /* ---------- passed is not gone, only out of the way -------------- */
+    /* ---------- nothing layered over them ---------------------------
+       The card used to be covered by a stretched link, with the buttons
+       opting back in with `pointer-events: auto`. Chromium honours that
+       and an iPhone did not, so the fault was invisible to every test
+       here while a tester could not use the page at all. This asks the
+       page the question directly, at every scroll position: if a finger
+       lands on the middle of this button, what does it land on? */
+    await page.goto(`${BASE}/browse`, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => /Ask to talk|Asked/.test(document.body.innerText), {
+      timeout: 45_000,
+    });
+    await page.waitForTimeout(1500);
+
+    const covered = [];
+    let positions = 0;
+    for (let i = 0; i < 14; i++) {
+      await page.evaluate((h) => window.scrollBy(0, h * 0.8), page.viewportSize().height);
+      await page.waitForTimeout(400);
+      const found = await page.evaluate(() => {
+        /* Whose card it is, read from the heading rather than by
+           cutting innerText at a newline. */
+        const name = (li) => li?.querySelector("span.font-manrope")?.textContent?.trim() ?? "?";
+        const out = [];
+        const want = 'button[name="mark"], button[type="submit"]';
+        for (const b of document.querySelectorAll(want)) {
+          const r = b.getBoundingClientRect();
+          if (r.top < 0 || r.bottom > innerHeight || !r.width) continue;
+          const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          if (el && (el === b || b.contains(el))) continue;
+          out.push(
+            `${name(b.closest("li"))} ${b.value || b.textContent.trim()}` +
+              ` — the tap lands on <${el ? el.tagName.toLowerCase() : "nothing"}>`
+          );
+        }
+        return out;
+      });
+      positions += 1;
+      covered.push(...found);
+    }
+    check(
+      "nothing is layered over the buttons anywhere down the list",
+      covered.length === 0,
+      covered.slice(0, 4).join("; ")
+    );
+    check("and there were buttons on screen to check", positions > 0);
+
+    /* ---------- the rest of the card is still a link ----------------
+       The overlay is gone, so this is the thing that could have been
+       lost with it. */
+    await page.goto(`${BASE}/browse`, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => /Ask to talk|Asked/.test(document.body.innerText), {
+      timeout: 45_000,
+    });
+    await page.waitForTimeout(1500);
+    const facts = first().locator("dl");
+    await facts.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+    const fb = await facts.boundingBox();
+    await page.touchscreen.tap(fb.x + fb.width / 2, fb.y + 10);
+    const opened = await until(async () => /\/browse\/[a-f0-9]{24}/.test(page.url()), 15_000);
+    check(
+      "tapping the body of a card still opens the profile",
+      opened !== null,
+      `stayed on ${page.url()}`
+    );
+
+    /* ---------- and the Saved tab is where a save goes ---------------
+       This read `count() >= 0` when it was first written, which is true
+       of every page ever served and was therefore a line of output that
+       could not fail. */
+    await page.goto(`${BASE}/browse`, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => /Ask to talk|Asked/.test(document.body.innerText), {
+      timeout: 45_000,
+    });
+    await page.waitForTimeout(1500);
+    const toSave = await who();
+    await thumb(0);
+    /* Not `=== "saved"`: the person passed on a moment ago still has a
+       mark of their own, so what is being asked is whether a save was
+       added, not whether it is the only one. */
+    const savedCount = async () =>
+      db.collection("browseMarks").countDocuments({ userId: uid, kind: "saved" });
+    check(
+      "a second save stores too",
+      (await until(async () => (await savedCount()) > 0)) !== null,
+      `no saved mark after 25s; marks are ${await stored()}`
+    );
+
     await page.goto(`${BASE}/browse?saved=1`, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2500);
+    /* Each card's first line, the same way `who` reads it. Split on a
+       character code rather than an escape: this file has twice had a
+       backslash-n flattened into a real line break on its way through
+       a heredoc, which is a syntax error and not a subtle one. */
+    const onSaved = await page
+      .locator("main ul > li")
+      .evaluateAll((lis) => lis.map((li) => li.innerText.split(String.fromCharCode(10))[0].trim()));
     check(
-      "and the heart on the Saved tab still works there",
-      (await page.locator('button[name="mark"]').count()) >= 0
+      "and the Saved tab is where they turn up",
+      onSaved.includes(toSave),
+      `saved ${toSave}, the tab lists ${onSaved.join(", ") || "nobody"}`
+    );
+    check(
+      "with the heart already lit, so it reads as saved",
+      (await page.locator('main ul > li button[name="mark"][aria-pressed="true"]').count()) > 0,
+      "no lit heart on the Saved tab"
     );
   } finally {
     const me = await db.collection("users").findOne({ email: MEMBER });

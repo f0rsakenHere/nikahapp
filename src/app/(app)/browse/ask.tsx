@@ -31,7 +31,7 @@ function Pending() {
          glyph needed more than that. The price is gone from the label
          because there is no longer a price: asking is free, and what a
          plan buys is the conversation that follows. */
-      className="pointer-events-auto flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-pill border-2 border-accent-deep px-3.5 py-2 text-[18px] font-semibold text-accent-deep transition-colors hover:bg-accent/15 disabled:opacity-60"
+      className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-pill border-2 border-accent-deep px-3.5 py-2 text-[18px] font-semibold text-accent-deep transition-colors hover:bg-accent/15 disabled:opacity-60"
     >
       {pending ? "Sending…" : "Ask to talk"}
     </button>
@@ -49,7 +49,7 @@ export function AskButton({
 
   if (state.done || alreadyAsked) {
     return (
-      <p className="pointer-events-auto flex items-center justify-center gap-2 rounded-pill bg-mist px-4 py-2 text-[18px] font-semibold text-accent-deep">
+      <p className="flex items-center justify-center gap-2 rounded-pill bg-mist px-4 py-2 text-[18px] font-semibold text-accent-deep">
         <CheckIcon className="text-[19px]" />
         Asked
       </p>
@@ -60,7 +60,7 @@ export function AskButton({
     <form action={action}>
       <Pending />
       {state.error ? (
-        <p role="alert" className="pointer-events-auto mt-2 text-[18px] leading-[26px] text-peach-deep">
+        <p role="alert" className="mt-2 text-[18px] leading-[26px] text-peach-deep">
           {state.error}
         </p>
       ) : null}
