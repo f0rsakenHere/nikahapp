@@ -5,7 +5,7 @@ import { countUnread } from "@/lib/repositories/notifications";
 import { touchActivity } from "@/lib/repositories/profiles";
 import { Logo } from "@/components/brand/Logo";
 import { SidebarStory } from "@/components/app/sidebar-story";
-import { AccountIcon, BellIcon, SignOutIcon } from "@/components/app/icons";
+import { AccountIcon, BellIcon, MembershipIcon, SignOutIcon } from "@/components/app/icons";
 import { logout } from "@/lib/auth/actions";
 import { SideNav, TabBar, type TabId } from "./nav";
 import { PageTransition } from "./transition";
@@ -142,6 +142,20 @@ export function AppShell({
 
           <div className="mt-auto flex shrink-0 flex-col gap-1 pt-5">
             <div aria-hidden="true" className="mb-2 h-px bg-soft-green" />
+            {/* Its own row in the rail, not a line of small print at the
+                bottom of the profile form, where it was easy to miss
+                entirely. It sits with Account rather than among the five
+                tabs: the tab bar on a phone is already at the width it
+                can hold, and a sixth would push the last one off a 320px
+                screen without any overflow check noticing. Phones reach
+                it from Account instead. */}
+            <Link
+              href="/membership"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[18px] font-semibold text-text transition-colors hover:bg-white/70 hover:text-black"
+            >
+              <MembershipIcon className="text-[20px]" />
+              Membership
+            </Link>
             <Bell unread={unread} />
             <Link
               href="/settings"

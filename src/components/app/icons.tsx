@@ -228,6 +228,18 @@ export function PassIcon(p: P) {
   );
 }
 
+/* A membership card, not a crown or a star. The thing being bought
+   here is dull and monthly, and a trophy would oversell it. */
+export function MembershipIcon(p: P) {
+  return (
+    <Stroke {...p}>
+      <rect x="2.8" y="5.2" width="18.4" height="13.6" rx="2.6" />
+      <path d="M2.8 9.6h18.4" />
+      <path d="M6.4 14.4h4.2" />
+    </Stroke>
+  );
+}
+
 export function SignOutIcon(p: P) {
   return (
     <Stroke {...p}>

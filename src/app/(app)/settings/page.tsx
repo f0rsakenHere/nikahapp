@@ -6,6 +6,7 @@ import { listSessionsForUser } from "@/lib/repositories/sessions";
 import { mayRevealLinks } from "@/lib/notifications";
 import { describeDevice } from "@/lib/domain/device";
 import { mfaRequired } from "@/lib/domain/user";
+import { hasActivePlan } from "@/lib/domain/plan";
 import { AuthShell } from "../auth-shell";
 import { ChangePassword, SendVerification, SessionRow, SignOutEverywhere } from "./forms";
 import { MfaSection } from "./mfa";
@@ -36,6 +37,7 @@ export default async function SettingsPage() {
   const { user, tokenHash } = session;
   const { sessions, total: signedInOn } = await listSessionsForUser(user.id, { pin: tokenHash });
   const profile = await findProfileByUserId(user.id);
+  const member = hasActivePlan(user, new Date());
 
   return (
     <AuthShell
@@ -59,6 +61,35 @@ export default async function SettingsPage() {
           "Email" beside "Password" left exactly that. Columns pack each
           card under the previous one and the holes disappear. */}
       <div className="lg:columns-2 lg:gap-5">
+        {/* ----------------------------------------------- membership -- */}
+        {/* Here as well as in the sidebar, because the sidebar is the
+            one piece of chrome a phone does not get. This is the route
+            in from a phone: Account, then here. */}
+        <section className={PANEL}>
+          <h2 className={PANEL_TITLE}>Membership</h2>
+          {member && user.planActiveUntil ? (
+            <p className="text-[18px] text-black">
+              Active until{" "}
+              {user.planActiveUntil.toLocaleDateString("en-CA", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+              .
+            </p>
+          ) : (
+            <p className="text-[18px] text-black">
+              Your profile, the pool and asking to talk are free. Membership covers the messages.
+            </p>
+          )}
+          <Link
+            href="/membership"
+            className="grid h-12 w-full place-items-center rounded-pill border-2 border-accent-deep text-[18px] font-semibold text-accent-deep"
+          >
+            {member ? "Your membership" : "See membership"}
+          </Link>
+        </section>
+
         {/* ---------------------------------------------------- email -- */}
         <section className={PANEL}>
           <h2 className={PANEL_TITLE}>Email</h2>

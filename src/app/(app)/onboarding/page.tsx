@@ -297,17 +297,9 @@ export default async function OnboardingPage({
       ) : null}
 
       <div className="mt-8 flex max-w-[420px] flex-col gap-3 border-t border-soft-green pt-6">
-        {/* Membership had no way in at all — the page existed and
-            nothing linked to it, so the only way to reach it was to
-            know the address. Here rather than in the tab bar: it is
-            read once and then rarely, which is what this footer is
-            for. */}
-        <Link
-          href="/membership"
-          className="text-[18px] font-semibold text-peach-deep underline-offset-2 hover:underline"
-        >
-          Membership
-        </Link>
+        {/* Membership used to be a line of small print here, which is
+            where a thing goes to be missed. It is in the sidebar now,
+            and on Account for phones, which have no sidebar. */}
         <Link
           href="/how-it-works"
           className="text-[18px] font-semibold text-peach-deep underline-offset-2 hover:underline"
