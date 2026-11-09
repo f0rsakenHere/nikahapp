@@ -147,6 +147,19 @@ function check(label, ok, detail) {
        dashboard, and reads that as the button doing nothing. */
     await page.goto(`${BASE}/pricing`, { waitUntil: "domcontentloaded", timeout: 90_000 });
     await page.waitForTimeout(1500);
+    /* Only one price can ever be yours — gender is fixed at signup — so
+       signed in there is exactly one button, on your own card. Two
+       identical buttons read as a choice, and pressing the other one
+       landed this sister on a page quoting $9.99, which looks broken. */
+    const buttons = await page.locator(".pricing-plan-button").count();
+    check("signed in, only your own plan is offered", buttons === 1, `${buttons} buttons`);
+    const note = await page.locator(".pricing-plan-note").innerText().catch(() => "");
+    check(
+      "and the other price is stated, not pressable",
+      /brothers/i.test(note),
+      `the note says ${JSON.stringify(note)}`
+    );
+
     const cta = page.locator(".pricing-plan-button").first();
     await cta.scrollIntoViewIfNeeded();
     await page.waitForTimeout(300);

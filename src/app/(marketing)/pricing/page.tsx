@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { currentUser } from "@/lib/auth/current";
+import { findProfileByUserId } from "@/lib/repositories/profiles";
 import { pricing } from "@/content/pricing";
 import { socialImages, socialMetadata } from "@/lib/social-metadata";
 import { LandingHeader } from "@/components/marketing/LandingHeader";
@@ -38,7 +39,8 @@ function PricingBackdrop() {
 }
 
 export default async function PricingPage() {
-  const signedIn = Boolean(await currentUser());
+  const session = await currentUser();
+  const signedIn = Boolean(session);
   /* Somebody signed in who presses a price wants to buy that thing, so
      it goes to the page where they can. It used to go to the dashboard,
      which is not an answer to the question they asked — and because
@@ -49,6 +51,21 @@ export default async function PricingPage() {
    * a membership to yet, and registering always continues to onboarding
    * rather than honouring a destination. */
   const startHref = signedIn ? "/membership" : "/register";
+
+  /* Which of the two prices is actually yours.
+   *
+   * The price follows gender, which is fixed at signup — so these are
+   * not two things to choose between, they are one fact about you and
+   * one fact about somebody else. Presented as two identical buttons it
+   * read as a choice, and a sister who pressed "Brothers" landed on a
+   * page quoting her $9.99 and reasonably concluded the button was
+   * broken. Signed in, only your own plan is offered; the other is
+   * stated and left alone.
+   *
+   * Null for a wali, who has no profile and buys nothing. Both cards
+   * stay pressable in that case and /membership sends him onward. */
+  const gender = session ? (await findProfileByUserId(session.user.id))?.gender ?? null : null;
+  const mine = gender === "sister" ? "Sisters" : gender === "brother" ? "Brothers" : null;
   const values = [
     { Icon: ShieldIcon, label: "Nikah focused" },
     { Icon: PeopleIcon, label: "Wali involved" },
@@ -76,28 +93,38 @@ export default async function PricingPage() {
           {/* Two plans, and neither is "most popular" — there is no choice
               to make here, only the one that applies to you. */}
           <section id="pricing-plans" className="pricing-plans" aria-label="Membership">
-            {pricing.plans.map((plan, i) => (
-              <article key={plan.who} className="pricing-card">
-                <span className="pricing-plan-icon" aria-hidden="true">
-                  {i === 0 ? <ProfileIcon /> : <PeopleIcon />}
-                </span>
-                <h2>{plan.who}</h2>
-                <p className="pricing-price">
-                  <span className="pricing-currency">CAD</span>
-                  <span>${plan.price}</span>
-                  <span className="pricing-period">/ month</span>
-                </p>
-                <p className="pricing-plan-description">{plan.description}</p>
-                <Link
-                  href={startHref}
-                  className="landing-button pricing-plan-button"
-                  aria-label={`Get started, ${plan.who.toLowerCase()} membership at $${plan.price} a month`}
-                >
-                  Get started
-                  <span className="landing-button-arrow" aria-hidden="true"><ArrowIcon /></span>
-                </Link>
-              </article>
-            ))}
+            {pricing.plans.map((plan, i) => {
+              const yours = mine === null || mine === plan.who;
+              return (
+                <article key={plan.who} className={`pricing-card${mine === plan.who ? " is-featured" : ""}`}>
+                  <span className="pricing-plan-icon" aria-hidden="true">
+                    {i === 0 ? <ProfileIcon /> : <PeopleIcon />}
+                  </span>
+                  <h2>{plan.who}</h2>
+                  <p className="pricing-price">
+                    <span className="pricing-currency">CAD</span>
+                    <span>${plan.price}</span>
+                    <span className="pricing-period">/ month</span>
+                  </p>
+                  <p className="pricing-plan-description">{plan.description}</p>
+                  {yours ? (
+                    <Link
+                      href={startHref}
+                      className="landing-button pricing-plan-button"
+                      aria-label={`Get started, ${plan.who.toLowerCase()} membership at $${plan.price} a month`}
+                    >
+                      Get started
+                      <span className="landing-button-arrow" aria-hidden="true"><ArrowIcon /></span>
+                    </Link>
+                  ) : (
+                    /* Not a disabled button. A greyed-out button invites
+                       a press and then refuses it, which is the thing we
+                       are trying to stop happening here. */
+                    <p className="pricing-plan-note">What {plan.who.toLowerCase()} pay.</p>
+                  )}
+                </article>
+              );
+            })}
           </section>
 
           <section className="pricing-connection" aria-labelledby="connection-title">
