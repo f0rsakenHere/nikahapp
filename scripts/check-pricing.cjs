@@ -2,6 +2,22 @@ const { chromium } = require('playwright');
 const fs = require('node:fs');
 const path = require('node:path');
 
+/* Next prefetches the routes behind every <Link> that comes into view.
+ * This page has a "Get started" link per card pointing at /register,
+ * and nginx caps /register at ten requests a minute — so walking
+ * thirteen viewport widths spent the whole budget on prefetches and the
+ * real click at the end got a 503. The checker then reported that as
+ * "registration is unreachable", which is a product fault that did not
+ * exist. Prefetches are an artefact of the measurement, so they are
+ * refused. */
+async function openPage(browser, viewport) {
+  const context = await browser.newContext({ viewport });
+  await context.route("**/*", (route) =>
+    route.request().headers()["next-router-prefetch"] ? route.abort() : route.continue()
+  );
+  return context.newPage();
+}
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const failures = [];
@@ -10,7 +26,7 @@ async function main() {
   fs.mkdirSync(out, { recursive: true });
   try {
     for (const width of [320, 360, 390, 430, 600, 767, 768, 880, 881, 946, 1218, 1440, 1920]) {
-      const page = await browser.newPage({ viewport: { width, height: 1000 } });
+      const page = await openPage(browser, { width, height: 1000 });
       page.on('pageerror', error => failures.push(`${width}: ${error.message}`));
       const response = await page.goto(base + '/pricing', { waitUntil: 'networkidle' });
       await page.evaluate(() => document.fonts.ready);
@@ -58,14 +74,23 @@ async function main() {
       console.log(JSON.stringify({ width, overflow: layout.overflow, cardHeights: layout.cardHeights }));
       await page.close();
     }
-    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    const page = await openPage(browser, { width: 1440, height: 900 });
     await page.goto(base, { waitUntil: 'networkidle' });
     await page.locator('.landing-desktop-nav').getByRole('link', { name: 'Pricing', exact: true }).click();
     await page.waitForURL('**/pricing');
     if (await page.locator('.landing-desktop-nav').getByRole('link', { name: 'Pricing', exact: true }).getAttribute('aria-current') !== 'page') failures.push('Desktop navigation does not identify the pricing page');
     await page.getByRole('link', { name: 'Get started, sisters membership at $9.99 a month', exact: true }).click();
     await page.waitForURL('**/register');
-    if (await page.getByRole('heading', { name: 'Create your account' }).count() !== 1) failures.push('Membership action did not reach registration');
+    if (await page.getByRole('heading', { name: 'Create your account' }).count() !== 1) {
+      /* Distinguishes "the button is broken" from "nginx throttled us",
+         which look identical from here and are not the same problem. */
+      const throttled = /too many|503|rate/i.test(await page.evaluate(() => document.body.innerText));
+      failures.push(
+        throttled
+          ? 'Registration answered a rate-limit page. nginx caps /register at 10/min; wait a minute and re-run.'
+          : 'Membership action did not reach registration'
+      );
+    }
     await page.goto(base + '/dashboard', { waitUntil: 'networkidle' });
     if (new URL(page.url()).pathname !== '/login') failures.push('Member routes should still require sign in');
     await page.close();
