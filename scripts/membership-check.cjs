@@ -139,6 +139,27 @@ function check(label, ok, detail) {
       /PayPal/.test(seen),
       seen.slice(0, 200)
     );
+
+    /* ---------- pricing leads somewhere useful --------------------
+       Signed in, "Get started" on a price used to go to the dashboard.
+       It navigated perfectly well and still looked broken: a member who
+       is already signed in presses a price, lands on their own
+       dashboard, and reads that as the button doing nothing. */
+    await page.goto(`${BASE}/pricing`, { waitUntil: "domcontentloaded", timeout: 90_000 });
+    await page.waitForTimeout(1500);
+    const cta = page.locator(".pricing-plan-button").first();
+    await cta.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+    await cta.click();
+    const landed = await page
+      .waitForURL("**/membership", { timeout: 20_000 })
+      .then(() => true)
+      .catch(() => false);
+    check(
+      "a signed-in member pressing a price reaches membership",
+      landed,
+      `landed on ${new URL(page.url()).pathname}`
+    );
   } finally {
     await browser.close();
     await mongo.close();

@@ -39,7 +39,16 @@ function PricingBackdrop() {
 
 export default async function PricingPage() {
   const signedIn = Boolean(await currentUser());
-  const startHref = signedIn ? "/dashboard" : "/register";
+  /* Somebody signed in who presses a price wants to buy that thing, so
+     it goes to the page where they can. It used to go to the dashboard,
+     which is not an answer to the question they asked — and because
+     they were already signed in, landing on their own dashboard read as
+     the button having done nothing at all.
+   *
+   * Signed out it is still registration: there is no account to attach
+   * a membership to yet, and registering always continues to onboarding
+   * rather than honouring a destination. */
+  const startHref = signedIn ? "/membership" : "/register";
   const values = [
     { Icon: ShieldIcon, label: "Nikah focused" },
     { Icon: PeopleIcon, label: "Wali involved" },
@@ -110,7 +119,7 @@ export default async function PricingPage() {
           <section className="pricing-ready" aria-labelledby="pricing-ready-title">
             <h2 id="pricing-ready-title">Ready to find your future spouse?</h2>
             <p>Begin with a free profile. Membership only matters once a conversation is under way.</p>
-            <Link href={startHref} className="landing-button">{signedIn ? "Go to your account" : "Choose Your Plan"}<span className="landing-button-arrow" aria-hidden="true"><ArrowIcon /></span></Link>
+            <Link href={startHref} className="landing-button">{signedIn ? "Go to membership" : "Choose Your Plan"}<span className="landing-button-arrow" aria-hidden="true"><ArrowIcon /></span></Link>
           </section>
 
           <ul className="pricing-values" aria-label="Our approach">
