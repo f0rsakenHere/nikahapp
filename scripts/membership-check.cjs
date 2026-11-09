@@ -104,8 +104,13 @@ function check(label, ok, detail) {
          version of this check expected the word "free" and failed
          against a site where charging is switched off — where the page
          correctly says the opposite, that nothing is closed to you. */
-      const settings = (await db.collection("settings").findOne({})) ?? {};
-      const gateOn = settings.planGate && settings.planGate !== "nobody";
+      /* `{ key: "product", value: { ... } }` — the settings live under
+         `value`, not at the top level. Read flat, this was always
+         undefined, so the checker always took the paywall-off branch
+         and would have gone on passing after it was switched on. */
+      const doc = await db.collection("settings").findOne({ key: "product" });
+      const gate = doc?.value?.planGate ?? "nobody";
+      const gateOn = gate !== "nobody";
       check(
         gateOn
           ? "the page says what stays free, so the price is not read as a gate on everything"
@@ -113,7 +118,7 @@ function check(label, ok, detail) {
         gateOn
           ? /free/i.test(seen)
           : /not required|every part of the site is open/i.test(seen),
-        `planGate=${settings.planGate ?? "(unset)"} — ${seen.replace(/\s+/g, " ").slice(0, 160)}`
+        `planGate=${gate} — ${seen.replace(/\s+/g, " ").slice(0, 160)}`
       );
 
       /* The button is PayPal's own, drawn into an iframe by their
