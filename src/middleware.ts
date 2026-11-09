@@ -43,6 +43,16 @@ const PUBLIC_EXACT = new Set([
    * explicit rather than incidental. `currentUser()` is what actually
    * keeps a half-authenticated session out of everything else. */
   "/mfa",
+  /* PayPal calls this from their own servers and has no session to
+   * offer. It is public because it must be, and it is not unprotected:
+   * the handler verifies PayPal's signature over the exact bytes of the
+   * body before it reads a single field, and rejects anything it cannot
+   * verify without touching the database.
+   *
+   * Listed as one exact path rather than opening "/api/", so the next
+   * route handler added here is still closed by default — which is the
+   * whole point of this file. */
+  "/api/paypal/webhook",
 ]);
 const PUBLIC_PREFIXES = ["/legal/"];
 
