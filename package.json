@@ -37,6 +37,8 @@
     "check:feedback": "node scripts/tester-feedback-check.cjs",
     "check:mark": "node scripts/mark-check.cjs",
     "check:paypal": "node scripts/paypal-check.cjs",
+    "paypal:plans": "node scripts/paypal-plans.cjs",
+    "paypal:webhook": "node scripts/paypal-webhook.cjs",
     "check:mark:safari": "node scripts/mark-check.cjs --webkit",
     "brand:crop": "node scripts/brand-crop.cjs",
     "shot": "node scripts/screenshot.cjs .",

@@ -89,6 +89,19 @@ export const INDEXES: Partial<Record<CollectionName, Spec[]>> = {
     { keys: { decision: 1, "call.scheduledFor": 1 }, options: { name: "decision_callAt" } },
   ],
 
+  /* PayPal sends the same event again whenever it is not certain we
+     received the first one, so the event id is the thing that makes
+     handling it twice impossible. Unique, and therefore load-bearing:
+     without it a retried activation grants a second month. */
+  [COLLECTIONS.payments]: [
+    { keys: { eventId: 1 }, options: { unique: true, name: "eventId_unique" } },
+    { keys: { userId: 1, receivedAt: -1 }, options: { name: "userId_receivedAt" } },
+    {
+      keys: { subscriptionId: 1 },
+      options: { name: "subscriptionId", sparse: true },
+    },
+  ],
+
   [COLLECTIONS.auditLog]: [
     { keys: { "subject.type": 1, "subject.id": 1, at: -1 }, options: { name: "subject_at" } },
     { keys: { "actor.userId": 1, at: -1 }, options: { name: "actor_at" } },

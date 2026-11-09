@@ -87,6 +87,14 @@ export const UserSchema = z.object({
    * in the past. Optional because every account written before plans
    * existed has no such field, and those accounts have no plan. */
   planActiveUntil: z.date().nullable().optional(),
+
+  /* The PayPal subscription behind that date, when there is one.
+   * Written when the member subscribes and used to recognise the
+   * renewal payments afterwards, which name the subscription rather
+   * than the subscriber. Absent on accounts whose plan was granted by
+   * hand, which is deliberate: `scripts/grant.cjs` is how a comp or a
+   * fix is given, and those have no subscription to point at. */
+  paypalSubscriptionId: z.string().nullable().optional(),
 })
   .refine((u) => !mfaRequired(u.roles) || u.mfa.enabled, {
     message: "staff, verifier and admin accounts must have 2FA enabled",
