@@ -21,6 +21,10 @@ type PaymentDoc = {
   eventType: string;
   subscriptionId: string | null;
   userId: string | null;
+  /** The plan PayPal says was paid on, when the event names one. Kept
+   *  because the commonest money question after "was I charged" is
+   *  "charged for what", and a renewal payment does not name a plan. */
+  planId: string | null;
   /** What we did about it, in words, for whoever reads this later. */
   outcome: string;
   receivedAt: Date;
@@ -44,6 +48,7 @@ export async function recordEvent(input: {
   eventType: string;
   subscriptionId: string | null;
   userId: string | null;
+  planId: string | null;
   outcome: string;
   raw: unknown;
 }): Promise<boolean> {
@@ -119,12 +124,30 @@ export async function userForSubscription(subscriptionId: string): Promise<strin
 }
 
 /** Ties a PayPal subscription to the member who started it, as soon as
- *  the browser comes back — before any webhook has necessarily arrived. */
-export async function linkSubscription(userId: string, subscriptionId: string): Promise<void> {
-  await (await getDb())
-    .collection(COLLECTIONS.users)
-    .updateOne(
-      { _id: new ObjectId(userId) },
-      { $set: { paypalSubscriptionId: subscriptionId, updatedAt: new Date() } }
-    );
+ *  the browser comes back — before any webhook has necessarily arrived.
+ *
+ *  Refuses if somebody else already holds it. That row is what renewal
+ *  payments are matched on — they name the subscription and not the
+ *  subscriber — so two accounts pointing at one subscription would mean
+ *  the wrong person collecting the other's renewals every month. One
+ *  subscription, one member. */
+export async function linkSubscription(
+  userId: string,
+  subscriptionId: string
+): Promise<{ ok: true } | { ok: false; because: string }> {
+  const users = (await getDb()).collection(COLLECTIONS.users);
+
+  const holder = await users.findOne(
+    { paypalSubscriptionId: subscriptionId },
+    { projection: { _id: 1 } }
+  );
+  if (holder && String(holder._id) !== userId) {
+    return { ok: false, because: "that subscription is already on another account" };
+  }
+
+  await users.updateOne(
+    { _id: new ObjectId(userId) },
+    { $set: { paypalSubscriptionId: subscriptionId, updatedAt: new Date() } }
+  );
+  return { ok: true };
 }

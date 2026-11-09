@@ -4,6 +4,7 @@ import {
   GRACE_DAYS,
   isKnownEvent,
   planChangeFor,
+  planIsRight,
   type SubscriptionEvent,
 } from "./subscription";
 
@@ -98,5 +99,43 @@ describe("isKnownEvent", () => {
 
   it("does not recognise everything PayPal might send", () => {
     expect(isKnownEvent("CHECKOUT.ORDER.APPROVED")).toBe(false);
+  });
+});
+
+describe("planIsRight", () => {
+  /* The one this exists for. The plan id is chosen in the browser, and
+     the two plans are not the same price, so a brother who pays on the
+     sisters' plan is a brother paying $9.99 for a $19.99 membership. */
+  it("refuses a brother who paid on the sisters' plan", () => {
+    const verdict = planIsRight("sister", "brother");
+    expect(verdict.ok).toBe(false);
+    expect(verdict.ok === false && verdict.because).toContain("sisters' plan");
+  });
+
+  /* Refused as well, though nobody is out of pocket but her. It cannot
+     happen by accident — the page only ever offers your own plan — so
+     it means something went wrong, and silently banking the extra ten
+     dollars is not the way to find out what. */
+  it("refuses a sister who paid on the brothers' plan", () => {
+    expect(planIsRight("brother", "sister").ok).toBe(false);
+  });
+
+  it("allows each member their own plan", () => {
+    expect(planIsRight("sister", "sister").ok).toBe(true);
+    expect(planIsRight("brother", "brother").ok).toBe(true);
+  });
+
+  /* A renewal payment names no plan at all, and an unrecognised plan id
+     is a configuration gap rather than evidence of anything. Neither is
+     a reason to withhold a membership somebody has paid for. */
+  it("does not treat an unknown plan as a wrong one", () => {
+    expect(planIsRight(null, "sister").ok).toBe(true);
+  });
+
+  /* No profile, no gender, no price — so no grant. A wali has no
+     profile and buys nothing; anything else here is irregular. */
+  it("refuses when there is no profile to price", () => {
+    expect(planIsRight("sister", null).ok).toBe(false);
+    expect(planIsRight(null, null).ok).toBe(false);
   });
 });

@@ -43,7 +43,8 @@
     "check:mark:safari": "node scripts/mark-check.cjs --webkit",
     "brand:crop": "node scripts/brand-crop.cjs",
     "shot": "node scripts/screenshot.cjs .",
-    "shot:phone": "node scripts/phone-shots.cjs"
+    "shot:phone": "node scripts/phone-shots.cjs",
+    "check:plans": "node scripts/paypal-plans.cjs --verify"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",

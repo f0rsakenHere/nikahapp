@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
-import { planChangeFor, type SubscriptionEvent } from "@/lib/domain/subscription";
+import { planChangeFor, planIsRight, type SubscriptionEvent } from "@/lib/domain/subscription";
+import { findProfileByUserId } from "@/lib/repositories/profiles";
 import {
   extendMembership,
   noteOutcome,
   recordEvent,
   userForSubscription,
 } from "@/lib/repositories/subscriptions";
-import { getSubscription, paypalIsConfigured, webhookIsGenuine } from "@/lib/payments/paypal";
+import {
+  genderForPlan,
+  getSubscription,
+  paypalIsConfigured,
+  webhookIsGenuine,
+  type PaypalSubscription,
+} from "@/lib/payments/paypal";
 
 /* Where PayPal tells us somebody has paid.
  *
@@ -35,6 +42,8 @@ type PaypalWebhook = {
   resource?: {
     id?: string;
     custom_id?: string;
+    /** Present on subscription events, absent on renewal payments. */
+    plan_id?: string;
     billing_agreement_id?: string;
     billing_info?: { next_billing_time?: string };
   };
@@ -101,6 +110,7 @@ export async function POST(request: Request) {
     eventType,
     subscriptionId,
     userId: event.userId,
+    planId: resource.plan_id ?? null,
     outcome: "received",
     raw: body,
   });
@@ -120,17 +130,29 @@ export async function POST(request: Request) {
   /* Who is this? `custom_id` is the reliable answer and is set when the
      subscription is created. Renewal payments do not carry it, so fall
      back to the subscription we stored, and only then ask PayPal. */
+  /* Asked for at most once, and only if something below needs it. A
+     renewal payment names neither the member nor the plan, so both
+     questions can end up here, and there is no sense paying for two
+     round trips to answer them. */
+  let fetched: PaypalSubscription | null | undefined;
+  async function subscription(): Promise<PaypalSubscription | null> {
+    if (fetched !== undefined) return fetched;
+    if (!subscriptionId) return (fetched = null);
+    try {
+      fetched = await getSubscription(subscriptionId);
+    } catch (e) {
+      log(`could not read subscription ${subscriptionId}`, e);
+      fetched = null;
+    }
+    return fetched;
+  }
+
   let userId = event.userId;
   if (!userId && subscriptionId) {
     userId = await userForSubscription(subscriptionId);
   }
   if (!userId && subscriptionId) {
-    try {
-      const sub = await getSubscription(subscriptionId);
-      userId = sub.custom_id ?? null;
-    } catch (e) {
-      log(`could not read subscription ${subscriptionId}`, e);
-    }
+    userId = (await subscription())?.custom_id ?? null;
   }
 
   if (!userId) {
@@ -138,6 +160,31 @@ export async function POST(request: Request) {
        work out whose payment this was by hand. */
     const why = `no member could be matched to subscription ${subscriptionId ?? "(none)"}`;
     log(`${eventType} — ${why}`);
+    await noteOutcome(eventId, why);
+    return NextResponse.json({ ok: true });
+  }
+
+  /* And is this the plan they owe?
+   *
+   * `plan_id` is chosen by the browser when the subscription is
+   * created. Our page only ever offers somebody their own, but nothing
+   * stops a page being edited, and the two plans are not the same
+   * price — so without this a brother who learns the sisters' plan id
+   * subscribes at $9.99 and PayPal takes it, because PayPal is
+   * enforcing its own plan and has never heard of our rule about who
+   * may buy which.
+   *
+   * Checked here rather than at the button, because the button is the
+   * part we do not control. */
+  const planId = resource.plan_id ?? (await subscription())?.plan_id ?? null;
+  const profile = await findProfileByUserId(userId);
+  const right = planIsRight(genderForPlan(planId), profile?.gender ?? null);
+  if (!right.ok) {
+    /* 200: PayPal sending it again would not make it right. Recorded in
+       words, with the plan, so whoever picks this up can refund it or
+       put the member on the correct plan. */
+    const why = `${right.because} — not granted (plan ${planId ?? "unknown"}, member ${userId})`;
+    log(`${eventType} — REFUSED: ${why}`);
     await noteOutcome(eventId, why);
     return NextResponse.json({ ok: true });
   }

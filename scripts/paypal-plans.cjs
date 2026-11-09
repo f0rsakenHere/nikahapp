@@ -12,6 +12,7 @@
  *   node scripts/paypal-plans.cjs            # show what it would do
  *   node scripts/paypal-plans.cjs --apply    # do it
  *   node scripts/paypal-plans.cjs --list     # what already exists
+ *   node scripts/paypal-plans.cjs --verify   # are the configured ids the right ones
  *
  * It prints the two plan ids at the end. Those go in .env.local as
  * PAYPAL_PLAN_SISTER and PAYPAL_PLAN_BROTHER.
@@ -22,6 +23,7 @@ loadEnv();
 
 const APPLY = process.argv.includes("--apply");
 const LIST = process.argv.includes("--list");
+const VERIFY = process.argv.includes("--verify");
 
 const ENV = process.env.PAYPAL_ENV === "live" ? "live" : "sandbox";
 const HOST = ENV === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
@@ -93,6 +95,71 @@ async function api(path, init = {}) {
 (async () => {
   console.log(`environment: ${ENV}${ENV === "live" ? "  — this is the real account" : ""}`);
   console.log("");
+
+  /* ---------- is what we are configured with the right thing? -------
+     Everything else here is about creating plans. This asks the
+     different question: do the two ids sitting in the environment
+     actually point at the two plans we think they do, at the prices we
+     advertise?
+
+     Worth asking on its own, because the one failure the app cannot
+     detect is the two ids being swapped. Swapped, every check inside
+     the app still passes — a brother is consistently sent to the plan
+     labelled "brother" — and every brother is quietly charged $9.99
+     and every sister $19.99. Only PayPal knows, so only PayPal can be
+     asked. */
+  if (VERIFY) {
+    let bad = 0;
+    const check = (label, ok, detail) => {
+      console.log(`${ok ? "pass" : "FAIL"}  ${label}${ok || !detail ? "" : `  — ${detail}`}`);
+      if (!ok) bad++;
+    };
+
+    const seen = new Map();
+    for (const want of PLANS) {
+      const id = process.env[want.key];
+      if (!id) {
+        check(`${want.key} is set`, false, "not in the environment");
+        continue;
+      }
+      if (seen.has(id)) {
+        check(`${want.key} is its own plan`, false, `the same id as ${seen.get(id)}`);
+        continue;
+      }
+      seen.set(id, want.key);
+
+      let plan;
+      try {
+        plan = await api(`/v1/billing/plans/${encodeURIComponent(id)}`);
+      } catch (e) {
+        check(`${want.key} names a plan on this account`, false, e.message);
+        continue;
+      }
+
+      const cycle = (plan.billing_cycles ?? []).find((c) => c.tenure_type === "REGULAR");
+      const price = cycle?.pricing_scheme?.fixed_price ?? {};
+      const freq = cycle?.frequency ?? {};
+
+      check(`${want.key} is ${want.name}`, plan.name === want.name, `PayPal calls it ${JSON.stringify(plan.name)}`);
+      /* The one that matters. A swap shows up here and nowhere else. */
+      check(
+        `${want.key} charges CAD ${want.price}`,
+        price.value === want.price && price.currency_code === "CAD",
+        `PayPal charges ${price.currency_code ?? "?"} ${price.value ?? "?"}`
+      );
+      check(
+        `${want.key} bills monthly`,
+        freq.interval_unit === "MONTH" && Number(freq.interval_count) === 1,
+        `every ${freq.interval_count ?? "?"} ${freq.interval_unit ?? "?"}`
+      );
+      check(`${want.key} is active`, plan.status === "ACTIVE", `status ${plan.status}`);
+    }
+
+    const NL = String.fromCharCode(10);
+    console.log(bad ? NL + bad + " check(s) failed" : NL + "all good");
+    process.exitCode = bad ? 1 : 0;
+    return;
+  }
 
   /* ---------- what is already there --------------------------------- */
   const existingPlans = await api("/v1/billing/plans?page_size=20&total_required=true").catch(

@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { currentUser } from "@/lib/auth/current";
-import { getSubscription, paypalIsConfigured } from "@/lib/payments/paypal";
+import { genderForPlan, getSubscription, paypalIsConfigured } from "@/lib/payments/paypal";
+import { planIsRight } from "@/lib/domain/subscription";
+import { findProfileByUserId } from "@/lib/repositories/profiles";
 import { linkSubscription } from "@/lib/repositories/subscriptions";
 
 /** Ties a subscription the member just approved to their account.
@@ -33,12 +35,34 @@ export async function recordSubscription(
     const sub = await getSubscription(subscriptionId);
 
     /* The subscription must say it belongs to this member. PayPal is
-       the authority on that, not the browser that called us. */
-    if (sub.custom_id && sub.custom_id !== session.user.id) {
+       the authority on that, not the browser that called us.
+
+       Absent is refused, not waved through. Our own button always sets
+       `custom_id`, so a subscription without one was made somewhere
+       else — and the earlier `sub.custom_id && ...` let exactly those
+       be claimed by anybody who knew the id, which would have handed
+       them a stranger's renewals every month thereafter. */
+    if (sub.custom_id !== session.user.id) {
       return { error: "That subscription belongs to another account." };
     }
 
-    await linkSubscription(session.user.id, subscriptionId);
+    /* And it must be the plan this member owes. The webhook checks this
+       too and is the one that decides — but it arrives seconds later
+       and out of sight, so without this the member sees "thank you",
+       is charged, and is never told why nothing happened. */
+    const profile = await findProfileByUserId(session.user.id);
+    const right = planIsRight(genderForPlan(sub.plan_id), profile?.gender ?? null);
+    if (!right.ok) {
+      return {
+        error:
+          "That subscription is on the wrong plan for your account, so it has not been " +
+          "applied. Please contact us and we will sort it out — do not subscribe again.",
+      };
+    }
+
+    const linked = await linkSubscription(session.user.id, subscriptionId);
+    if (!linked.ok) return { error: "That subscription is already on another account." };
+
     revalidatePath("/membership");
     return { ok: true };
   } catch {

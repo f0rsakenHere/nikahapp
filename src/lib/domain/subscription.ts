@@ -103,6 +103,48 @@ export function planChangeFor(event: SubscriptionEvent, now: Date): PlanChange {
   }
 }
 
+export type Gender = "brother" | "sister";
+
+/** Whether the plan somebody actually paid on is the plan they owe.
+ *
+ *  The two plans are not the same price — sisters $9.99, brothers
+ *  $19.99 — and the plan id is chosen in the browser, which is to say
+ *  by whoever is sitting at it. Our page only ever offers you your own,
+ *  but `plan_id` is sent from the page to PayPal, so a brother who
+ *  learns the sisters' plan id can subscribe at half price and PayPal
+ *  will happily take it: PayPal is enforcing its own plan, not our rule
+ *  about who may buy it. The only place that rule can be enforced is
+ *  here, when PayPal tells us what was bought.
+ *
+ *  It is checked rather than corrected. We cannot quietly charge the
+ *  difference, and granting a membership at the wrong price — in either
+ *  direction — is a thing a member would find out about later and be
+ *  right to be angry about. So it is refused, recorded in words, and
+ *  left for a person.
+ *
+ *  Unknown plan is not the same as wrong plan. A renewal payment names
+ *  no plan at all, and the configuration may name plans this build does
+ *  not know; neither is evidence of anything, so neither blocks a
+ *  payment that is otherwise good.
+ */
+export function planIsRight(
+  planGender: Gender | null,
+  memberGender: Gender | null
+): { ok: true } | { ok: false; because: string } {
+  if (memberGender === null) {
+    /* No profile, so no price. Reaching the membership page at all
+       requires one, so this is either a wali — who buys nothing — or
+       something irregular. Either way it is not a grant. */
+    return { ok: false, because: "no profile, so there is no plan this member should be on" };
+  }
+  if (planGender === null) return { ok: true };
+  if (planGender === memberGender) return { ok: true };
+  return {
+    ok: false,
+    because: `paid on the ${planGender}s' plan, but this member is a ${memberGender}`,
+  };
+}
+
 /** The date to store, given what the account already has.
  *
  *  Never earlier than what is there. Two events about the same payment —

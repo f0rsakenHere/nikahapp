@@ -55,6 +55,19 @@ export function planIdFor(gender: "brother" | "sister" | null): string | null {
   return null;
 }
 
+/** Which gender a plan id belongs to, or null if it is not one of ours.
+ *
+ *  The inverse of `planIdFor`, and the thing that lets the webhook
+ *  check that the plan somebody paid on is the plan they owe. Null for
+ *  an unrecognised plan: that is a configuration gap, not evidence of
+ *  wrongdoing, and `planIsRight` treats it as such. */
+export function genderForPlan(planId: string | null | undefined): "brother" | "sister" | null {
+  if (!planId) return null;
+  if (planId === process.env.PAYPAL_PLAN_BROTHER) return "brother";
+  if (planId === process.env.PAYPAL_PLAN_SISTER) return "sister";
+  return null;
+}
+
 export class PaypalError extends Error {
   constructor(
     message: string,
