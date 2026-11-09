@@ -71,10 +71,30 @@ async function tokenFrom(host, a, b) {
       const { ok, status, body } = await tokenFrom(host, id, secret);
       if (ok) {
         accepted = name;
-        const subs = /billing\/subscriptions/.test(body.scope ?? "");
+        /* The scope comes back as a space-separated list of long URLs.
+           Trimmed to the part that identifies the permission, because
+           what matters here is which features the client ticked on the
+           app, and that is unreadable in the raw form. */
+        const scopes = String(body.scope ?? "")
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((s) => s.replace(/^https?:\/\/[^/]+\/v1\//, ""))
+          .sort();
+        /* Matched loosely on purpose. The first version of this looked
+           for "billing/subscriptions", which is the REST path and not
+           the scope name — PayPal grants
+           `https://uri.paypal.com/services/subscriptions` — so it
+           reported a correctly configured app as unable to take
+           subscriptions. A checker that calls a working setup broken
+           costs more than no checker. */
+        const subs = scopes.some((s) => /subscriptions/.test(s));
         line =
           `accepted. a token was issued, good for ${Math.round((body.expires_in ?? 0) / 60)} minutes.\n` +
-          `                   subscriptions scope: ${subs ? "yes" : "NO — this app cannot manage subscriptions"}`;
+          `                   subscriptions: ${
+            subs ? "enabled" : "NOT ENABLED — this app cannot manage subscriptions"
+          }\n` +
+          `                   ${scopes.length} scopes granted:\n` +
+          scopes.map((s) => `                     ${s}`).join("\n");
       } else {
         line = `${status} ${body.error ?? ""} ${body.error_description ?? ""}`.trim();
       }
