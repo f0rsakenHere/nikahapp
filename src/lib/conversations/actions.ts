@@ -27,7 +27,7 @@ const REFUSALS = {
   "read-only": "You can read this conversation, and not write in it.",
   empty: "Write something first.",
   "plan-required":
-    "You have used the free messages in this conversation. Sending another needs a plan.",
+    "You have used the free messages in this conversation. Sending another needs a membership.",
 } as const;
 
 export async function sendMessage(

@@ -44,7 +44,9 @@
     "brand:crop": "node scripts/brand-crop.cjs",
     "shot": "node scripts/screenshot.cjs .",
     "shot:phone": "node scripts/phone-shots.cjs",
-    "check:plans": "node scripts/paypal-plans.cjs --verify"
+    "check:plans": "node scripts/paypal-plans.cjs --verify",
+    "check:plan-gate": "node scripts/plan-gate-flow.cjs",
+    "paywall": "node scripts/paywall.cjs"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",

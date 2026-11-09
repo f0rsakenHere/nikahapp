@@ -252,16 +252,36 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
           {/* Only his sending stops. The thread stays readable, what was
               said stays said, and she can still write — so this says that,
               rather than reading like the conversation has been taken
-              away. No button yet: there is no checkout to send him to,
-              and a button that goes nowhere is worse than a sentence. */}
+              away.
+
+              The button arrived after the words did. This said "needs a
+              plan" and offered nothing, because when it was written
+              there was no checkout to send anybody to and a button that
+              goes nowhere is worse than a sentence. There is one now,
+              and this is the one screen where somebody has a reason to
+              use it — so it is here, in the place the wall is met,
+              rather than left to be found in a menu. */}
           <div className="mt-6 rounded-md border border-peach/40 bg-soft-peach/60 px-4 py-4">
             <p className="text-[18px] font-semibold text-black">
               You have used your {allowance.free} free messages
             </p>
             <p className="mt-1.5 text-[18px] leading-[26px] text-text">
-              Sending more in this conversation needs a plan. {otherPronoun} can still write to
-              you, and everything already said stays here.
+              Sending more in this conversation needs a membership.{" "}
+              {/* Only said when it is certainly true. Under the `brother`
+                  gate she never pays, so she can always still write. Under
+                  `everybody` she has her own three free messages and may
+                  have used them, and this screen does not know — so it
+                  stops short of telling him something about her that we
+                  have not checked. */}
+              {settings.planGate === "brother" ? `${otherPronoun} can still write to you, and ` : ""}
+              everything already said stays here, and the conversation stays readable.
             </p>
+            <Link
+              href="/membership"
+              className="mt-3.5 grid h-12 w-full max-w-[320px] place-items-center rounded-pill bg-accent-deep text-[18px] font-semibold text-white"
+            >
+              See membership
+            </Link>
           </div>
           <CloseThread conversationId={id} role={seat.role} />
         </>

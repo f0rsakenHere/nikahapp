@@ -13,6 +13,12 @@
  *
  *   MONGODB_DB=nikahcanada_plantest npx next dev -p 3001
  *   MONGODB_DB=nikahcanada_plantest BASE=http://127.0.0.1:3001 node scripts/plan-gate-flow.cjs
+ *
+ * `--gate everybody` runs the same walk with the setting the site
+ * actually uses since sisters were given a price of their own. Under
+ * that gate she is not exempt, so the half of this that proves she is
+ * never charged becomes the half that proves she is charged the same
+ * way he is.
  */
 const { chromium } = require("playwright");
 const { MongoClient, ObjectId, ServerApiVersion } = require("mongodb");
@@ -33,6 +39,21 @@ const client = new MongoClient(requireEnv("MONGODB_URI"), {
   serverApi: { version: ServerApiVersion.v1, strict: false, deprecationErrors: true },
   serverSelectionTimeoutMS: 10_000,
 });
+
+/* Which gate to walk. `brother` is the original rule — sisters exempt —
+   and is kept because the setting still allows it. `everybody` is what
+   production runs. */
+const GATE = (() => {
+  const i = process.argv.indexOf("--gate");
+  const v = i === -1 ? "brother" : process.argv[i + 1];
+  if (v !== "brother" && v !== "everybody") {
+    console.error(`
+FAIL  --gate must be "brother" or "everybody", not ${JSON.stringify(v)}
+`);
+    process.exit(1);
+  }
+  return v;
+})();
 
 const STAMP = Date.now();
 const PASSWORD = "a-long-enough-passphrase";
@@ -173,10 +194,13 @@ async function send(page, body) {
     check("with the paywall off, he has a box to write in", (await him.page.locator("textarea").count()) === 1);
     check("and no free-message counter is shown", !/free messages? left/i.test(await text(him.page)));
 
-    /* ---------- switch it on, for brothers ---------------------------- */
+    /* ---------- switch it on ------------------------------------------ */
+    console.log(`
+  gate: ${GATE}
+`);
     await db
       .collection("settings")
-      .updateOne({ key: "product" }, { $set: { key: "product", "value.planGate": "brother" } }, { upsert: true });
+      .updateOne({ key: "product" }, { $set: { key: "product", "value.planGate": GATE } }, { upsert: true });
 
     await him.page.goto(thread, { waitUntil: "networkidle" });
     check(
@@ -204,7 +228,25 @@ async function send(page, body) {
     const afterThree = await text(him.page);
     check("after the third, the box to write in is gone", (await him.page.locator("textarea").count()) === 0);
     check("and he is told why", /You have used your 3 free messages/.test(afterThree), afterThree.replace(/\s+/g, " ").slice(-300));
-    check("and that she can still write to him", /She can still write to you/.test(afterThree));
+    /* Only promised under the gate where it is certainly true. */
+    if (GATE === "brother") {
+      check("and that she can still write to him", /She can still write to you/.test(afterThree));
+    } else {
+      check(
+        "and is not told anything about her that we have not checked",
+        !/can still write to you/i.test(afterThree),
+        afterThree.replace(/\s+/g, " ").slice(-240)
+      );
+    }
+
+    /* The wall is the one screen where somebody has a reason to buy
+       something, so it has to offer the way. It said "needs a plan" and
+       offered nothing for as long as there was no checkout to point at. */
+    check(
+      "the wall offers a way to pay",
+      (await him.page.locator('a[href="/membership"]').count()) > 0,
+      "no link to /membership on the screen that tells him he needs one"
+    );
     await shot(him.page, "2-used-up");
 
     /* ---------- the server refuses, not only the screen --------------- */
@@ -216,21 +258,70 @@ async function send(page, body) {
     );
     check(
       "with a sentence saying a plan is needed",
-      /Sending another needs a plan/.test(await text(staleTab)),
+      /Sending another needs a membership/.test(await text(staleTab)),
       (await text(staleTab)).replace(/\s+/g, " ").slice(-240)
     );
     await staleTab.close();
 
-    /* ---------- she is never charged ---------------------------------- */
+    /* ---------- her side of the same rule ----------------------------- */
     await her.page.goto(thread, { waitUntil: "networkidle" });
-    check("she still has a box to write in", (await her.page.locator("textarea").count()) === 1);
-    check("and sees no counter", !/free messages? left/i.test(await text(her.page)));
-    for (let i = 1; i <= 4; i++) await send(her.page, `Her message ${i}.`);
-    check("she can send more than three", (await countFrom(sister)) === 4, String(await countFrom(sister)));
-    check("and he reads what she wrote", /Her message 4\./.test(await (async () => {
-      await him.page.goto(thread, { waitUntil: "networkidle" });
-      return text(him.page);
-    })()));
+    if (GATE === "brother") {
+      check("she still has a box to write in", (await her.page.locator("textarea").count()) === 1);
+      check("and sees no counter", !/free messages? left/i.test(await text(her.page)));
+      for (let i = 1; i <= 4; i++) await send(her.page, `Her message ${i}.`);
+      check("she can send more than three", (await countFrom(sister)) === 4, String(await countFrom(sister)));
+    } else {
+      /* She pays too now, at her own price, so she meets the same wall
+         at the same place. Her three are hers: they are counted per
+         person, not per conversation, so his being used up has not
+         touched them. */
+      check(
+        `she is told she has ${FREE} free messages of her own`,
+        new RegExp(`${FREE} of ${FREE} free messages left`).test(await text(her.page)),
+        (await text(her.page)).replace(/\s+/g, " ").slice(-300)
+      );
+      await send(her.page, "Her message 1.");
+      await send(her.page, "Her message 2.");
+
+      /* Opened while she still has one message left, so it keeps a
+         working composer after the wall appears on her own screen —
+         the same trick used on his side, because a form that is merely
+         hidden is a form that can still be posted. */
+      const herStale = await her.context.newPage();
+      await herStale.goto(thread, { waitUntil: "networkidle" });
+
+      await send(her.page, "Her message 3.");
+      check("her three are stored", (await countFrom(sister)) === 3, String(await countFrom(sister)));
+
+      const hers = await text(her.page);
+      check("after her third, her box to write in is gone too", (await her.page.locator("textarea").count()) === 0);
+      check("and she is told why", /You have used your 3 free messages/.test(hers), hers.replace(/\s+/g, " ").slice(-300));
+      check(
+        "and she is offered the way to pay",
+        (await her.page.locator('a[href="/membership"]').count()) > 0,
+        "no link to /membership on her wall"
+      );
+
+      await send(herStale, "Her fourth, from a tab left open.");
+      check(
+        "and her fourth is refused by the server, not only hidden",
+        (await countFrom(sister)) === 3,
+        `${await countFrom(sister)} stored`
+      );
+      await herStale.close();
+    }
+    /* The last one she actually got to send — four under `brother`,
+       where she is exempt, three under `everybody`, where she is not.
+       Being at his own wall must not stop him reading hers. */
+    const herLast = GATE === "brother" ? "Her message 4." : "Her message 3.";
+    check(
+      "and he reads what she wrote, though he cannot reply",
+      (await (async () => {
+        await him.page.goto(thread, { waitUntil: "networkidle" });
+        return text(him.page);
+      })()).includes(herLast),
+      `looking for ${JSON.stringify(herLast)}`
+    );
 
     /* ---------- with a plan, he writes again -------------------------- */
     await users.updateOne(

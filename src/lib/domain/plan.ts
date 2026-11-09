@@ -55,9 +55,21 @@ export function messageAllowance(
      cannot write in them anyway. */
   if (who.role !== "member") return { gated: false };
 
-  /* Sisters never pay. An unknown gender is treated the same way rather
-     than charged: refusing someone a message because a profile lookup
-     came back empty would be charging for our own missing data. */
+  /* Refusing someone a message because a profile lookup came back empty
+     is charging them for our own missing data, so an unreadable gender
+     is never gated.
+
+     This used to be a side effect of the line below — `!== "brother"`
+     catches null as well — which meant it held under the `brother` gate
+     and silently stopped holding under `everybody`, where a member we
+     could not read would have been walled out of a conversation with no
+     way to tell us why. Same asymmetry the subscription rules keep: a
+     few free messages given away wrongly costs ten dollars, a locked
+     door costs somebody the conversation. */
+  if (who.gender === null) return { gated: false };
+
+  /* Sisters do not pay under `brother`. They do under `everybody`,
+     which is what the site runs on since they were given a price. */
   if (settings.planGate === "brother" && who.gender !== "brother") return { gated: false };
 
   if (who.hasPlan) return { gated: false };
@@ -82,5 +94,5 @@ export function planNote(
   if (settings.planGate === "nobody") return null;
   if (settings.planGate === "brother" && gender !== "brother") return null;
   const n = settings.freeMessagesPerConversation;
-  return `Once you are talking, your first ${n} message${n === 1 ? " is" : "s are"} free; after that you need a plan to keep writing.`;
+  return `Once you are talking, your first ${n} message${n === 1 ? " is" : "s are"} free; after that you need a membership to keep writing.`;
 }
