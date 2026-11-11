@@ -3,8 +3,15 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { currentUser } from "@/lib/auth/current";
-import { parseStepForm } from "@/lib/domain/profile-form";
-import { stepsFor, submitBlockers, type ProfileDraft, type StepId } from "@/lib/domain/profile";
+import { missingRequired, parseStepForm, valuesOf } from "@/lib/domain/profile-form";
+import {
+  firstUnfinishedStep,
+  isStepUnlocked,
+  stepsFor,
+  submitBlockers,
+  type ProfileDraft,
+  type StepId,
+} from "@/lib/domain/profile";
 import {
   findProfileByUserId,
   saveProfileSection,
@@ -14,15 +21,23 @@ import { hasConfirmedWali } from "@/lib/repositories/guardianships";
 import { openRequiredChecks } from "@/lib/repositories/verifications";
 import { record } from "@/lib/audit";
 
-export type StepState = { issues?: string[] };
+export type StepState = {
+  issues?: string[];
+  /** Paths of the required answers still empty, so each field can say so. */
+  missing?: string[];
+};
 
-/** Saves one step and moves to the next.
+/** Saves one step, and moves to the next only once this one is finished.
  *
- *  Saves whatever was filled in, even if the step is not finished —
- *  "the profile can be finished across several sittings" is a promise
- *  the marketing page makes, and it is worth nothing if leaving halfway
- *  through loses the half. Completeness is reported, never enforced
- *  here; `submitBlockers` is the gate, at the end.
+ *  Whatever was filled in is still saved — "the profile can be finished
+ *  across several sittings" is a promise the marketing page makes, and
+ *  it is worth nothing if leaving halfway through loses the half. What
+ *  changed is the moving on. It used to forward regardless, so a member
+ *  could leave a step half-answered, half-answer the next, and end up
+ *  with answers scattered across three screens and 0% to show for it.
+ *  The client: "without completing one step fully they should not be
+ *  able to go to next step." So an unfinished step keeps them on it and
+ *  names what is missing.
  */
 export async function saveStep(step: StepId, _prev: StepState, form: FormData): Promise<StepState> {
   const session = await currentUser();
@@ -34,12 +49,33 @@ export async function saveStep(step: StepId, _prev: StepState, form: FormData): 
   const ctxBefore = {
     hasConfirmedWali: profile.gender === "sister" ? await hasConfirmedWali(session.user.id) : false,
   };
+
+  /* A step that is not open yet is not saved into either. The page
+     already refuses to show it; this is the same refusal for a form
+     posted from a tab left open before an earlier answer was cleared. */
+  if (!isStepUnlocked(profile, step, ctxBefore)) {
+    const first = firstUnfinishedStep(profile, ctxBefore);
+    redirect(first ? `/onboarding/${first.id}` : "/onboarding");
+  }
+
   const wasIncomplete = submitBlockers(profile, ctxBefore).length > 0;
 
   const patch = parseStepForm(step, profile.gender, form);
   const saved = await saveProfileSection(session.user.id, patch, new Date());
 
   if (!saved.ok) return { issues: saved.issues };
+
+  const missing = missingRequired(step, profile.gender, valuesOf(saved.profile));
+  if (missing.length > 0) {
+    /* The paths, not a sentence: the form counts them for its summary
+       line and marks each question where it sits. Revalidated at the
+       layout so the step's own page — its stepper and percentage —
+       reflects what was just saved, along with the checklist. */
+    revalidatePath("/onboarding", "layout");
+    return {
+      missing: missing.map((f) => f.path),
+    };
+  }
 
   /* The answer that finishes the profile also sends it in.
    *

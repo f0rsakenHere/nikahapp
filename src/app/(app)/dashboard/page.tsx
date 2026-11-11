@@ -289,6 +289,10 @@ export default async function DashboardPage({
   /* Hers alone. This card used to greet a brother with "Name your wali"
      and a form, which is a wali system with the word "optional" on it. */
   const needsWali = me.gender === "sister" && !ctx.hasConfirmedWali;
+  /* Not while an earlier step is unfinished. The wali step is the last
+     one and opens only after the others, so a banner offering it to a
+     sister still on "About you" was a button into a redirect. */
+  const showWaliBanner = needsWali && !(isDraft && nextStep);
   /* Required, and no longer something she can get to in her own time. */
   const urgent = needsWali && !isDraft;
   const moderatorAvailable = Boolean(settings.moderatorWaliUserId);
@@ -375,7 +379,7 @@ export default async function DashboardPage({
           accent: present, not alarmed. A warning shown on day one about
           a step nobody has reached is how a warning colour stops
           meaning anything. */}
-      {needsWali ? (
+      {showWaliBanner ? (
         <div
           className={`mb-5 flex flex-col gap-4 rounded-lg border-2 p-5 lg:flex-row lg:items-center ${
             urgent ? "border-peach bg-soft-peach/50" : "border-accent bg-accent/12"

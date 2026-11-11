@@ -18,6 +18,7 @@ import {
   QURAN,
   RELOCATE,
   SALAH,
+  type ProfileDraft,
   type StepId,
 } from "./profile";
 import {
@@ -189,6 +190,18 @@ export const STEP_FIELDS: Record<Exclude<StepId, "guardian">, FieldSpec[]> = {
   ],
 
 };
+
+/** Flattens a profile to the `section.key` paths the specs use. */
+export function valuesOf(profile: ProfileDraft): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [section, values] of Object.entries(profile)) {
+    if (!values || typeof values !== "object" || Array.isArray(values) || values instanceof Date) {
+      continue;
+    }
+    for (const [key, value] of Object.entries(values)) out[`${section}.${key}`] = value;
+  }
+  return out;
+}
 
 /** The required fields on this step that are still empty.
  *

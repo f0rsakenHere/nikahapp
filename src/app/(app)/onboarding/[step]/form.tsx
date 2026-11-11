@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { saveStep, type StepState } from "@/lib/profile/actions";
 import type { FieldSpec } from "@/lib/domain/profile-form";
 import type { StepId } from "@/lib/domain/profile";
@@ -32,17 +32,51 @@ export function StepForm({
 }) {
   const action = saveStep.bind(null, step);
   const [state, formAction] = useActionState(action, EMPTY);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  /* The button is at the bottom and the first unanswered question may be
+     a screen and a half above it. Without this, pressing it on a phone
+     looked like nothing happening at all. Deferred a tick so it runs
+     after React's reset and the draft's restore. */
+  useEffect(() => {
+    const first = state.missing?.[0];
+    if (!first || !formRef.current) return;
+    const el = formRef.current.querySelector<HTMLElement>(`[name="${CSS.escape(first)}"]`);
+    if (!el) return;
+    /* Scrolled to, not focused. Focus paints the green "you are here"
+       border over the red one, so the first missing question was the
+       one that did not look missing. The summary is a live alert, which
+       is what tells a screen reader. */
+    const t = setTimeout(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [state]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-7" noValidate>
+    <form ref={formRef} action={formAction} className="flex flex-col gap-7" noValidate>
       {/* Saved answers come from the server; this covers the ones typed
           since, which until now a refresh threw away. */}
       <FormDraft name={draftKey} />
 
-      <FormError>{state.issues?.[0]}</FormError>
+      <FormError>
+        {state.missing?.length
+          ? state.missing.length === 1
+            ? "Please answer the highlighted question to continue."
+            : `Please answer the ${state.missing.length} highlighted questions to continue.`
+          : state.issues?.[0]}
+      </FormError>
 
       {fields.map((spec) => (
-        <SpecField key={spec.path} spec={spec} value={values[spec.path]} />
+        <SpecField
+          key={spec.path}
+          spec={spec}
+          value={values[spec.path]}
+          /* Marked where it is, not only in the summary at the top: on a
+             phone the summary has scrolled away by the time somebody
+             reaches the box it means. */
+          error={state.missing?.includes(spec.path) ? "Please answer this to continue." : undefined}
+        />
       ))}
 
       <div className="flex flex-col gap-3 border-t border-soft-green pt-6">

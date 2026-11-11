@@ -2,34 +2,24 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { currentUser } from "@/lib/auth/current";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
-import { fieldsForStep, missingRequired } from "@/lib/domain/profile-form";
+import { fieldsForStep, valuesOf } from "@/lib/domain/profile-form";
 import {
   completeness,
+  firstUnfinishedStep,
+  isStepUnlocked,
   stepById,
   stepsFor,
   submitBlockers,
-  type ProfileDraft,
 } from "@/lib/domain/profile";
 import { AppFrame } from "../../frame";
 import { StepForm } from "./form";
+import { Stepper, type StepperItem } from "./stepper";
 import { GuardianStep } from "./guardian";
 import { hasConfirmedWali, listGuardianshipsForMember } from "@/lib/repositories/guardianships";
 import { MAX_WALIS, activeGuardianships } from "@/lib/domain/guardianship";
 import { readSettings } from "@/lib/repositories/connections";
 
 export const metadata: Metadata = { title: "Your profile | NikahCanada" };
-
-/** Flattens the draft to the `section.key` paths the specs use. */
-function valuesOf(profile: ProfileDraft): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [section, values] of Object.entries(profile)) {
-    if (!values || typeof values !== "object" || Array.isArray(values) || values instanceof Date) {
-      continue;
-    }
-    for (const [key, value] of Object.entries(values)) out[`${section}.${key}`] = value;
-  }
-  return out;
-}
 
 export default async function StepPage({ params }: { params: Promise<{ step: string }> }) {
   const { step: stepParam } = await params;
@@ -52,6 +42,15 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
   if (!visible.some((s) => s.id === step.id)) redirect("/onboarding");
 
   const ctx = { hasConfirmedWali: await hasConfirmedWali(session.user.id) };
+
+  /* One step at a time, in order. Typing the address of a later step —
+     or following an old link to it — lands on the first one still
+     unfinished, which is where the answers are wanted. */
+  if (!isStepUnlocked(profile, step.id, ctx)) {
+    const first = firstUnfinishedStep(profile, ctx);
+    redirect(first ? `/onboarding/${first.id}` : "/onboarding");
+  }
+
   const progress = completeness(profile, ctx);
   const blockers = submitBlockers(profile, ctx);
   const position = visible.findIndex((s) => s.id === step.id) + 1;
@@ -86,7 +85,22 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
     confirmedAt: g.confirmedAt ? day(g.confirmedAt) : "",
   }));
 
-  const missing = missingRequired(step.id, profile.gender, valuesOf(profile));
+  /* Where each step stands, for the row across the top. The wali step
+     is "done" only once he has confirmed — `required` asks the context —
+     and otherwise "open" once she has reached it, never "current" by
+     accident of being unfinished. */
+  const stepper: StepperItem[] = visible.map((s) => ({
+    id: s.id,
+    title: s.title,
+    state:
+      s.id === step.id
+        ? "current"
+        : !isStepUnlocked(profile, s.id, ctx)
+          ? "locked"
+          : s.required(profile, ctx)
+            ? "done"
+            : "open",
+  }));
 
   /* Framed like the rest of the app, but kept to a reading column: this
      is one form at a time, and a field set stretched across a monitor is
@@ -96,43 +110,33 @@ export default async function StepPage({ params }: { params: Promise<{ step: str
     <AppFrame active="profile" title={step.title}>
       <p className="-mt-3 mb-6 max-w-[560px] text-[18px] leading-[26px] text-text">{step.blurb}</p>
 
-      {/* Where you are, beside how far along you are — one line, in the
-          column it belongs to. It used to sit opposite the title, which
-          on a wide pane put it several hundred pixels from anything it
-          referred to. */}
-      <div className="mb-7 flex max-w-[560px] flex-col gap-2">
-        <div className="flex items-center justify-between text-[18px] font-semibold text-text/70">
-          <span>{`Step ${position} of ${visible.length}`}</span>
-          <span className="text-peach-deep">{progress.percent}% complete</span>
+      {/* Where you are, how far along, and what is still ahead and shut.
+          The bar tracks completion, not position. Filling it by position
+          put a 60%-wide bar next to the words "20% complete", which is
+          the sort of thing a reader notices immediately and an automated
+          check never does. */}
+      <div className="mb-7 flex max-w-[560px] flex-col gap-3">
+        <div className="flex items-center justify-between gap-3 text-[18px] font-semibold text-text/70">
+          <span>
+            {`Step ${position} of ${visible.length}`}
+            <span className="font-normal text-text/60"> · {step.title}</span>
+          </span>
+          <span className="shrink-0 text-peach-deep">{progress.percent}%</span>
         </div>
-        {/* The bar tracks completion, not position. Filling it by
-            position put a 60%-wide bar next to the words "20% complete",
-            which is the sort of thing a reader notices immediately and
-            an automated check never does. */}
         <div className="h-1 w-full overflow-hidden rounded-full bg-soft-green">
           <div
             className="h-full rounded-full bg-peach"
             style={{ width: `${progress.percent}%` }}
           />
         </div>
+        <Stepper items={stepper} />
       </div>
 
-      {/* What this step is still waiting for, by name. Answers save as
-          they are typed, so leaving one out is silent: the step simply
-          does not tick, and the member is left to guess which box did
-          it. */}
-      {missing.length > 0 && step.id !== "guardian" ? (
-        <div className="mb-6 max-w-[560px] rounded-md border border-peach bg-soft-peach/40 px-4 py-4">
-          <p className="text-[18px] font-semibold text-black">
-            {missing.length === 1
-              ? "One answer is still needed here"
-              : `${missing.length} answers are still needed here`}
-          </p>
-          <p className="mt-1 text-[18px] leading-[26px] text-text">
-            {missing.map((f) => f.label).join(", ")}. Everything else on this page is optional, and
-            whatever you have typed is already saved.
-          </p>
-        </div>
+      {step.id !== "guardian" ? (
+        <p className="mb-6 max-w-[560px] text-[18px] leading-[26px] text-text/70">
+          Questions marked <span className="text-peach-deep">*</span> need an answer before the
+          next step opens. Everything you fill in is saved.
+        </p>
       ) : null}
 
       <div className="max-w-[560px]">

@@ -10,6 +10,8 @@ import {
   stepById,
   stepsFor,
   canParticipate,
+  firstUnfinishedStep,
+  isStepUnlocked,
   submitBlockers,
   type ProfileDraft,
 } from "./profile";
@@ -338,5 +340,47 @@ describe("who is in the pool", () => {
   it("accounts for every status that exists", () => {
     const decided = new Set([...poolStatuses(open), "draft", "paused", "matched", "withdrawn", "rejected"]);
     expect([...PROFILE_STATUSES].filter((s) => !decided.has(s))).toEqual([]);
+  });
+});
+
+describe("steps open strictly in order", () => {
+  it("opens only the first step on an empty draft", () => {
+    const p = draft();
+    expect(isStepUnlocked(p, "basics")).toBe(true);
+    expect(isStepUnlocked(p, "background")).toBe(false);
+    expect(isStepUnlocked(p, "deen")).toBe(false);
+    expect(isStepUnlocked(p, "guardian")).toBe(false);
+  });
+
+  /* The client's complaint: some answers here, some there. Filling a
+     later step does not open it while an earlier one is unfinished. */
+  it("keeps a later step shut even when it has answers, if an earlier one is unfinished", () => {
+    const p = complete({ basics: { city: "Montreal" } } as Partial<ProfileDraft>);
+    expect(isStepUnlocked(p, "background")).toBe(false);
+    expect(isStepUnlocked(p, "deen")).toBe(false);
+    expect(firstUnfinishedStep(p)?.id).toBe("basics");
+  });
+
+  it("opens the next step once the one before is finished", () => {
+    const p = draft({
+      basics: { birthYear: 1995, city: "Montreal", province: "QC", citizenship: "citizen" },
+    } as Partial<ProfileDraft>);
+    expect(isStepUnlocked(p, "background")).toBe(true);
+    expect(isStepUnlocked(p, "deen")).toBe(false);
+    expect(firstUnfinishedStep(p)?.id).toBe("background");
+  });
+
+  it("leaves every finished step open for editing", () => {
+    const p = complete();
+    for (const s of stepsFor("sister")) expect(isStepUnlocked(p, s.id)).toBe(true);
+    expect(firstUnfinishedStep(p)).toBeNull();
+  });
+
+  it("opens the wali step without needing him to have confirmed already", () => {
+    expect(isStepUnlocked(complete(), "guardian", { hasConfirmedWali: false })).toBe(true);
+  });
+
+  it("never opens the wali step for a brother", () => {
+    expect(isStepUnlocked(complete({ gender: "brother" }), "guardian")).toBe(false);
   });
 });

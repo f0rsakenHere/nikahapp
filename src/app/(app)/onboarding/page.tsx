@@ -6,8 +6,8 @@ import { logout } from "@/lib/auth/actions";
 import { submitProfile } from "@/lib/profile/actions";
 import { findProfileByUserId } from "@/lib/repositories/profiles";
 import { hasConfirmedWali } from "@/lib/repositories/guardianships";
-import { completeness, stepsFor, submitBlockers } from "@/lib/domain/profile";
-import { Check } from "@/components/app/kit";
+import { completeness, isStepUnlocked, stepsFor, submitBlockers } from "@/lib/domain/profile";
+import { Check, Lock } from "@/components/app/kit";
 import { ConfirmEmail } from "@/components/app/confirm-email";
 import { AppIllustration } from "@/components/app/illustration";
 import { AppFrame } from "../frame";
@@ -16,11 +16,13 @@ export const metadata: Metadata = { title: "Your profile | NikahCanada" };
 
 /* Progress, and the way back into whichever step is unfinished.
  *
- * A list rather than a wizard that marches you forward: people fill
- * these in over several sittings and want to see what is left, and the
- * one step a sister cannot finish alone — her wali — needs to be visible
- * as *waiting on someone else* rather than as her failure to complete
- * it. */
+ * Still a list, because people fill these in over several sittings and
+ * want to see what is left — but no longer a list you can enter
+ * anywhere. Steps open strictly in order (`isStepUnlocked`): answers
+ * scattered half-filled across three screens is what the client asked
+ * us to stop. A step not reached yet is shown, locked, so the road
+ * ahead is visible without being walkable. The wali step still reads as
+ * *waiting on someone else* once it is open, not as her failure. */
 export default async function OnboardingPage({
   searchParams,
 }: {
@@ -194,10 +196,61 @@ export default async function OnboardingPage({
       >
         {visible.map((step) => {
           const done = isDone(step.id);
+          const locked = !isStepUnlocked(profile, step.id, ctx);
           /* The one step nobody can finish alone, and only a sister has
              it. Reported as waiting on somebody rather than as her
              failure to fill something in. */
-          const waitingOnWali = step.id === "guardian" && !done;
+          const waitingOnWali = step.id === "guardian" && !done && !locked;
+          const before = visible[visible.indexOf(step) - 1];
+
+          const inner = (
+            <>
+              <span
+                className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[18px] font-semibold ${
+                  locked
+                    ? "bg-soft-green/60 text-text/50"
+                    : done
+                      ? "bg-peach text-black"
+                      : waitingOnWali
+                        ? "border border-dashed border-soft-green text-text/50"
+                        : "border-2 border-peach-deep text-peach-deep"
+                }`}
+              >
+                {/* Numbered by what this member is shown, not by the
+                    position in `STEPS` — that list holds both slot-4
+                    definitions, so a brother's reference came out as 5
+                    under a 3, with no 4 anywhere on the screen. */}
+                {locked ? (
+                  <Lock className="h-3.5 w-3.5" />
+                ) : done ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  visible.indexOf(step) + 1
+                )}
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className={`text-[18px] font-semibold ${locked ? "text-text/60" : "text-black"}`}>
+                  {step.title}
+                </span>
+                <span
+                  className={`text-[18px] leading-[26px] ${
+                    done || waitingOnWali || locked ? "text-text/70" : "font-semibold text-peach-deep"
+                  }`}
+                >
+                  {locked
+                    ? `Opens once ${before ? before.title.toLowerCase() : "the step before"} is finished`
+                    : waitingOnWali
+                      ? "Waiting on your wali"
+                      : done
+                        ? "Done"
+                        : "Not finished yet"}
+                </span>
+                {done || waitingOnWali || locked ? null : (
+                  <span className="text-[18px] leading-[26px] text-text/70">{step.blurb}</span>
+                )}
+              </span>
+            </>
+          );
 
           return (
             /* `h-full` on both: a grid row is as tall as its tallest
@@ -205,49 +258,33 @@ export default async function OnboardingPage({
                which has a line fewer — sat in a box of its own size
                with a gap under it. */
             <li key={step.id} className="h-full">
-              <Link
-                href={`/onboarding/${step.id}`}
-                /* The one that still wants something is the one that
-                   looks different. Four rows in the same grey, one of
-                   them carrying a dashed circle instead of a tick, is a
-                   difference nobody reads as "this one is for you". */
-                className={`flex h-full items-center gap-3.5 rounded-xl border px-4 py-4 shadow-app transition-[border-color,box-shadow,background-color] hover:shadow-soft ${
-                  done
-                    ? "border-soft-green hover:border-accent-deep"
-                    : waitingOnWali
-                      ? "border-soft-green bg-mist hover:border-accent-deep"
-                      : "border-peach bg-soft-peach/30 hover:border-peach-deep"
-                }`}
-              >
-                <span
-                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[18px] font-semibold ${
+              {locked ? (
+                /* Not a link. A link that bounces you back to another
+                   page is a door that lies about being a door. */
+                <div
+                  aria-disabled="true"
+                  className="flex h-full items-center gap-3.5 rounded-xl border border-dashed border-soft-green bg-white/60 px-4 py-4"
+                >
+                  {inner}
+                </div>
+              ) : (
+                <Link
+                  href={`/onboarding/${step.id}`}
+                  /* The one that still wants something is the one that
+                     looks different. Four rows in the same grey, one of
+                     them carrying a dashed circle instead of a tick, is a
+                     difference nobody reads as "this one is for you". */
+                  className={`flex h-full items-center gap-3.5 rounded-xl border px-4 py-4 shadow-app transition-[border-color,box-shadow,background-color] hover:shadow-soft ${
                     done
-                      ? "bg-peach text-black"
+                      ? "border-soft-green hover:border-accent-deep"
                       : waitingOnWali
-                        ? "border border-dashed border-soft-green text-text/50"
-                        : "border-2 border-peach-deep text-peach-deep"
+                        ? "border-soft-green bg-mist hover:border-accent-deep"
+                        : "border-peach bg-soft-peach/30 hover:border-peach-deep"
                   }`}
                 >
-                  {/* Numbered by what this member is shown, not by the
-                      position in `STEPS` — that list holds both slot-4
-                      definitions, so a brother's reference came out as 5
-                      under a 3, with no 4 anywhere on the screen. */}
-                  {done ? <Check className="h-3.5 w-3.5" /> : visible.indexOf(step) + 1}
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-[18px] font-semibold text-black">{step.title}</span>
-                  <span
-                    className={`text-[18px] leading-[26px] ${
-                      done || waitingOnWali ? "text-text/70" : "font-semibold text-peach-deep"
-                    }`}
-                  >
-                    {waitingOnWali ? "Waiting on your wali" : done ? "Done" : "Not finished yet"}
-                  </span>
-                  {done || waitingOnWali ? null : (
-                    <span className="text-[18px] leading-[26px] text-text/70">{step.blurb}</span>
-                  )}
-                </span>
-              </Link>
+                  {inner}
+                </Link>
+              )}
             </li>
           );
         })}

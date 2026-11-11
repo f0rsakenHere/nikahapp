@@ -66,7 +66,7 @@ export function TextField({
         required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy || undefined}
-        className={`${CONTROL} ${error ? "border-peach-deep" : ""}`}
+        className={error ? CONTROL.replace("border-soft-green", "border-peach-deep") : CONTROL}
       />
       {hint ? (
         <span id={`${name}-hint`} className="text-[18px] leading-[26px] text-text/70">
@@ -137,7 +137,7 @@ export function DateOfBirthField({
   /* Tighter sides than the full-width fields: every pixel of padding
      here is a pixel the month name does not get, and "September" has to
      fit on a 360px phone. */
-  const box = `${CONTROL_BASE} px-2.5 ${error ? "border-peach-deep" : ""}`;
+  const box = `${error ? CONTROL_BASE.replace("border-soft-green", "border-peach-deep") : CONTROL_BASE} px-2.5`;
   const part = "text-[18px] leading-[26px] text-text/70";
 
   return (
@@ -316,6 +316,41 @@ export function CheckboxField({
  *  cramming them there is how you get a control nobody can read on a
  *  phone. Multi-selects are checkbox lists rather than a native
  *  `<select multiple>`, which on touch is close to unusable. */
+/* Required is the thing marked, not optional. Most questions on a step
+   are required, and a page where the exceptions carry the label reads
+   as "everything here is optional" to anybody skimming it. */
+function RequiredMark({ required }: { required?: boolean }) {
+  if (!required) return null;
+  return (
+    <>
+      <span aria-hidden="true" className="ml-1 text-peach-deep">
+        *
+      </span>
+      <span className="sr-only"> (required)</span>
+    </>
+  );
+}
+
+function FieldError({ children }: { children?: string }) {
+  if (!children) return null;
+  return (
+    <span className="flex items-start gap-1.5 text-[18px] leading-[26px] text-peach-deep">
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 16 16"
+        className="mt-[5px] h-4 w-4 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      >
+        <circle cx="8" cy="8" r="6.5" />
+        <path d="M8 4.5v4.2M8 11.2v.3" strokeLinecap="round" />
+      </svg>
+      {children}
+    </span>
+  );
+}
+
 export function SpecField({
   spec,
   value,
@@ -334,7 +369,7 @@ export function SpecField({
       <fieldset className="flex flex-col gap-2">
         <legend className={LABEL}>
           {spec.label}
-          {spec.required ? "" : <span className="ml-2 normal-case text-text/50">optional</span>}
+          <RequiredMark required={spec.required} />
         </legend>
         {spec.hint ? (
           <span className="text-[18px] leading-[26px] text-text/70">{spec.hint}</span>
@@ -343,7 +378,9 @@ export function SpecField({
           {(spec.options ?? []).map((o) => (
             <label
               key={o.value}
-              className="flex cursor-pointer items-center gap-3 rounded-md border border-soft-green px-3.5 py-2.5 transition-colors has-[:checked]:border-accent-deep has-[:checked]:bg-accent/12"
+              className={`flex cursor-pointer items-center gap-3 rounded-md border px-3.5 py-2.5 transition-colors has-[:checked]:border-accent-deep has-[:checked]:bg-accent/12 ${
+                error ? "border-peach-deep/70" : "border-soft-green"
+              }`}
             >
               <input
                 type={multiple ? "checkbox" : "radio"}
@@ -356,9 +393,7 @@ export function SpecField({
             </label>
           ))}
         </div>
-        {error ? (
-          <span className="text-[18px] leading-[26px] text-peach-deep">{error}</span>
-        ) : null}
+        <FieldError>{error}</FieldError>
       </fieldset>
     );
   }
@@ -367,14 +402,17 @@ export function SpecField({
     id,
     name: id,
     "aria-invalid": error ? true : undefined,
-    className: `${CONTROL} ${error ? "border-peach-deep" : ""}`,
+    /* Swapped, not appended. Both border colours on one element leave
+       the winner to stylesheet order, and the calm one won — a flagged
+       dropdown looked exactly like an answered one. */
+    className: error ? CONTROL.replace("border-soft-green", "border-peach-deep") : CONTROL,
   };
 
   return (
     <label className="flex flex-col gap-1.5">
       <span className={LABEL}>
         {spec.label}
-        {spec.required ? "" : <span className="ml-2 normal-case text-text/50">optional</span>}
+        <RequiredMark required={spec.required} />
       </span>
 
       {/* A number with a fixed list of answers is a dropdown too: height
@@ -419,7 +457,7 @@ export function SpecField({
       {spec.hint ? (
         <span className="text-[18px] leading-[26px] text-text/70">{spec.hint}</span>
       ) : null}
-      {error ? <span className="text-[18px] leading-[26px] text-peach-deep">{error}</span> : null}
+      <FieldError>{error}</FieldError>
     </label>
   );
 }

@@ -388,6 +388,36 @@ export function completeness(
   };
 }
 
+/** Whether this member may open a step yet.
+ *
+ *  Strictly in order, at the client's word: "without completing one step
+ *  fully they should not be able to go to next step... I put some info
+ *  here then some info there, that is not good." A step opens once every
+ *  form step before it is finished. Steps already finished stay open, so
+ *  an answer can always be changed.
+ *
+ *  The wali step is last and is gated like the rest — but it never
+ *  locks anything itself, because whether he has confirmed is somebody
+ *  else's doing, not an answer she has left out. */
+export function isStepUnlocked(
+  p: ProfileDraft,
+  stepId: StepId,
+  ctx: StepContext = NO_WALI
+): boolean {
+  const steps = stepsFor(p.gender);
+  const at = steps.findIndex((s) => s.id === stepId);
+  if (at < 0) return false;
+  return steps
+    .slice(0, at)
+    .every((s) => s.id === "guardian" || s.required(p, ctx));
+}
+
+/** The first form step still wanting an answer, or null when they are
+ *  all done. Where a member trying to skip ahead is sent back to. */
+export function firstUnfinishedStep(p: ProfileDraft, ctx: StepContext = NO_WALI): Step | null {
+  return stepsFor(p.gender).find((s) => s.id !== "guardian" && !s.required(p, ctx)) ?? null;
+}
+
 /* The wali variant is gone. He used to block submission, so a sister who
  * had finished everything still could not send her profile in and had
  * nothing on her screen but somebody else's inbox to wait on. He now
